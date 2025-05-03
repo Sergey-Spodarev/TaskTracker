@@ -12,8 +12,13 @@ public class User {
     @Column(name = "userId", unique = false)//unique - говорит что должно быть уникальное значение
     @GeneratedValue(strategy = GenerationType.IDENTITY)//Указывает стратегию генерации ID (автоинкремент, sequence и т. д.).
     private Long userId;
+
     @Column(name = "userName", nullable = false, unique = true) //Позволяет задать имя столбца, ограничения и другие параметры.
     private String userName;
+
     @Column(name = "password", nullable = false)
     private String password;
+
+    @Column(nullable = false)
+    private String email;
 }
