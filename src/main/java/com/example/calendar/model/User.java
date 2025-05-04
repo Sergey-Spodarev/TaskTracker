@@ -3,10 +3,11 @@ package com.example.calendar.model;
 import jakarta.persistence.*;
 import lombok.Data;
 
+
 // Сущности БД (классы-таблицы):данные пользователя.
+@Data//lombok здесь реализуется get,set,tostring,equals,hascod
 @Entity//Помечает класс как сущность БД.
 @Table(name = "User") //(опционально) – Указывает имя таблицы, если оно отличается от имени класса.
-@Data //lombok здесь реализуется get,set,tostring,equals,hascod
 public class User {
     @Id //Обозначает первичный ключ.
     @Column(name = "userId", unique = false)//unique - говорит что должно быть уникальное значение
