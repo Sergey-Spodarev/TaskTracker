@@ -32,4 +32,11 @@ public class UserService {
 
         return userRepository.save(user);
     }
+
+//    public User updatePassword(String email, String newPassword){
+//        User user = userRepository.findByEmail(email)
+//                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+//        user.setPassword(newPassword);
+//        return userRepository.save(user);
+//    }
 }
