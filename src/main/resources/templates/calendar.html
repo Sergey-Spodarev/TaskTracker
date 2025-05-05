@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Календарь</title>
+    <!-- Подключаем FullCalendar -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css">
+    <style>
+        #calendar {
+            max-width: 900px;
+            margin: 40px auto;
+        }
+    </style>
+</head>
+<body>
+<div id="calendar"></div>
+
+<!-- Скрипты -->
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const calendarEl = document.getElementById('calendar');
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            events: '/api/events', // Ваш REST API для событий
+            dateClick: function(info) {
+                const title = prompt('Введите название события:');
+                if (title) {
+                    axios.post('/api/events', {
+                        title: title,
+                        start: info.dateStr,
+                        allDay: true
+                    }).then(() => calendar.refetchEvents());
+                }
+            },
+            eventClick: function(info) {
+                if (confirm('Удалить событие?')) {
+                    axios.delete('/api/events/' + info.event.id)
+                        .then(() => calendar.refetchEvents());
+                }
+            }
+        });
+        calendar.render();
+    });
+</script>
+</body>
+</html>
