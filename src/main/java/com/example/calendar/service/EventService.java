@@ -27,7 +27,7 @@ public class EventService {
         this.userRepository = userRepository;
     }
 
-    public List<EventDTO> getCurrentUserEvents(){
+    public List<Event> getCurrentUserEvents(){
         User user = getCurrentUser();
         return eventRepository.findAllByEmail(user.getEmail());
     }

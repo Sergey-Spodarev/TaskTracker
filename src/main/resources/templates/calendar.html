@@ -20,8 +20,9 @@
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         const calendarEl = document.getElementById('calendar');
+
         const calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: 'dayGridMonth',
             headerToolbar: {
@@ -29,24 +30,31 @@
                 center: 'title',
                 right: 'dayGridMonth,timeGridWeek,timeGridDay'
             },
-            events: '/api/events', // Ваш REST API для событий
-            dateClick: function(info) {
+            events: '/api/event/get', // получение событий
+            dateClick: function (info) {
                 const title = prompt('Введите название события:');
                 if (title) {
-                    axios.post('/api/events', {
+                    const endDate = prompt('Введите дату окончания (в формате YYYY-MM-DD):', info.dateStr);
+
+                    axios.post('/api/event/add', {
                         title: title,
                         start: info.dateStr,
-                        allDay: true
-                    }).then(() => calendar.refetchEvents());
+                        end: endDate || info.dateStr
+                    }).then(() => {
+                        calendar.refetchEvents();
+                    });
                 }
             },
-            eventClick: function(info) {
+            eventClick: function (info) {
                 if (confirm('Удалить событие?')) {
-                    axios.delete('/api/events/' + info.event.id)
-                        .then(() => calendar.refetchEvents());
+                    axios.delete('/api/event/' + info.event.id)
+                        .then(() => {
+                            calendar.refetchEvents();
+                        });
                 }
             }
         });
+
         calendar.render();
     });
 </script>
