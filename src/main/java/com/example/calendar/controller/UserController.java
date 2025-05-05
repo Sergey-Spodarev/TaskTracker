@@ -7,12 +7,10 @@ import com.example.calendar.service.UserService;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/users")  // Лучше использовать множественное число для REST
+@RequestMapping("/api/users")
 public class UserController {
-
     private final UserService userService;
 
-    // Внедрение зависимости через конструктор
     public UserController(UserService userService) {
         this.userService = userService;
     }
