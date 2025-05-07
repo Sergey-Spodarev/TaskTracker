@@ -4,6 +4,10 @@ import ch.qos.logback.core.model.Model;
 import com.example.calendar.DTO.UserDTO;
 import com.example.calendar.model.User;
 import com.example.calendar.service.UserService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -15,17 +19,18 @@ public class UserController {
         this.userService = userService;
     }
 
+    @GetMapping("/test")
+    public String test() {
+        return "Server is running!";
+    }
+
     @PostMapping("/register")
-    public String registerUser(@RequestParam String username, @RequestParam String email, @RequestParam String password, Model model) {
+    public ResponseEntity<?> registerUser(@RequestBody UserDTO userDTO) {
         try {
-            UserDTO userDTO = new UserDTO();
-            userDTO.setUserName(username);
-            userDTO.setEmail(email);
-            userDTO.setPassword(password);
             User registeredUser = userService.registerUser(userDTO);
-            return "redirect:/login?success";
+            return ResponseEntity.ok().body("Регистрация успешна");
         } catch (Exception e) {
-            return "register";
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 }
