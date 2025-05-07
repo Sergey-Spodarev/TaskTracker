@@ -28,7 +28,7 @@ public class EventService {
 
     public List<Event> getCurrentUserEvents(){
         User user = getCurrentUser();
-        return eventRepository.findAllByEmail(user.getEmail());
+        return eventRepository.findAllByUserEmail(user.getEmail());
     }
 
     public Event saveEvent(EventDTO eventDTO) {
@@ -52,8 +52,8 @@ public class EventService {
         User user = getCurrentUser();
         Event event = new Event();
         event.setTitle(eventDTO.getTitle());
-        event.setStart(eventDTO.getStart());
-        event.setEnd(eventDTO.getEnd());
+        event.setStartTime(eventDTO.getStart());
+        event.setEndTime(eventDTO.getEnd());
         event.setUser(user);
         return eventRepository.save(event);
     }
