@@ -7,10 +7,10 @@ import lombok.Data;
 // Сущности БД (классы-таблицы):данные пользователя.
 @Data//lombok здесь реализуется get,set,tostring,equals,hascod
 @Entity//Помечает класс как сущность БД.
-@Table(name = "User") //(опционально) – Указывает имя таблицы, если оно отличается от имени класса.
+@Table(name = "users") //(опционально) – Указывает имя таблицы, если оно отличается от имени класса.
 public class User {
     @Id //Обозначает первичный ключ.
-    @Column(name = "userId", unique = false)//unique - говорит что должно быть уникальное значение
+    @Column(name = "user_id", unique = false)//unique - говорит что должно быть уникальное значение
     @GeneratedValue(strategy = GenerationType.IDENTITY)//Указывает стратегию генерации ID (автоинкремент, sequence и т. д.).
     private Long userId;
 
