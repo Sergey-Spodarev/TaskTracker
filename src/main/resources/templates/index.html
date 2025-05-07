@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html>
 <head>
     <meta charset="UTF-8">
     <title>Student App</title>
@@ -9,9 +9,9 @@
         .form-group { margin-bottom: 15px; }
         input { width: 100%; padding: 8px; }
         button { background: #4CAF50; color: white; border: none; padding: 10px; width: 100%; }
-        .tabs { display: flex; margin-bottom: 20px; }
-        .tab { padding: 10px; cursor: pointer; }
-        .tab.active { background: #4CAF50; color: white; }
+        .error { color: red; margin-top: 10px; }
+        .register-link { margin-top: 15px; text-align: center; }
+        .register-link a { color: #4CAF50; text-decoration: none; cursor: pointer; }
         .hidden { display: none; }
     </style>
 </head>
@@ -19,27 +19,27 @@
 <div class="container">
     <h1>Добро пожаловать!</h1>
 
-    <div class="tabs">
-        <div class="tab active" onclick="showTab('login')">Вход</div>
-        <div class="tab" onclick="showTab('register')">Регистрация</div>
-    </div>
-
     <!-- Форма входа -->
     <div id="login-form">
-        <form th:action="@{/login}" method="post">
+        <form id="loginForm">
             <div class="form-group">
-                <input type="email" name="email" placeholder="Email" required>
+                <input type="text" name="username" placeholder="Имя пользователя" required>
             </div>
             <div class="form-group">
                 <input type="password" name="password" placeholder="Пароль" required>
             </div>
             <button type="submit">Войти</button>
         </form>
+        <div id="loginError" class="error"></div>
+        <div class="register-link">
+            Нет аккаунта? <a onclick="showForm('register')">Зарегистрироваться</a>
+        </div>
     </div>
 
     <!-- Форма регистрации -->
     <div id="register-form" class="hidden">
-        <form th:action="@{/register}" method="post">
+        <h2>Регистрация</h2>
+        <form id="registerForm">
             <div class="form-group">
                 <input type="text" name="username" placeholder="Имя пользователя" required>
             </div>
@@ -51,18 +51,99 @@
             </div>
             <button type="submit">Зарегистрироваться</button>
         </form>
+        <div id="registerError" class="error"></div>
+        <div class="register-link">
+            Уже есть аккаунт? <a onclick="showForm('login')">Войти</a>
+        </div>
     </div>
 </div>
 
 <script>
-    function showTab(tabName) {
-        document.getElementById('login-form').classList.toggle('hidden', tabName !== 'login');
-        document.getElementById('register-form').classList.toggle('hidden', tabName !== 'register');
-
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.classList.toggle('active', tab.textContent.toLowerCase().includes(tabName));
-        });
+    // Функция для переключения между формами
+    function showForm(formType) {
+        if (formType === 'login') {
+            document.getElementById('login-form').classList.remove('hidden');
+            document.getElementById('register-form').classList.add('hidden');
+        } else if (formType === 'register') {
+            document.getElementById('register-form').classList.remove('hidden');
+            document.getElementById('login-form').classList.add('hidden');
+        }
     }
+
+    // Обработка формы регистрации
+    document.getElementById('registerForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const formData = {
+            userName: this.username.value,  // ← Изменили на userName (Java ожидает)
+            email: this.email.value,
+            password: this.password.value
+        };
+
+        try {
+            const response = await fetch('/api/users/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            });
+
+            if (response.ok) {
+                showForm('login');
+                document.getElementById('registerError').textContent = '';
+                alert('Регистрация успешна! Теперь вы можете войти.');
+            } else {
+                let errorMessage = 'Ошибка сервера';
+
+                // Пытаемся получить текст или JSON из ответа
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.includes("application/json")) {
+                    const errorData = await response.json();
+                    errorMessage = errorData.message || JSON.stringify(errorData);
+                } else {
+                    errorMessage = await response.text(); // Если пришёл HTML или простой текст
+                }
+
+                throw new Error(errorMessage);
+            }
+        } catch (error) {
+            console.error('Ошибка регистрации:', error);
+            document.getElementById('registerError').textContent =
+                `Ошибка при регистрации: ${error.message || 'Проверьте подключение к серверу'}`;
+        }
+    });
+
+    // Обработка формы входа
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const formData = {
+            username: this.username.value,
+            password: this.password.value
+        };
+
+        try {
+            const response = await fetch('/api/users/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            });
+
+            if (response.ok) {
+                window.location.href = '/calendar';
+            } else {
+                const errorData = await response.json().catch(() => null);
+                throw new Error(errorData?.message || `Ошибка входа: ${response.status}`);
+            }
+        } catch (error) {
+            console.error('Ошибка входа:', error);
+            document.getElementById('loginError').textContent =
+                `Ошибка при входе: ${error.message || 'Проверьте подключение к серверу'}`;
+        }
+    });
 </script>
 </body>
 </html>
