@@ -2,26 +2,74 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Календарь</title>
-    <!-- Подключаем FullCalendar -->
+    <title>Календарь событий</title>
+
+    <!-- FullCalendar -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css">
+
+    <!-- Bootstrap для красивой модалки -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
     <style>
         #calendar {
             max-width: 900px;
             margin: 40px auto;
+        }
+
+        .fc-event {
+            cursor: pointer;
+            margin: 2px 0;
         }
     </style>
 </head>
 <body>
 <div id="calendar"></div>
 
+<!-- Модальное окно для добавления/редактирования -->
+<div class="modal fade" id="eventModal" tabindex="-1" aria-labelledby="eventModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="eventModalLabel">Новое событие</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="eventForm">
+                    <input type="hidden" id="eventId">
+                    <div class="mb-3">
+                        <label for="titleInput" class="form-label">Название события</label>
+                        <input type="text" class="form-control" id="titleInput" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="startInput" class="form-label">Дата и время начала</label>
+                        <input type="datetime-local" class="form-control" id="startInput" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="endInput" class="form-label">Дата и время окончания</label>
+                        <input type="datetime-local" class="form-control" id="endInput">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger me-auto" id="deleteEventBtn" style="display: none;">Удалить</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="saveEventBtn">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Скрипты -->
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const calendarEl = document.getElementById('calendar');
+        const eventModal = new bootstrap.Modal(document.getElementById('eventModal'));
+
+        let currentEvent = null;
 
         const calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: 'dayGridMonth',
@@ -30,32 +78,94 @@
                 center: 'title',
                 right: 'dayGridMonth,timeGridWeek,timeGridDay'
             },
-            events: '/api/event/get', // получение событий
-            dateClick: function (info) {
-                const title = prompt('Введите название события:');
-                if (title) {
-                    const endDate = prompt('Введите дату окончания (в формате YYYY-MM-DD):', info.dateStr);
+            events: '/api/event/get',
+            eventClick: function(info) {
+                // Редактирование существующего события
+                currentEvent = info.event;
+                document.getElementById('eventId').value = currentEvent.id;
+                document.getElementById('titleInput').value = currentEvent.title;
+                document.getElementById('startInput').value = formatDateForInput(currentEvent.start);
+                document.getElementById('endInput').value = currentEvent.end ? formatDateForInput(currentEvent.end) : '';
 
-                    axios.post('/api/event/add', {
-                        title: title,
-                        start: info.dateStr,
-                        end: endDate || info.dateStr
-                    }).then(() => {
-                        calendar.refetchEvents();
-                    });
-                }
+                // Показываем кнопку удаления
+                document.getElementById('deleteEventBtn').style.display = 'block';
+                eventModal.show();
             },
-            eventClick: function (info) {
-                if (confirm('Удалить событие?')) {
-                    axios.delete('/api/event/' + info.event.id)
-                        .then(() => {
-                            calendar.refetchEvents();
-                        });
-                }
+            dateClick: function(info) {
+                // Создание нового события
+                currentEvent = null;
+                document.getElementById('eventId').value = '';
+                document.getElementById('titleInput').value = '';
+                document.getElementById('startInput').value = info.dateStr.slice(0, 16);
+                document.getElementById('endInput').value = '';
+
+                // Скрываем кнопку удаления
+                document.getElementById('deleteEventBtn').style.display = 'none';
+                eventModal.show();
             }
         });
 
         calendar.render();
+
+        // Форматирование даты для input[type=datetime-local]
+        function formatDateForInput(date) {
+            if (!date) return '';
+            const d = new Date(date);
+            return d.toISOString().slice(0, 16);
+        }
+
+        // Сохранение события
+        document.getElementById('saveEventBtn').addEventListener('click', async () => {
+            const id = document.getElementById('eventId').value;
+            const title = document.getElementById('titleInput').value;
+            const start = document.getElementById('startInput').value;
+            const end = document.getElementById('endInput').value;
+
+            if (!title || !start) {
+                alert("Заполните обязательные поля");
+                return;
+            }
+
+            const eventData = {
+                title: title,
+                start: start,
+                end: end || null
+            };
+
+            try {
+                if (id) {
+                    // Обновление существующего события
+                    await axios.put('/api/event/' + id, eventData);
+                } else {
+                    // Создание нового события
+                    await axios.post('/api/event/add', eventData);
+                }
+
+                calendar.refetchEvents();
+                eventModal.hide();
+            } catch (error) {
+                console.error("Ошибка при сохранении события:", error);
+                alert("Произошла ошибка при сохранении");
+            }
+        });
+
+        // Удаление события
+        document.getElementById('deleteEventBtn').addEventListener('click', async () => {
+            const id = document.getElementById('eventId').value;
+
+            if (!id || !confirm("Вы уверены, что хотите удалить это событие?")) {
+                return;
+            }
+
+            try {
+                await axios.delete('/api/event/' + id);
+                calendar.refetchEvents();
+                eventModal.hide();
+            } catch (error) {
+                console.error("Ошибка при удалении события:", error);
+                alert("Произошла ошибка при удалении");
+            }
+        });
     });
 </script>
 </body>
