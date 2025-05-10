@@ -10,4 +10,5 @@ import java.util.Optional;
 @Repository//Помечает интерфейс как Spring-репозиторий (не обязательно, т. к. Spring автоматически распознаёт его через наследование от JpaRepository).
 public interface UserRepository extends JpaRepository<User, Long> {//JpaRepository - автоматически создаст реализацию.
     Optional findByEmail(String email);
+    Optional<User>  findByUserName(String username);
 }

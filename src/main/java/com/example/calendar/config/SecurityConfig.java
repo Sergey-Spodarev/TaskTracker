@@ -17,10 +17,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         // Настройка CSRF
-        http.csrf(csrf -> csrf
-                .ignoringRequestMatchers(new AntPathRequestMatcher("/api/**")) // ✅ Отключаем CSRF для /api/**
-                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()) // Для UI
-        );
+        http.csrf((csrf) -> csrf.disable());
 
         // Авторизация
         http.authorizeHttpRequests(auth -> auth
@@ -28,7 +25,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/**").permitAll() // Все API-маршруты открыты
                 .requestMatchers("/profile/**").authenticated()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
-                .anyRequest().authenticated()
+                .anyRequest().permitAll()
         );
 
         // Форма входа

@@ -2,6 +2,7 @@ package com.example.calendar.controller;
 
 import com.example.calendar.DTO.EventDTO;
 import com.example.calendar.model.Event;
+import com.example.calendar.repository.UserRepository;
 import com.example.calendar.service.EventService;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,7 +12,8 @@ import java.util.List;
 @RequestMapping("/api/event")
 public class EventController {
     private final EventService eventService;
-    public EventController(EventService eventService) {
+
+    public EventController(EventService eventService, UserRepository userRepository) {
         this.eventService = eventService;
     }
 
