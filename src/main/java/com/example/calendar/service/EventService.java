@@ -58,7 +58,7 @@ public class EventService {
         return eventRepository.save(event);
     }
 
-    private User getCurrentUser() {
+    public User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || !authentication.isAuthenticated()) {
