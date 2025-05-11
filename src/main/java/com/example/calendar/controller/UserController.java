@@ -28,7 +28,7 @@ public class UserController {
     public ResponseEntity<?> registerUser(@RequestBody UserDTO userDTO) {
         try {
             User registeredUser = userService.registerUser(userDTO);
-            return ResponseEntity.ok().body("Регистрация успешна");
+            return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

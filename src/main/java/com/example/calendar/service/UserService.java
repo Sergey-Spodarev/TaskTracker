@@ -3,6 +3,7 @@ package com.example.calendar.service;
 import com.example.calendar.DTO.UserDTO;
 import com.example.calendar.model.User;
 import com.example.calendar.repository.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,9 +12,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional //Управляет транзакциями для работы с БД.
 public class UserService {
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository){
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public Boolean checkUserRegistered(String email){
@@ -28,7 +31,7 @@ public class UserService {
         User user = new User();
         user.setUserName(userDTO.getUserName());
         user.setEmail(userDTO.getEmail());
-        user.setPassword(userDTO.getPassword());
+        user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
 
         return userRepository.save(user);
     }
