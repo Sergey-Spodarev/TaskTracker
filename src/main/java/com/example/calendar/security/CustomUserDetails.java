@@ -12,7 +12,6 @@ import java.util.Collection;
 public class CustomUserDetails implements UserDetails {
     private final String userName;
     private final String password;
-    private final String email;
 
     //эти все поля нужны для наследования от UserDetails
     private final Collection<? extends GrantedAuthority> authorities;//для работы с полномочиями
@@ -24,7 +23,6 @@ public class CustomUserDetails implements UserDetails {
     CustomUserDetails(User user) {
         this.userName = user.getUserName();
         this.password = user.getPassword();
-        this.email = user.getEmail();
 
         this.authorities = AuthorityUtils.createAuthorityList("ROLE_USER");//AuthorityUtils для работы с полномочиями в Spring Security
         this.enabled = true;

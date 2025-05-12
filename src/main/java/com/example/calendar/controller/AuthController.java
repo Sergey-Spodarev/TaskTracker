@@ -1,43 +1,59 @@
 package com.example.calendar.controller;
 
 import com.example.calendar.DTO.LoginDto;
-import com.example.calendar.model.User;
 import com.example.calendar.repository.UserRepository;
-import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/users")
 public class AuthController {
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
 
-    public AuthController(UserRepository userRepository) {
+    public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.authenticationManager = authenticationManager;
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginDto loginDto) {
-        System.out.println("[DEBUG] Получен запрос: " + loginDto.getUserName() + "/" + loginDto.getPassword());
+    public ResponseEntity<Map<String, Object>> login(@RequestBody LoginDto loginDto) {
 
-        User user = userRepository.findByUserName(loginDto.getUserName())
-                .orElseThrow(() -> {
-                    System.out.println("[DEBUG] Пользователь не найден: " + loginDto.getUserName());
-                    return new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-                });
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        loginDto.getUserName(),
+                        loginDto.getPassword()
+                )
+        );
 
-        System.out.println("[DEBUG] Найден пользователь: " + user.getUserName() + "/" + user.getPassword());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        if (!user.getPassword().equals(loginDto.getPassword())) {
-            System.out.println("[DEBUG] Пароль не совпадает!");
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-        }
+        // Получаем данные текущего пользователя
+        String username = authentication.getName();
+        Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
+        System.out.println(authorities);
+        // Формируем ответ
+        Map<String, Object> response = new HashMap<>();
+        response.put("username", username);
+        response.put("roles", authorities.stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList()));
+        response.put("message", "Вы успешно вошли");
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/calendar")

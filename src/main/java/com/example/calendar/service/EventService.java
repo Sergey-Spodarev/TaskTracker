@@ -65,15 +65,15 @@ public class EventService {
             throw new IllegalStateException("Пользователь не авторизован");
         }
 
-        String email;
-
-        if (authentication.getPrincipal() instanceof UserDetails userDetails) {
-            email = userDetails.getUsername();
+        String name;
+        if (authentication.getPrincipal() instanceof UserDetails userDetails){
+            name = userDetails.getUsername();
         } else {
-            email = authentication.getName();
+            name = authentication.getName();
         }
 
-        Optional<User> userOptional = userRepository.findByEmail(email);
-        return userOptional.orElseThrow(() -> new UsernameNotFoundException("Пользователь с email " + email + " не найден"));
+        Optional<User> userOptional = userRepository.findByUserName(name);
+        return userOptional.
+                orElseThrow(() -> new UsernameNotFoundException("Пользователь с именем " + name + " не найден"));
     }
 }
