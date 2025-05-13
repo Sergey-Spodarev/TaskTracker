@@ -33,8 +33,14 @@ public class EventService {
 
     public Event saveEvent(EventDTO eventDTO) {
         User user = getCurrentUser();
-        Event event = copy(eventDTO);
+
+        Event event = new Event();
+        event.setTitle(eventDTO.getTitle());
+        event.setStartTime(eventDTO.getStart());
+        event.setEndTime(eventDTO.getEnd());
         event.setUser(user);
+
+        System.out.println("Saving event: " + event);
         return eventRepository.save(event);
     }
 
@@ -48,15 +54,7 @@ public class EventService {
         eventRepository.deleteById(id);
     }
 
-    public Event copy(EventDTO eventDTO) {
-        User user = getCurrentUser();
-        Event event = new Event();
-        event.setTitle(eventDTO.getTitle());
-        event.setStartTime(eventDTO.getStart());
-        event.setEndTime(eventDTO.getEnd());
-        event.setUser(user);
-        return eventRepository.save(event);
-    }
+
 
     public User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

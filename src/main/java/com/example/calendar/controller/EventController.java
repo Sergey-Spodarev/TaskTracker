@@ -13,12 +13,12 @@ import java.util.List;
 @RequestMapping("/api/event")
 public class EventController {
     private final EventService eventService;
-    public EventController(EventService eventService, UserRepository userRepository) {
+    public EventController(EventService eventService) {
         this.eventService = eventService;
     }
 
     @PostMapping("/add")
-    public ResponseEntity<Void> addEvent(@RequestBody EventDTO eventDTO) {
+    public ResponseEntity<?> addEvent(@RequestBody EventDTO eventDTO) {
         eventService.saveEvent(eventDTO);
         return ResponseEntity.ok().build();
     }
@@ -32,6 +32,4 @@ public class EventController {
     public void deleteEvent(@PathVariable Long id) {
         eventService.deleteEvent(id);
     }
-
-
 }

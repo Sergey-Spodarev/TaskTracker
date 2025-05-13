@@ -20,7 +20,7 @@ public class Event {
 
     private boolean allDay;
 
-    @OneToOne//todo переделать на @OneToMany
+    @ManyToOne//todo переделать на @OneToMany
     @JoinColumn(name = "user_id", referencedColumnName = "user_id")
     private User user;
 }

@@ -26,7 +26,7 @@ public class SecurityConfig {
         // Авторизация
         http.authorizeHttpRequests(auth -> auth
                 .requestMatchers("/", "/login", "/register").permitAll()
-                .requestMatchers("/api/**").permitAll() // Все API-маршруты открыты
+                .requestMatchers("/api/**").authenticated() // ✅ Только залогиненные
                 .requestMatchers("/profile/**").authenticated()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .anyRequest().permitAll()
