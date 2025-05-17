@@ -7,7 +7,7 @@ import lombok.Data;
 @Data
 public class LoginDto {
     @JsonProperty("username")
-    private String userName;
+    private String username;
     @NotBlank(message = "Пароль обязателен")
     private String password;
 }

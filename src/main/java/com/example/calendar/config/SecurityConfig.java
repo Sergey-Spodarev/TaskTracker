@@ -7,10 +7,12 @@ import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 @Configuration
@@ -23,21 +25,22 @@ public class SecurityConfig {
         // Настройка CSRF
         http.csrf((csrf) -> csrf.disable());
 
+        http.sessionManagement(session -> session
+                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+        );
+        http.securityContext(c ->
+                c.securityContextRepository(new HttpSessionSecurityContextRepository())
+        );
+
         // Авторизация
         http.authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/login", "/register").permitAll()
+                .requestMatchers("/", "/api/users/login", "/api/users/register").permitAll()
                 .requestMatchers("/api/**").authenticated() // ✅ Только залогиненные
                 .requestMatchers("/profile/**").authenticated()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .anyRequest().permitAll()
         );
 
-        // Форма входа
-        http.formLogin(form -> form
-                .loginPage("/login")
-                .defaultSuccessUrl("/profile")
-                .permitAll()
-        );
 
         // Выход
         http.logout(logout -> logout
