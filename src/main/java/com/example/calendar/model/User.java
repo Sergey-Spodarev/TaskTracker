@@ -2,6 +2,10 @@ package com.example.calendar.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.ToString;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 // Сущности БД (классы-таблицы):данные пользователя.
@@ -10,8 +14,8 @@ import lombok.Data;
 @Table(name = "users") //(опционально) – Указывает имя таблицы, если оно отличается от имени класса.
 public class User {
     @Id //Обозначает первичный ключ.
-    @Column(name = "user_id", unique = false)//unique - говорит что должно быть уникальное значение
     @GeneratedValue(strategy = GenerationType.IDENTITY)//Указывает стратегию генерации ID (автоинкремент, sequence и т. д.).
+    @Column(name = "user_id")//unique - говорит что должно быть уникальное значение
     private Long userId;
 
     @Column(name = "userName", nullable = false, unique = true) //Позволяет задать имя столбца, ограничения и другие параметры.
@@ -22,4 +26,8 @@ public class User {
 
     @Column(nullable = false)
     private String email;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @ToString.Exclude
+    private List<Event> events = new ArrayList<>();
 }

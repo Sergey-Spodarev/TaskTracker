@@ -1,7 +1,9 @@
 package com.example.calendar.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 
@@ -22,5 +24,6 @@ public class Event {
 
     @ManyToOne//todo переделать на @OneToMany
     @JoinColumn(name = "user_id", referencedColumnName = "user_id")
+    @JsonBackReference
     private User user;
 }
