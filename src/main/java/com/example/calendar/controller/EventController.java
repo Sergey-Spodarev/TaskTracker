@@ -1,5 +1,6 @@
 package com.example.calendar.controller;
 
+import com.example.calendar.DTO.CalendarEventDto;
 import com.example.calendar.DTO.EventDTO;
 import com.example.calendar.model.Event;
 import com.example.calendar.repository.UserRepository;
@@ -24,8 +25,18 @@ public class EventController {
     }
 
     @GetMapping("/get")
-    public List<Event> getEvents() {
-        return eventService.getCurrentUserEvents();
+    public List<CalendarEventDto> getEvents() {
+        return eventService.getCurrentUserEvents().stream()
+                .map(event -> {
+                    CalendarEventDto dto = new CalendarEventDto();
+                    dto.setId(event.getId().toString());
+                    dto.setTitle(event.getTitle());
+                    dto.setStart(event.getStartTime());
+                    dto.setEnd(event.getEndTime());
+                    dto.setAllDay(event.isAllDay());
+                    return dto;
+                })
+                .toList();
     }
 
     @DeleteMapping("/{id}")
