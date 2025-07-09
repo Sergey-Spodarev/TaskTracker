@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Авторизация</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            width: 320px;
+            text-align: center;
+        }
+        h1 {
+            margin-bottom: 20px;
+            font-size: 24px;
+            color: #333;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #3367d6;
+        }
+        .auth-links {
+            margin-top: 20px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+        .auth-link {
+            display: block;
+            color: #4285f4;
+            text-decoration: none;
+            margin: 10px 0;
+            font-size: 14px;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .auth-link:hover {
+            color: #3367d6;
+            text-decoration: underline;
+        }
+        .hidden {
+            display: none;
+        }
+        .error {
+            color: #d32f2f;
+            font-size: 12px;
+            margin: -5px 0 10px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+<!-- Главная страница (Авторизация) -->
+<div class="container" id="loginPage">
+    <h1>Авторизация</h1>
+    <input type="email" id="loginEmail" placeholder="Email" required>
+    <input type="password" id="loginPassword" placeholder="Пароль" required>
+    <button onclick="attemptLogin()">Войти</button>
+
+    <div class="auth-links">
+        <a class="auth-link" onclick="showForgotPassword()">Забыли пароль?</a>
+        <a class="auth-link" onclick="showUserRegister()">Регистрация пользователя</a>
+        <a class="auth-link" onclick="showAdminRegister()">Регистрация админа</a>
+    </div>
+</div>
+
+<!-- Страница восстановления пароля -->
+<div class="container hidden" id="forgotPasswordPage">
+    <h1>Восстановление пароля</h1>
+    <input type="email" id="forgotEmail" placeholder="Ваш email" required>
+    <div id="forgotError" class="error"></div>
+    <button onclick="resetPassword()">Отправить ссылку</button>
+    <div class="auth-links">
+        <a class="auth-link" onclick="backToLogin()">← Назад к авторизации</a>
+    </div>
+</div>
+
+<!-- Страница регистрации пользователя -->
+<div class="container hidden" id="userRegisterPage">
+    <h1>Регистрация пользователя</h1>
+    <input type="email" id="userRegEmail" placeholder="Email" required>
+    <input type="password" id="userRegPassword" placeholder="Пароль" required>
+    <input type="password" id="userRegConfirmPassword" placeholder="Подтвердите пароль" required>
+    <div id="userRegError" class="error"></div>
+    <button onclick="registerUser()">Зарегистрироваться</button>
+    <div class="auth-links">
+        <a class="auth-link" onclick="backToLogin()">← Назад к авторизации</a>
+    </div>
+</div>
+
+<!-- Страница проверки пароля для админа -->
+<div class="container hidden" id="adminCheckPage">
+    <h1>Проверка прав администратора</h1>
+    <input type="password" id="adminSecret" placeholder="Секретный пароль" required>
+    <div id="adminCheckError" class="error"></div>
+    <button onclick="checkAdminSecret()">Продолжить</button>
+    <div class="auth-links">
+        <a class="auth-link" onclick="backToLogin()">← Назад к авторизации</a>
+    </div>
+</div>
+
+<!-- Страница регистрации админа -->
+<div class="container hidden" id="adminRegisterPage">
+    <h1>Регистрация администратора</h1>
+    <input type="email" id="adminRegEmail" placeholder="Email" required>
+    <input type="password" id="adminRegPassword" placeholder="Пароль" required>
+    <input type="password" id="adminRegConfirmPassword" placeholder="Подтвердите пароль" required>
+    <div id="adminRegError" class="error"></div>
+    <button onclick="registerAdmin()">Зарегистрироваться</button>
+    <div class="auth-links">
+        <a class="auth-link" onclick="backToLogin()">← Назад к авторизации</a>
+    </div>
+</div>
+
+<script>
+    // Функции переключения между страницами
+    function showPage(pageId) {
+        document.querySelectorAll('.container').forEach(page => {
+            page.classList.add('hidden');
+        });
+        document.getElementById(pageId).classList.remove('hidden');
+    }
+
+    function backToLogin() {
+        showPage('loginPage');
+    }
+
+    function showForgotPassword() {
+        showPage('forgotPasswordPage');
+    }
+
+    function showUserRegister() {
+        showPage('userRegisterPage');
+    }
+
+    function showAdminRegister() {
+        showPage('adminCheckPage');
+    }
+
+    // Валидация email
+    function validateEmail(email) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+
+    // Функции обработки действий
+    function attemptLogin() {
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+
+        if (!validateEmail(email)) {
+            alert('Пожалуйста, введите корректный email!');
+            return;
+        }
+
+        alert(`Попытка входа: ${email} (заглушка)`);
+    }
+
+    function resetPassword() {
+        const email = document.getElementById('forgotEmail').value;
+        const errorElement = document.getElementById('forgotError');
+
+        if (!validateEmail(email)) {
+            errorElement.textContent = 'Пожалуйста, введите корректный email!';
+            return;
+        }
+
+        errorElement.textContent = '';
+        alert(`Ссылка для сброса пароля отправлена на ${email} (заглушка)`);
+        backToLogin();
+    }
+
+    function registerUser() {
+        const email = document.getElementById('userRegEmail').value;
+        const password = document.getElementById('userRegPassword').value;
+        const confirmPassword = document.getElementById('userRegConfirmPassword').value;
+        const errorElement = document.getElementById('userRegError');
+
+        if (!validateEmail(email)) {
+            errorElement.textContent = 'Пожалуйста, введите корректный email!';
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            errorElement.textContent = 'Пароли не совпадают!';
+            return;
+        }
+
+        errorElement.textContent = '';
+        alert('Пользователь успешно зарегистрирован (заглушка)');
+        backToLogin();
+    }
+
+    function checkAdminSecret() {
+        const secret = document.getElementById('adminSecret').value;
+        const errorElement = document.getElementById('adminCheckError');
+
+        if (secret === "admin123") { // пример секретного пароля
+            showPage('adminRegisterPage');
+        } else {
+            errorElement.textContent = 'Неверный секретный пароль!';
+        }
+    }
+
+    function registerAdmin() {
+        const email = document.getElementById('adminRegEmail').value;
+        const password = document.getElementById('adminRegPassword').value;
+        const confirmPassword = document.getElementById('adminRegConfirmPassword').value;
+        const errorElement = document.getElementById('adminRegError');
+
+        if (!validateEmail(email)) {
+            errorElement.textContent = 'Пожалуйста, введите корректный email!';
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            errorElement.textContent = 'Пароли не совпадают!';
+            return;
+        }
+
+        errorElement.textContent = '';
+        alert('Администратор успешно зарегистрирован (заглушка)');
+        backToLogin();
+    }
+</script>
+</body>
+</html>
