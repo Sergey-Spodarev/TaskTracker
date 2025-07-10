@@ -1,6 +1,7 @@
 package com.example.TaskTracker.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
 import lombok.Data;
 
 @Entity
@@ -8,14 +9,14 @@ import lombok.Data;
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private String id;
+    private Long id;
 
     @Column(nullable = false)
-    private String login;
+    @Email
+    private String email;
 
     @Column(nullable = false)
     private String password;
 
-    @ManyToOne
-    private Role role;
+    private String role;
 }
