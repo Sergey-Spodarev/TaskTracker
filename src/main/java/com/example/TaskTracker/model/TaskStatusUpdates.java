@@ -20,5 +20,5 @@ public class TaskStatusUpdates {
 
     private String status;//Новый статус: "новая", "в работе", "ожидает проверки", "завершена"
     private String comment;//Комментарий при обновлении статуса
-    private LocalDateTime updated_at;//Время обновления статуса
+    private LocalDateTime updatedAt;//Время обновления статуса
 }
