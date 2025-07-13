@@ -213,6 +213,19 @@
         backToLogin();
     }
 
+
+
+    function checkAdminSecret() {
+        const secret = document.getElementById('adminSecret').value;
+        const errorElement = document.getElementById('adminCheckError');
+
+        if (secret === "admin123") {
+            showPage('adminRegisterPage');
+        } else {
+            errorElement.textContent = 'Неверный секретный пароль!';
+        }
+    }
+
     function registerUser() {
         const email = document.getElementById('userRegEmail').value;
         const password = document.getElementById('userRegPassword').value;
@@ -229,20 +242,30 @@
             return;
         }
 
-        errorElement.textContent = '';
-        alert('Пользователь успешно зарегистрирован (заглушка)');
-        backToLogin();
-    }
-
-    function checkAdminSecret() {
-        const secret = document.getElementById('adminSecret').value;
-        const errorElement = document.getElementById('adminCheckError');
-
-        if (secret === "admin123") {
-            showPage('adminRegisterPage');
-        } else {
-            errorElement.textContent = 'Неверный секретный пароль!';
-        }
+        // Отправка данных на бэкенд
+        fetch('http://localhost:8080/api/users/register/user', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                username: email,
+                password: password
+            })
+        })
+            .then(response => {
+                if (response.ok) {
+                    errorElement.style.color = '#388e3c';
+                    errorElement.textContent = 'Пользователь успешно зарегистрирован!';
+                    setTimeout(backToLogin, 1500);
+                } else {
+                    errorElement.textContent = 'Ошибка регистрации. Попробуйте снова.';
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+                errorElement.textContent = 'Произошла ошибка при регистрации';
+            });
     }
 
     function registerAdmin() {
@@ -261,9 +284,30 @@
             return;
         }
 
-        errorElement.textContent = '';
-        alert('Администратор успешно зарегистрирован (заглушка)');
-        backToLogin();
+        // Отправка данных на бэкенд
+        fetch('http://localhost:8080/api/users/register/admin', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                username: email,
+                password: password
+            })
+        })
+            .then(response => {
+                if (response.ok) {
+                    errorElement.style.color = '#388e3c';
+                    errorElement.textContent = 'Администратор успешно зарегистрирован!';
+                    setTimeout(backToLogin, 1500);
+                } else {
+                    errorElement.textContent = 'Ошибка регистрации. Попробуйте снова.';
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+                errorElement.textContent = 'Произошла ошибка при регистрации';
+            });
     }
 </script>
 
