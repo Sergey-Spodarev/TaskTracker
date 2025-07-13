@@ -1,8 +1,7 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Авторизация</title>
     <style>
         body {
@@ -83,12 +82,23 @@
     </style>
 </head>
 <body>
+
 <!-- Главная страница (Авторизация) -->
 <div class="container" id="loginPage">
     <h1>Авторизация</h1>
-    <input type="email" id="loginEmail" placeholder="Email" required>
-    <input type="password" id="loginPassword" placeholder="Пароль" required>
-    <button onclick="attemptLogin()">Войти</button>
+
+    <!-- Форма логина для Spring Security -->
+    <form th:action="@{/login}" method="post">
+        <input type="email" name="username" placeholder="Email" required>
+        <input type="password" name="password" placeholder="Пароль" required>
+
+        <!-- Отображение ошибки входа -->
+        <div class="error" th:if="${param.error}">
+            Неправильный логин или пароль
+        </div>
+
+        <button type="submit">Войти</button>
+    </form>
 
     <div class="auth-links">
         <a class="auth-link" onclick="showForgotPassword()">Забыли пароль?</a>
@@ -96,6 +106,9 @@
         <a class="auth-link" onclick="showAdminRegister()">Регистрация админа</a>
     </div>
 </div>
+
+<!-- Остальная часть HTML (твоя оригинальная разметка) -->
+<!-- Можно оставить как есть, если нужна регистрация на одной странице -->
 
 <!-- Страница восстановления пароля -->
 <div class="container hidden" id="forgotPasswordPage">
@@ -146,7 +159,7 @@
 </div>
 
 <script>
-    // Функции переключения между страницами
+    // Твой JS остаётся без изменений
     function showPage(pageId) {
         document.querySelectorAll('.container').forEach(page => {
             page.classList.add('hidden');
@@ -170,12 +183,10 @@
         showPage('adminCheckPage');
     }
 
-    // Валидация email
     function validateEmail(email) {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     }
 
-    // Функции обработки действий
     function attemptLogin() {
         const email = document.getElementById('loginEmail').value;
         const password = document.getElementById('loginPassword').value;
@@ -227,7 +238,7 @@
         const secret = document.getElementById('adminSecret').value;
         const errorElement = document.getElementById('adminCheckError');
 
-        if (secret === "admin123") { // пример секретного пароля
+        if (secret === "admin123") {
             showPage('adminRegisterPage');
         } else {
             errorElement.textContent = 'Неверный секретный пароль!';
@@ -255,5 +266,6 @@
         backToLogin();
     }
 </script>
+
 </body>
 </html>
