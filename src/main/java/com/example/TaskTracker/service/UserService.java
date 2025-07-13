@@ -8,6 +8,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @Transactional
 public class UserService {
@@ -42,5 +44,9 @@ public class UserService {
         dto.setRole(user.getRole());
         // Пароль НЕ возвращаем!
         return dto;
+    }
+
+    public List<Users> getAllUsers() {
+        return userRepository.findAll();
     }
 }
