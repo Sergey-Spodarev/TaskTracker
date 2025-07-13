@@ -19,7 +19,7 @@ public class Tasks {
     private LocalDate createdAt;//Дата создания задачи
 
     @ManyToOne
-    private User creator;//Кто создал задачу (ссылка на users.id)
+    private Users creator;//Кто создал задачу (ссылка на users.id)
     @ManyToOne
-    private User assignee;//Кому назначена задача (ссылка на users.id)
+    private Users assignee;//Кому назначена задача (ссылка на users.id)
 }

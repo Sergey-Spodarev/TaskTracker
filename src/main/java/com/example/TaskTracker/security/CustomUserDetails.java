@@ -1,6 +1,6 @@
 package com.example.TaskTracker.security;
 
-import com.example.TaskTracker.model.User;
+import com.example.TaskTracker.model.Users;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.AuthorityUtils;
@@ -25,7 +25,7 @@ public class CustomUserDetails implements UserDetails, Serializable {
     private final boolean credentialsNonExpired;//Не истёк ли срок пароля
     private final boolean accountNonLocked;//Заблокирован ли пользователь
 
-    CustomUserDetails(User user) {
+    CustomUserDetails(Users user) {
         this.userName = user.getEmail();
         this.password = user.getPassword();
         this.authorities = AuthorityUtils.createAuthorityList(user.getRole());//AuthorityUtils для работы с полномочиями в Spring Security

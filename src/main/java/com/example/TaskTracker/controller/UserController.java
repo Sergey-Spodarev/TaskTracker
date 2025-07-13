@@ -19,11 +19,21 @@ public class UserController {
         this.userService = userService;
     }
 
-    @PostMapping("/register")
+    @PostMapping("/register/user")
     public ResponseEntity<UserDTO> registerUser(@RequestBody @Valid UserDTO userDTO) {
         UserDTO savedUser = userService.saveUser(userDTO);
+        savedUser.setRole("USER");
         return ResponseEntity
                 .status(HttpStatus.CREATED)  // 201 Created
+                .body(savedUser);
+    }
+
+    @PostMapping("/register/admin")
+    public ResponseEntity<UserDTO> registerAdmin(@RequestBody @Valid UserDTO userDTO) {
+        UserDTO savedUser = userService.saveUser(userDTO);
+        savedUser.setRole("ADMIN");
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
                 .body(savedUser);
     }
 

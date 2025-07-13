@@ -16,7 +16,7 @@ public class TaskStatusUpdates {
     private Tasks task;//К какой задаче относится обновление
 
     @ManyToOne
-    private User user;//Кто обновил статус (пользователь)
+    private Users user;//Кто обновил статус (пользователь)
 
     private String status;//Новый статус: "новая", "в работе", "ожидает проверки", "завершена"
     private String comment;//Комментарий при обновлении статуса

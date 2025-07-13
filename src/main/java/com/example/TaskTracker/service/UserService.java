@@ -2,13 +2,11 @@ package com.example.TaskTracker.service;
 
 
 import com.example.TaskTracker.DTO.UserDTO;
-import com.example.TaskTracker.model.User;
+import com.example.TaskTracker.model.Users;
 import com.example.TaskTracker.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Optional;
 
 @Service
 @Transactional
@@ -29,15 +27,15 @@ public class UserService {
         if(haveUser(userDTO.getEmail())){
             throw new RuntimeException("Пользователь уже существует");//todo временно так потом надо сообщение пользователю выбивать
         }
-        User user = new User();
+        Users user = new Users();
         user.setEmail(userDTO.getEmail());
         user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
         user.setRole(userDTO.getRole());
-        User savedUser = userRepository.save(user);
+        Users savedUser = userRepository.save(user);
         return convertToDTO(savedUser);
     }
 
-    private UserDTO convertToDTO(User user) {
+    private UserDTO convertToDTO(Users user) {
         UserDTO dto = new UserDTO();
         dto.setId(user.getId());
         dto.setEmail(user.getEmail());
