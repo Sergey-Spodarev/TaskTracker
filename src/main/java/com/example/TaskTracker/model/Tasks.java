@@ -14,9 +14,9 @@ public class Tasks {
 
     private String title;//Заголовок задачи
     private String description;//Описание задачи
-    private LocalDate deadline;//Срок выполнения задачи
+    private LocalDate startDate;//страт выполнения задачи
+    private LocalDate endData;//конец выполнения задачи
     private String priority;//Приоритет: "низкий", "средний", "высокий"
-    private LocalDate createdAt;//Дата создания задачи
 
     @ManyToOne
     private Users creator;//Кто создал задачу (ссылка на users.id)

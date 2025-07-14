@@ -1,5 +1,6 @@
 package com.example.TaskTracker.DTO;
 
+import com.example.TaskTracker.model.Users;
 import lombok.Data;
 
 import java.time.LocalDate;
@@ -8,7 +9,9 @@ import java.time.LocalDate;
 public class TasksDTO {
     private String title;
     private String description;
-    private LocalDate deadline;
+    private LocalDate startDate;
+    private LocalDate endDate;
     private String priority;
-    private LocalDate createdAt;
+
+    private String assigneeEmail;
 }
