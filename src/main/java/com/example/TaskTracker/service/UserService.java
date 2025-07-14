@@ -25,9 +25,9 @@ public class UserService {
         return userRepository.findByEmail(email).isPresent();
     }
 
-    public UserDTO saveUser(UserDTO userDTO){
+    public UserDTO saveUser(UserDTO userDTO){//todo надо может будет сделать что сюда передавать роль чтобы она тут добавлялась а не в Controller
         if(haveUser(userDTO.getEmail())){
-            throw new RuntimeException("Пользователь уже существует");//todo временно так потом надо сообщение пользователю выбивать
+            throw new RuntimeException("Пользователь уже существует");
         }
         Users user = new Users();
         user.setEmail(userDTO.getEmail());
