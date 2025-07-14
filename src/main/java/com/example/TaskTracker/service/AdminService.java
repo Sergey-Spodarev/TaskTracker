@@ -1,6 +1,7 @@
 package com.example.TaskTracker.service;
 
 import com.example.TaskTracker.DTO.TasksDTO;
+import com.example.TaskTracker.DTO.UserDTO;
 import com.example.TaskTracker.model.Tasks;
 import com.example.TaskTracker.model.Users;
 import com.example.TaskTracker.repository.AdminRepository;
@@ -8,6 +9,8 @@ import com.example.TaskTracker.repository.UserRepository;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @Transactional
@@ -32,7 +35,7 @@ public class AdminService {
         tasks.setAssignee(getUser(tasksDTO.getAssigneeEmail()));
 
         Tasks savedTask = adminRepository.save(tasks);
-        return mapToDTO(savedTask);
+        return convertToDTO(savedTask);
     }
 
     public Users getUser(String email) {
@@ -40,7 +43,7 @@ public class AdminService {
                 .orElseThrow(() -> new UsernameNotFoundException("Пользователь не найден"));
     }
 
-    private TasksDTO mapToDTO(Tasks task) {
+    private TasksDTO convertToDTO(Tasks task) {
         TasksDTO dto = new TasksDTO();
         dto.setTitle(task.getTitle());
         dto.setDescription(task.getDescription());
@@ -51,4 +54,29 @@ public class AdminService {
         return dto;
     }
 
+    private UserDTO convertToDTO(Users user) {
+        UserDTO dto = new UserDTO();
+        dto.setId(user.getId());
+        dto.setEmail(user.getEmail());
+        dto.setRole(user.getRole());
+        return dto;
+    }
+
+    public List<UserDTO> getAllUsersWithTasks() {//todo переделать чтобы возвращал значения типа TasksDTO
+        List<Users> usersWithTasks = userRepository.findUsersWithTasks();
+        return usersWithTasks.stream()
+                .map(this::convertToDTO)
+                .toList();
+    }
+
+    public List<UserDTO> getAllUsers() {
+        List<Users> allUsers = userRepository.findAllByRole("USER");
+        return allUsers.stream()
+                .map(this::convertToDTO)
+                .toList();
+    }
+
+    public void delTask(TasksDTO tasksDTO){
+        adminRepository.delete(adminRepository.findById(tasksDTO.getId()).get());
+    }
 }
