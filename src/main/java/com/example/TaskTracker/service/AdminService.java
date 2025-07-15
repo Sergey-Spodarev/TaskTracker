@@ -62,9 +62,9 @@ public class AdminService {
         return dto;
     }
 
-    public List<UserDTO> getAllUsersWithTasks() {//todo переделать чтобы возвращал значения типа TasksDTO
-        List<Users> usersWithTasks = userRepository.findUsersWithTasks();
-        return usersWithTasks.stream()
+    public List<TasksDTO> getAllTasks() {
+        List<Tasks> allUsers = adminRepository.findAll();
+        return allUsers.stream()
                 .map(this::convertToDTO)
                 .toList();
     }
@@ -76,7 +76,25 @@ public class AdminService {
                 .toList();
     }
 
-    public void delTask(TasksDTO tasksDTO){
-        adminRepository.delete(adminRepository.findById(tasksDTO.getId()).get());
+    public void delTask(Long id){
+        adminRepository.deleteById(id);
+    }
+
+    public TasksDTO updateTask(TasksDTO tasksDTO, String currentEmail) {
+        Tasks updateTasks = adminRepository.findById(tasksDTO.getId())
+                .orElseThrow(() -> new RuntimeException("Задача не найдена"));
+
+        updateTasks.setStartDate(tasksDTO.getStartDate());
+        updateTasks.setEndData(tasksDTO.getEndDate());
+        updateTasks.setPriority(tasksDTO.getPriority());
+        updateTasks.setDescription(tasksDTO.getDescription());
+        updateTasks.setTitle(tasksDTO.getTitle());
+
+        updateTasks.setAssignee(getUser(tasksDTO.getAssigneeEmail()));
+        updateTasks.setCreator(getUser(currentEmail));
+
+        Tasks updatedTask = adminRepository.save(updateTasks);
+
+        return convertToDTO(updatedTask);
     }
 }

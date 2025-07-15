@@ -27,14 +27,26 @@ public class SecurityConfig {
         );
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/","/login", "/api/users/register/admin", "/api/users/register/user").permitAll()
+                        .requestMatchers("/","/login", "/api/users/register/admin", "/api/users/register/user", "/api/admin/**", "/api/users/test").permitAll()
                         .anyRequest().authenticated()
                 )
                 .formLogin(login -> login
                         .loginPage("/login")
-                        .loginProcessingUrl("/login") // Обработка POST /login
-                        .successHandler((req, res, auth) -> res.setStatus(HttpStatus.OK.value()))
-                        .failureHandler((req, res, ex) -> res.setStatus(HttpStatus.UNAUTHORIZED.value()))
+                        .loginProcessingUrl("/login")
+                        .successHandler((request, response, authentication) -> {
+                            String redirectUrl = "/"; // дефолтный путь
+
+                            if (authentication.getAuthorities().stream()
+                                    .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("ADMIN"))) {
+                                redirectUrl = "/admin";
+                            } else if (authentication.getAuthorities().stream()
+                                    .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("ROLE_USER"))) {
+                                redirectUrl = "/user";
+                            }
+
+                            response.sendRedirect(redirectUrl);
+                        })
+                        .failureHandler((request, response, ex) -> response.setStatus(HttpStatus.UNAUTHORIZED.value()))
                 )
                 .logout(logout -> logout
                         .logoutUrl("/logout")

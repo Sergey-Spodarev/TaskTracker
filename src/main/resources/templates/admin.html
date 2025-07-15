@@ -14,7 +14,6 @@
             flex-direction: column;
             align-items: center;
         }
-
         .header {
             width: 90%;
             max-width: 1000px;
@@ -23,12 +22,10 @@
             align-items: center;
             margin-top: 30px;
         }
-
         h1 {
             color: #2c3e50;
             margin: 0;
         }
-
         .logout-btn {
             padding: 10px 20px;
             background-color: #e74c3c;
@@ -39,11 +36,9 @@
             font-weight: bold;
             transition: background 0.3s ease;
         }
-
         .logout-btn:hover {
             background-color: #c0392b;
         }
-
         .add-task-btn {
             padding: 12px 24px;
             background-color: #3498db;
@@ -55,11 +50,9 @@
             margin-bottom: 30px;
             transition: background 0.3s ease;
         }
-
         .add-task-btn:hover {
             background-color: #2980b9;
         }
-
         .container {
             width: 90%;
             max-width: 1000px;
@@ -67,7 +60,6 @@
             flex-direction: column;
             align-items: center;
         }
-
         /* Modal */
         .modal {
             display: none;
@@ -80,7 +72,6 @@
             overflow: auto;
             background-color: rgba(0,0,0,0.5);
         }
-
         .modal-content {
             background-color: #fefefe;
             margin: 5% auto;
@@ -90,7 +81,6 @@
             max-width: 500px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
-
         .close {
             float: right;
             cursor: pointer;
@@ -98,17 +88,14 @@
             font-weight: bold;
             color: #555;
         }
-
         .close:hover {
             color: #000;
         }
-
         label {
             margin-top: 15px;
             font-weight: 600;
             color: #333;
         }
-
         input[type="date"], select, textarea {
             width: 100%;
             padding: 10px;
@@ -117,7 +104,6 @@
             border-radius: 6px;
             font-size: 14px;
         }
-
         button[type="button"] {
             margin-top: 20px;
             padding: 12px;
@@ -129,11 +115,9 @@
             cursor: pointer;
             transition: background 0.3s ease;
         }
-
         button[type="button"]:hover {
             background-color: #27ae60;
         }
-
         .task-card {
             background: white;
             padding: 20px;
@@ -145,19 +129,16 @@
             display: flex;
             flex-direction: column;
         }
-
         .task-buttons {
             margin-top: 10px;
             display: flex;
             gap: 10px;
         }
-
         .task-buttons button {
             flex: 1;
             padding: 8px;
             font-size: 14px;
         }
-
         .priority-badge {
             display: inline-block;
             padding: 4px 8px;
@@ -167,75 +148,94 @@
             font-size: 13px;
             margin-top: 5px;
         }
-
         .priority-low {
             background-color: #27ae60; /* зелёный */
         }
-
         .priority-medium {
             background-color: #f39c12; /* жёлто-оранжевый */
         }
-
         .priority-high {
             background-color: #e74c3c; /* красный */
         }
     </style>
 </head>
 <body>
-
 <div class="header">
     <h1>Задачи</h1>
     <button class="logout-btn">Выход</button>
 </div>
-
 <div class="container">
     <button class="add-task-btn" onclick="openModal()">Добавить задание</button>
     <div id="taskList"></div>
 </div>
-
 <!-- Modal -->
 <div id="taskModal" class="modal">
     <div class="modal-content">
         <span class="close" onclick="closeModal()">&times;</span>
         <h3 id="modalTitle">Новое задание</h3>
         <input type="hidden" id="taskId">
-
         <label for="employee">Кому:</label>
         <select id="employee">
-            <option value="Иванов И.И.">Иванов И.И.</option>
-            <option value="Петров П.П.">Петров П.П.</option>
-            <option value="Сидорова С.С.">Сидорова С.С.</option>
+            <!-- Сюда будут подгружаться пользователи -->
         </select>
-
         <label for="startDate">Дата начала:</label>
         <input type="date" id="startDate">
-
         <label for="endDate">Дата окончания:</label>
         <input type="date" id="endDate">
-
         <label for="priority">Приоритет:</label>
         <select id="priority">
             <option value="низкий">Низкий</option>
             <option value="средний">Средний</option>
             <option value="высокий">Высокий</option>
         </select>
-
         <label for="result">Ожидаемый результат:</label>
         <textarea id="result" rows="3"></textarea>
-
         <button type="button" onclick="saveTask()">Сохранить</button>
     </div>
 </div>
-
 <script>
+    const API_URL = '/api/admin';
     let tasks = [];
-    let currentId = 1;
+    let users = [];
 
+    // Загрузка всех пользователей (кроме админа)
+    async function loadEmployees() {
+        try {
+            const res = await fetch('/api/admin/getAllUser');
+            users = await res.json();
+            const employeeSelect = document.getElementById('employee');
+            employeeSelect.innerHTML = ''; // очищаем старые опции
+
+            users.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.email; // или user.id, если нужен email
+                option.textContent = user.name || user.email; // показываем имя или email
+                employeeSelect.appendChild(option);
+            });
+
+        } catch (err) {
+            console.error('Не удалось загрузить список сотрудников', err);
+        }
+    }
+
+    // Загрузка задач
+    async function fetchTasks() {
+        try {
+            const res = await fetch(API_URL + '/getAllUsersWithTasks');
+            tasks = await res.json();
+            renderTasks();
+        } catch (err) {
+            alert('Ошибка загрузки задач');
+            console.error(err);
+        }
+    }
+
+    // Открытие модального окна
     function openModal(task = null) {
         document.getElementById('modalTitle').innerText = task ? 'Редактировать задание' : 'Новое задание';
         if (task) {
             document.getElementById('taskId').value = task.id;
-            document.getElementById('employee').value = task.employee;
+            document.getElementById('employee').value = task.assigneeEmail || '';
             document.getElementById('startDate').value = task.startDate;
             document.getElementById('endDate').value = task.endDate;
             document.getElementById('priority').value = task.priority;
@@ -251,66 +251,90 @@
         document.getElementById('taskModal').style.display = 'block';
     }
 
+    // Закрытие модального окна
     function closeModal() {
         document.getElementById('taskModal').style.display = 'none';
     }
 
-    function saveTask() {
+    // Сохранение задачи
+    async function saveTask() {
         const id = document.getElementById('taskId').value;
-        const employee = document.getElementById('employee').value;
+        const assigneeEmail = document.getElementById('employee').value;
         const startDate = document.getElementById('startDate').value;
         const endDate = document.getElementById('endDate').value;
         const priority = document.getElementById('priority').value;
         const result = document.getElementById('result').value;
 
-        if (!employee || !startDate || !endDate || !priority || !result) {
+        if (!assigneeEmail || !startDate || !endDate || !priority || !result) {
             alert("Все поля обязательны!");
             return;
         }
 
-        if (id) {
-            // Редактирование
-            const task = tasks.find(t => t.id === parseInt(id));
-            task.employee = employee;
-            task.startDate = startDate;
-            task.endDate = endDate;
-            task.priority = priority;
-            task.result = result;
-        } else {
-            // Добавление
-            tasks.push({
-                id: currentId++,
-                employee,
-                startDate,
-                endDate,
-                priority,
-                result
-            });
+        const task = {
+            id: id ? parseInt(id) : undefined,
+            assigneeEmail,
+            startDate,
+            endDate,
+            priority,
+            result
+        };
+
+        try {
+            if (id) {
+                // Обновление задачи
+                const res = await fetch(API_URL + '/updateTask', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(task)
+                });
+                const updatedTask = await res.json();
+                const index = tasks.findIndex(t => t.id === updatedTask.id);
+                tasks[index] = updatedTask;
+            } else {
+                // Добавление новой задачи
+                const res = await fetch(API_URL + '/addTask', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(task)
+                });
+                const newTask = await res.json();
+                tasks.push(newTask);
+            }
+            renderTasks();
+            closeModal();
+        } catch (err) {
+            alert('Ошибка сохранения задачи');
+            console.error(err);
         }
-
-        renderTasks();
-        closeModal();
     }
 
-    function deleteTask(id) {
-        tasks = tasks.filter(t => t.id !== id);
-        renderTasks();
+    // Удаление задачи
+    async function deleteTask(id) {
+        if (!confirm("Удалить эту задачу?")) return;
+        try {
+            await fetch(`${API_URL}/delTask/${id}`, {
+                method: 'DELETE'
+            });
+            tasks = tasks.filter(t => t.id !== id);
+            renderTasks();
+        } catch (err) {
+            alert('Ошибка удаления задачи');
+            console.error(err);
+        }
     }
 
-    function editTask(id) {
-        const task = tasks.find(t => t.id === id);
+    // Редактирование задачи
+    function editTask(task) {
         openModal(task);
     }
 
+    // Отрисовка задач
     function renderTasks() {
         const container = document.getElementById('taskList');
         container.innerHTML = '';
-
         tasks.forEach(task => {
             const card = document.createElement('div');
             card.className = 'task-card';
-
-            // Определяем класс для цвета приоритета
             let priorityClass = '';
             switch (task.priority) {
                 case 'низкий':
@@ -325,23 +349,32 @@
                 default:
                     priorityClass = 'priority-low';
             }
-
             card.innerHTML = `
-        <strong>Сотрудник:</strong> ${task.employee}<br>
-        <strong>Дата начала:</strong> ${task.startDate}<br>
-        <strong>Дата окончания:</strong> ${task.endDate}<br>
-        <strong>Приоритет:</strong> <span class="priority-badge ${priorityClass}">${task.priority}</span><br>
-        <strong>Результат:</strong> ${task.result}
-        <div class="task-buttons">
-          <button onclick="editTask(${task.id})">Редактировать</button>
-          <button onclick="deleteTask(${task.id})">Удалить</button>
-        </div>
-      `;
-
+                <strong>Сотрудник:</strong> ${task.assigneeEmail || 'Не назначен'}<br>
+                <strong>Дата начала:</strong> ${task.startDate}<br>
+                <strong>Дата окончания:</strong> ${task.endDate}<br>
+                <strong>Приоритет:</strong> <span class="priority-badge ${priorityClass}">${task.priority}</span><br>
+                <strong>Ожидаемый результат:</strong> ${task.result}
+                <div class="task-buttons">
+                  <button onclick="editTask(${JSON.stringify(task).replace(/"/g, '&quot;')})">Редактировать</button>
+                  <button onclick="deleteTask(${task.id})">Удалить</button>
+                </div>
+            `;
             container.appendChild(card);
         });
     }
-</script>
 
+    // Выход
+    function logout() {
+        fetch('/logout', { method: 'POST', credentials: 'same-origin' })
+            .then(() => window.location.href = '/');
+    }
+
+    // Загружаем данные при запуске страницы
+    window.onload = () => {
+        loadEmployees(); // Загружаем пользователей
+        fetchTasks();    // Загружаем задачи
+    };
+</script>
 </body>
 </html>
