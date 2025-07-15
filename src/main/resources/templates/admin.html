@@ -162,12 +162,13 @@
 <body>
 <div class="header">
     <h1>Задачи</h1>
-    <button class="logout-btn">Выход</button>
+    <button class="logout-btn" onclick="logout()">Выход</button>
 </div>
 <div class="container">
     <button class="add-task-btn" onclick="openModal()">Добавить задание</button>
     <div id="taskList"></div>
 </div>
+
 <!-- Modal -->
 <div id="taskModal" class="modal">
     <div class="modal-content">
@@ -178,6 +179,10 @@
         <select id="employee">
             <!-- Сюда будут подгружаться пользователи -->
         </select>
+        <label for="title">Заголовок:</label>
+        <input type="text" id="title">
+        <label for="description">Описание:</label>
+        <textarea id="description" rows="3"></textarea>
         <label for="startDate">Дата начала:</label>
         <input type="date" id="startDate">
         <label for="endDate">Дата окончания:</label>
@@ -188,37 +193,31 @@
             <option value="средний">Средний</option>
             <option value="высокий">Высокий</option>
         </select>
-        <label for="result">Ожидаемый результат:</label>
-        <textarea id="result" rows="3"></textarea>
         <button type="button" onclick="saveTask()">Сохранить</button>
     </div>
 </div>
+
 <script>
     const API_URL = '/api/admin';
     let tasks = [];
-    let users = [];
 
-    // Загрузка всех пользователей (кроме админа)
     async function loadEmployees() {
         try {
             const res = await fetch('/api/admin/getAllUser');
-            users = await res.json();
+            const users = await res.json();
             const employeeSelect = document.getElementById('employee');
-            employeeSelect.innerHTML = ''; // очищаем старые опции
-
+            employeeSelect.innerHTML = '';
             users.forEach(user => {
                 const option = document.createElement('option');
-                option.value = user.email; // или user.id, если нужен email
-                option.textContent = user.name || user.email; // показываем имя или email
+                option.value = user.username;
+                option.textContent = user.username;
                 employeeSelect.appendChild(option);
             });
-
         } catch (err) {
             console.error('Не удалось загрузить список сотрудников', err);
         }
     }
 
-    // Загрузка задач
     async function fetchTasks() {
         try {
             const res = await fetch(API_URL + '/getAllUsersWithTasks');
@@ -230,53 +229,54 @@
         }
     }
 
-    // Открытие модального окна
     function openModal(task = null) {
         document.getElementById('modalTitle').innerText = task ? 'Редактировать задание' : 'Новое задание';
         if (task) {
             document.getElementById('taskId').value = task.id;
             document.getElementById('employee').value = task.assigneeEmail || '';
+            document.getElementById('title').value = task.title || '';
+            document.getElementById('description').value = task.description || '';
             document.getElementById('startDate').value = task.startDate;
             document.getElementById('endDate').value = task.endDate;
             document.getElementById('priority').value = task.priority;
-            document.getElementById('result').value = task.result;
         } else {
             document.getElementById('taskId').value = '';
             document.getElementById('employee').value = '';
+            document.getElementById('title').value = '';
+            document.getElementById('description').value = '';
             document.getElementById('startDate').value = '';
             document.getElementById('endDate').value = '';
             document.getElementById('priority').value = 'низкий';
-            document.getElementById('result').value = '';
         }
         document.getElementById('taskModal').style.display = 'block';
     }
 
-    // Закрытие модального окна
     function closeModal() {
         document.getElementById('taskModal').style.display = 'none';
     }
 
-    // Сохранение задачи
     async function saveTask() {
         const id = document.getElementById('taskId').value;
         const assigneeEmail = document.getElementById('employee').value;
+        const title = document.getElementById('title').value.trim();
+        const description = document.getElementById('description').value.trim();
         const startDate = document.getElementById('startDate').value;
         const endDate = document.getElementById('endDate').value;
         const priority = document.getElementById('priority').value;
-        const result = document.getElementById('result').value;
 
-        if (!assigneeEmail || !startDate || !endDate || !priority || !result) {
+        if (!assigneeEmail || !title || !description || !startDate || !endDate || !priority) {
             alert("Все поля обязательны!");
             return;
         }
 
         const task = {
             id: id ? parseInt(id) : undefined,
+            title,
+            description,
             assigneeEmail,
             startDate,
             endDate,
-            priority,
-            result
+            priority
         };
 
         try {
@@ -308,7 +308,6 @@
         }
     }
 
-    // Удаление задачи
     async function deleteTask(id) {
         if (!confirm("Удалить эту задачу?")) return;
         try {
@@ -323,57 +322,67 @@
         }
     }
 
-    // Редактирование задачи
     function editTask(task) {
         openModal(task);
     }
 
-    // Отрисовка задач
     function renderTasks() {
         const container = document.getElementById('taskList');
         container.innerHTML = '';
-        tasks.forEach(task => {
-            const card = document.createElement('div');
-            card.className = 'task-card';
-            let priorityClass = '';
-            switch (task.priority) {
-                case 'низкий':
-                    priorityClass = 'priority-low';
-                    break;
-                case 'средний':
-                    priorityClass = 'priority-medium';
-                    break;
-                case 'высокий':
-                    priorityClass = 'priority-high';
-                    break;
-                default:
-                    priorityClass = 'priority-low';
-            }
-            card.innerHTML = `
-                <strong>Сотрудник:</strong> ${task.assigneeEmail || 'Не назначен'}<br>
-                <strong>Дата начала:</strong> ${task.startDate}<br>
-                <strong>Дата окончания:</strong> ${task.endDate}<br>
-                <strong>Приоритет:</strong> <span class="priority-badge ${priorityClass}">${task.priority}</span><br>
-                <strong>Ожидаемый результат:</strong> ${task.result}
-                <div class="task-buttons">
-                  <button onclick="editTask(${JSON.stringify(task).replace(/"/g, '&quot;')})">Редактировать</button>
-                  <button onclick="deleteTask(${task.id})">Удалить</button>
-                </div>
-            `;
-            container.appendChild(card);
-        });
+        tasks
+            .filter(task => task.id != null)
+            .forEach(task => {
+                const card = document.createElement('div');
+                card.className = 'task-card';
+
+                let priorityClass = '';
+                switch (task.priority) {
+                    case 'низкий':
+                        priorityClass = 'priority-low';
+                        break;
+                    case 'средний':
+                        priorityClass = 'priority-medium';
+                        break;
+                    case 'высокий':
+                        priorityClass = 'priority-high';
+                        break;
+                    default:
+                        priorityClass = 'priority-low';
+                }
+
+                card.innerHTML = `
+                    <strong>Сотрудник:</strong> ${task.assigneeEmail || 'Не назначен'}<br>
+                    <strong>Заголовок:</strong> ${task.title}<br>
+                    <strong>Описание:</strong> ${task.description}<br>
+                    <strong>Дата начала:</strong> ${task.startDate}<br>
+                    <strong>Дата окончания:</strong> ${task.endDate}<br>
+                    <strong>Приоритет:</strong> <span class="priority-badge ${priorityClass}">${task.priority}</span><br>
+                    <div class="task-buttons">
+                      <button onclick="editTask(${JSON.stringify(task).replace(/"/g, '&quot;')})">Редактировать</button>
+                      <button onclick="deleteTask(${task.id})">Удалить</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
     }
 
-    // Выход
     function logout() {
-        fetch('/logout', { method: 'POST', credentials: 'same-origin' })
-            .then(() => window.location.href = '/');
+        fetch('/logout', {
+            method: 'POST',
+            credentials: 'same-origin' // важно для передачи JSESSIONID
+        })
+            .then(() => {
+                window.location.href = '/'; // перенаправляем после выхода
+            })
+            .catch(err => {
+                console.error('Ошибка выхода:', err);
+                alert('Не удалось выйти. Перезагрузите страницу.');
+            });
     }
 
-    // Загружаем данные при запуске страницы
     window.onload = () => {
-        loadEmployees(); // Загружаем пользователей
-        fetchTasks();    // Загружаем задачи
+        loadEmployees(); // загружаем пользователей
+        fetchTasks();    // загружаем задачи
     };
 </script>
 </body>

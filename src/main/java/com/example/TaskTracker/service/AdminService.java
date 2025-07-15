@@ -45,6 +45,7 @@ public class AdminService {
 
     private TasksDTO convertToDTO(Tasks task) {
         TasksDTO dto = new TasksDTO();
+        dto.setId(task.getId());
         dto.setTitle(task.getTitle());
         dto.setDescription(task.getDescription());
         dto.setStartDate(task.getStartDate());

@@ -28,7 +28,7 @@ public class AdminController {
                 .body(addTask);
     }
 
-    @GetMapping("/getAllUser")//todo проверить через Postman все решение ниже включая это
+    @GetMapping("/getAllUser")
     public ResponseEntity<List<UserDTO>> getAllUser() {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -43,11 +43,12 @@ public class AdminController {
     }
 
     @DeleteMapping("/delTask/{id}")
-    public void delTask(@PathVariable Long id) {
+    public ResponseEntity<Void> delTask(@PathVariable Long id) {
         adminService.delTask(id);
+        return ResponseEntity.ok().build();
     }
 
-    @PutMapping("/updateTask")
+    @PutMapping("/updateTask")//todo переделать это
     public ResponseEntity<TasksDTO> updateTask(@RequestBody TasksDTO tasksDTO) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         return ResponseEntity
