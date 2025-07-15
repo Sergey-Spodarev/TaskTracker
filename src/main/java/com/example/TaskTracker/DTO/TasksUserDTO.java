@@ -1,30 +1,19 @@
-package com.example.TaskTracker.model;
+package com.example.TaskTracker.DTO;
 
-import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDate;
 
-@Entity
 @Data
-public class Tasks {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class TasksUserDTO {
     private Long id;
-
     private String title;
     private String description;
     private LocalDate startDate;
-    private LocalDate endData;
+    private LocalDate endDate;
     private String priority;
-
-    @ManyToOne
-    private Users creator;
-
-    @ManyToOne
-    private Users assignee;
-
     private String status;
     private String comment;
     private LocalDate updatedAt;
+    private String assigneeEmail;
 }

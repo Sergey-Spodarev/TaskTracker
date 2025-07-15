@@ -1,46 +1,327 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="ru">
 <head>
+    <meta charset="UTF-8" />
     <title>Мои задачи</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to right, #eef2f3, #8e9eab);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .header {
+            width: 90%;
+            max-width: 1000px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 30px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin: 0;
+        }
+
+        .logout-btn {
+            padding: 10px 20px;
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background-color: #c0392b;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1000px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .close {
+            float: right;
+            cursor: pointer;
+            font-size: 24px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        label {
+            margin-top: 15px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input[type="date"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        button[type="button"] {
+            margin-top: 20px;
+            padding: 12px;
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        button[type="button"]:hover {
+            background-color: #27ae60;
+        }
+
+        .task-card {
+            background: white;
+            padding: 20px;
+            margin: 10px 0;
+            border-left: 6px solid #3498db;
+            border-radius: 8px;
+            width: 100%;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            color: white;
+            font-weight: bold;
+            font-size: 13px;
+            margin-top: 5px;
+        }
+
+        .status-new {
+            background-color: #3498db;
+        }
+
+        .status-in-progress {
+            background-color: #f39c12;
+        }
+
+        .status-awaiting-review {
+            background-color: #f1c40f;
+        }
+
+        .status-completed {
+            background-color: #27ae60;
+        }
+    </style>
 </head>
 <body>
-<h2>Мои задачи</h2>
+<div class="header">
+    <h1>Мои задачи</h1>
+    <button class="logout-btn" onclick="logout()">Выход</button>
+</div>
 
-<!-- Форма обновления статуса -->
-<form th:if="${task != null}" th:action="@{/tasks/{id}/update-status(id=${task.id})}" method="post">
-    <h3 th:text="${task.title}">Заголовок задачи</h3>
-    <p th:text="'Описание: ' + ${task.description}"></p>
-    <p th:text="'Приоритет: ' + ${task.priority}"></p>
-    <p th:text="'Срок: ' + ${#dates.format(task.dueDate, 'dd.MM.yyyy')}"></p>
-    <p th:text="'Статус: ' + ${task.status}"></p>
+<div class="container">
+    <div id="taskList"></div>
+</div>
 
-    <label for="status">Обновить статус:</label>
-    <select id="status" name="status">
-        <option value="Новая">Новая</option>
-        <option value="В работе">В работе</option>
-        <option value="Выполнена">Выполнена</option>
-    </select>
-    <button type="submit">Сохранить</button>
-</form>
-
-<hr/>
-
-<!-- Комментарии -->
-<div th:if="${comments != null}">
-    <h3>Комментарии</h3>
-    <div th:each="comment : ${comments}">
-        <p><strong th:text="${comment.author.email}">Автор</strong>:</p>
-        <p th:text="${comment.text}">Текст комментария</p>
+<!-- Modal -->
+<div id="taskModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <h3 id="modalTitle">Изменить статус задачи</h3>
+        <input type="hidden" id="taskId" />
+        <label for="title">Заголовок:</label>
+        <input type="text" id="title" disabled />
+        <label for="description">Описание:</label>
+        <textarea id="description" rows="3" disabled></textarea>
+        <label for="startDate">Дата начала:</label>
+        <input type="date" id="startDate" disabled />
+        <label for="endDate">Дата окончания:</label>
+        <input type="date" id="endDate" disabled />
+        <label for="priority">Приоритет:</label>
+        <input type="text" id="priority" disabled />
+        <label for="status">Статус:</label>
+        <select id="status">
+            <option value="новая">Новая</option>
+            <option value="в работе">В работе</option>
+            <option value="ожидает проверки">Ожидает проверки</option>
+            <option value="завершена">Завершена</option>
+        </select>
+        <label for="comment">Комментарий:</label>
+        <textarea id="comment" rows="3"></textarea>
+        <button type="button" onclick="saveUpdate()">Сохранить изменения</button>
     </div>
 </div>
 
-<!-- Добавить комментарий -->
-<form th:if="${canComment}" th:action="@{/tasks/{id}/add-comment(id=${task.id})}" method="post">
-    <textarea name="text" placeholder="Добавьте комментарий..." required></textarea>
-    <button type="submit">Отправить</button>
-</form>
+<script>
+    const API_URL = '/api/worker';
 
-<hr/>
-<a href="/logout">Выйти</a>
+    let tasks = [];
+
+    async function fetchTasks() {
+        try {
+            const res = await fetch(API_URL + '/getTasks', {
+                method: 'GET',
+                credentials: 'same-origin'
+            });
+            tasks = await res.json();
+            renderTasks();
+        } catch (err) {
+            alert('Ошибка загрузки задач');
+            console.error(err);
+        }
+    }
+
+    function openModal(task) {
+        document.getElementById('modalTitle').innerText = `Редактировать задачу: ${task.title}`;
+        document.getElementById('taskId').value = task.id;
+        document.getElementById('title').value = task.title;
+        document.getElementById('description').value = task.description;
+        document.getElementById('startDate').value = task.startDate;
+        document.getElementById('endDate').value = task.endDate;
+        document.getElementById('priority').value = task.priority;
+        document.getElementById('status').value = task.status || 'новая';
+        document.getElementById('comment').value = task.comment || '';
+        document.getElementById('taskModal').style.display = 'block';
+    }
+
+    function closeModal() {
+        document.getElementById('taskModal').style.display = 'none';
+    }
+
+    async function saveUpdate() {
+        const taskId = document.getElementById('taskId').value;
+        const status = document.getElementById('status').value;
+        const comment = document.getElementById('comment').value.trim();
+
+        if (!status) {
+            alert("Выберите статус");
+            return;
+        }
+
+        const update = {
+            id: parseInt(taskId),
+            status,
+            comment
+        };
+
+        try {
+            const res = await fetch(API_URL + '/updateTask', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(update),
+                credentials: 'same-origin'
+            });
+
+            if (res.ok) {
+                alert('Обновлено успешно');
+                closeModal();
+                fetchTasks();
+            } else {
+                alert('Ошибка при обновлении');
+            }
+        } catch (err) {
+            alert('Не удалось отправить данные');
+            console.error(err);
+        }
+    }
+
+    function renderTasks() {
+        const container = document.getElementById('taskList');
+        container.innerHTML = '';
+
+        tasks.forEach(task => {
+            const card = document.createElement('div');
+            card.className = 'task-card';
+
+            let statusClass = '';
+            switch (task.status) {
+                case 'новая':
+                    statusClass = 'status-new';
+                    break;
+                case 'в работе':
+                    statusClass = 'status-in-progress';
+                    break;
+                case 'ожидает проверки':
+                    statusClass = 'status-awaiting-review';
+                    break;
+                case 'завершена':
+                    statusClass = 'status-completed';
+                    break;
+                default:
+                    statusClass = 'status-new';
+            }
+
+            card.innerHTML = `
+          <strong>Заголовок:</strong> ${task.title}<br>
+          <strong>Описание:</strong> ${task.description}<br>
+          <strong>Дата начала:</strong> ${task.startDate}<br>
+          <strong>Дата окончания:</strong> ${task.endDate}<br>
+          <strong>Приоритет:</strong> ${task.priority}<br>
+          <strong>Статус:</strong> <span class="status-badge ${statusClass}">${task.status}</span><br>
+          <strong>Комментарий:</strong> ${task.comment || "—"}</br>
+          <button type="button" onclick="openModal(${JSON.stringify(task).replace(/"/g, '&quot;')})">Изменить статус / комментарий</button>
+        `;
+            container.appendChild(card);
+        });
+    }
+
+    function logout() {
+        fetch('/logout', {
+            method: 'POST',
+            credentials: 'same-origin'
+        }).then(() => window.location.href = '/').catch(err => {
+            console.error('Ошибка выхода:', err);
+            alert('Не удалось выйти');
+        });
+    }
+
+    window.onload = () => fetchTasks();
+</script>
 </body>
 </html>

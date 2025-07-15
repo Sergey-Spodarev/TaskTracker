@@ -48,7 +48,7 @@ public class AdminController {
         return ResponseEntity.ok().build();
     }
 
-    @PutMapping("/updateTask")//todo переделать это
+    @PutMapping("/updateTask")
     public ResponseEntity<TasksDTO> updateTask(@RequestBody TasksDTO tasksDTO) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         return ResponseEntity

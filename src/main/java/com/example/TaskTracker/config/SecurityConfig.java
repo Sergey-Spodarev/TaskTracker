@@ -27,7 +27,7 @@ public class SecurityConfig {
         );
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/","/login", "/api/users/register/admin", "/api/users/register/user", "/api/admin/**", "/api/users/test").permitAll()
+                        .requestMatchers("/","/login", "/api/users/register/admin", "/api/users/register/user", "/api/admin/**", "/api/worker/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .formLogin(login -> login
@@ -40,7 +40,7 @@ public class SecurityConfig {
                                     .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("ADMIN"))) {
                                 redirectUrl = "/admin";
                             } else if (authentication.getAuthorities().stream()
-                                    .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("ROLE_USER"))) {
+                                    .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("USER"))) {
                                 redirectUrl = "/user";
                             }
 
