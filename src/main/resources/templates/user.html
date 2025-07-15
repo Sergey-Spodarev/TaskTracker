@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Мои задачи</title>
+</head>
+<body>
+<h2>Мои задачи</h2>
+
+<!-- Форма обновления статуса -->
+<form th:if="${task != null}" th:action="@{/tasks/{id}/update-status(id=${task.id})}" method="post">
+    <h3 th:text="${task.title}">Заголовок задачи</h3>
+    <p th:text="'Описание: ' + ${task.description}"></p>
+    <p th:text="'Приоритет: ' + ${task.priority}"></p>
+    <p th:text="'Срок: ' + ${#dates.format(task.dueDate, 'dd.MM.yyyy')}"></p>
+    <p th:text="'Статус: ' + ${task.status}"></p>
+
+    <label for="status">Обновить статус:</label>
+    <select id="status" name="status">
+        <option value="Новая">Новая</option>
+        <option value="В работе">В работе</option>
+        <option value="Выполнена">Выполнена</option>
+    </select>
+    <button type="submit">Сохранить</button>
+</form>
+
+<hr/>
+
+<!-- Комментарии -->
+<div th:if="${comments != null}">
+    <h3>Комментарии</h3>
+    <div th:each="comment : ${comments}">
+        <p><strong th:text="${comment.author.email}">Автор</strong>:</p>
+        <p th:text="${comment.text}">Текст комментария</p>
+    </div>
+</div>
+
+<!-- Добавить комментарий -->
+<form th:if="${canComment}" th:action="@{/tasks/{id}/add-comment(id=${task.id})}" method="post">
+    <textarea name="text" placeholder="Добавьте комментарий..." required></textarea>
+    <button type="submit">Отправить</button>
+</form>
+
+<hr/>
+<a href="/logout">Выйти</a>
+</body>
+</html>
