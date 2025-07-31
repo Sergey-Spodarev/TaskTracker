@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 
 @Data
 public class EventDTO {
+    private Long id;
     @NotBlank(message = "Название задачи обязательно")
     private String title;
 

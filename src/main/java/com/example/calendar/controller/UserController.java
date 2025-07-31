@@ -4,6 +4,7 @@ import ch.qos.logback.core.model.Model;
 import com.example.calendar.DTO.UserDTO;
 import com.example.calendar.model.User;
 import com.example.calendar.service.UserService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,10 +28,19 @@ public class UserController {
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody UserDTO userDTO) {
         try {
-            User registeredUser = userService.registerUser(userDTO);
-            return ResponseEntity.ok().build();
+            UserDTO registeredUser = userService.registerUser(userDTO);
+            return ResponseEntity
+                    .status(HttpStatus.CREATED)
+                    .body(registeredUser);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+
+    @PostMapping("/update/dataUser")
+    public ResponseEntity<?> updateUser(@RequestBody UserDTO userDTO) {
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(userService.updateUser(userDTO));
     }
 }

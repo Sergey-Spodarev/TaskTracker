@@ -3,6 +3,7 @@ package com.example.calendar.service;
 import com.example.calendar.DTO.UserDTO;
 import com.example.calendar.model.User;
 import com.example.calendar.repository.UserRepository;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,7 +24,7 @@ public class UserService {
         return userRepository.findByEmail(email).isPresent();
     }
 
-    public User registerUser(UserDTO userDTO){
+    public UserDTO registerUser(UserDTO userDTO){
         if (checkUserRegistered(userDTO.getEmail())){
             throw new RuntimeException("Пользователь уже существует");//временно так потом надо сообщение пользователю выбивать
         }
@@ -33,13 +34,23 @@ public class UserService {
         user.setEmail(userDTO.getEmail());
         user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
 
-        return userRepository.save(user);
+        return convertUserToDTO(userRepository.save(user));
     }
 
-//    public User updatePassword(String email, String newPassword){
-//        User user = userRepository.findByEmail(email)
-//                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
-//        user.setPassword(newPassword);
-//        return userRepository.save(user);
-//    }
+    public UserDTO convertUserToDTO(User user){
+        UserDTO userDTO = new UserDTO();
+        userDTO.setUserName(user.getUserName());
+        userDTO.setEmail(user.getEmail());
+        userDTO.setPassword(user.getPassword());
+        return userDTO;
+    }
+
+    public UserDTO updateUser(UserDTO userDTO){
+        User user = userRepository.findByEmail(userDTO.getUserName())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email:" + userDTO.getEmail()));
+        user.setUserName(userDTO.getUserName());
+        user.setEmail(userDTO.getEmail());
+        user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+        return convertUserToDTO(userRepository.save(user));
+    }
 }

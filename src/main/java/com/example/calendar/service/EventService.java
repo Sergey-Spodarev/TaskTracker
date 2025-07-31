@@ -31,7 +31,7 @@ public class EventService {
         return eventRepository.findAllByUserEmail(user.getEmail());
     }
 
-    public Event saveEvent(EventDTO eventDTO) {
+    public EventDTO saveEvent(EventDTO eventDTO) {
         User user = getCurrentUser();
 
         Event event = new Event();
@@ -41,7 +41,27 @@ public class EventService {
         event.setUser(user);
 
         System.out.println("Saving event: " + event);
-        return eventRepository.save(event);
+        return convertEventToDTO(eventRepository.save(event));
+    }
+
+    public EventDTO updateEvent(EventDTO eventDTO) {
+        Event event = eventRepository.findById(eventDTO.getId())
+                .orElseThrow(() -> new UsernameNotFoundException("Event not found"));
+        event.setTitle(eventDTO.getTitle());
+        event.setStartTime(eventDTO.getStart());
+        event.setEndTime(eventDTO.getEnd());
+        event.setAllDay(eventDTO.isAllDay());
+        return convertEventToDTO(eventRepository.save(event));
+    }
+
+    private EventDTO convertEventToDTO(Event event) {
+        EventDTO eventDTO = new EventDTO();
+        eventDTO.setId(event.getId());
+        eventDTO.setTitle(event.getTitle());
+        eventDTO.setStart(event.getStartTime());
+        eventDTO.setEnd(event.getEndTime());
+        eventDTO.setAllDay(event.isAllDay());
+        return eventDTO;
     }
 
     public void deleteEvent(Long id) {
