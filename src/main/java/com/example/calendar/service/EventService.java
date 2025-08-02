@@ -26,9 +26,11 @@ public class EventService {
         this.userRepository = userRepository;
     }
 
-    public List<Event> getCurrentUserEvents(){
+    public List<EventDTO> getCurrentUserEvents(){
         User user = getCurrentUser();
-        return eventRepository.findAllByUserEmail(user.getEmail());
+        return eventRepository.findAllByUserEmail(user.getEmail()).stream()
+                .map(this::convertEventToDTO)
+                .toList();
     }
 
     public EventDTO saveEvent(EventDTO eventDTO) {
@@ -73,8 +75,6 @@ public class EventService {
         }
         eventRepository.deleteById(id);
     }
-
-
 
     public User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

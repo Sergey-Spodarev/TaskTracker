@@ -22,7 +22,7 @@ public class Event {
 
     private boolean allDay;
 
-    @ManyToOne//todo переделать на @OneToMany
+    @ManyToOne
     @JoinColumn(name = "user_id", referencedColumnName = "user_id")
     @JsonBackReference
     private User user;
