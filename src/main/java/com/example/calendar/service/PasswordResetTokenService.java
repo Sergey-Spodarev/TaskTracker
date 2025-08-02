@@ -64,7 +64,7 @@ public class PasswordResetTokenService {
         mailSender.send(message);
     }
 
-    public void updatePassword(String token, String newPassword) {
+    public PasswordResetTokenDTO updatePassword(String token, String newPassword) {
         PasswordResetToken passwordResetToken = passwordResetTokenRepository.findByToken(token)
                 .orElseThrow(() -> new UsernameNotFoundException("Token not found with token: " + token));
 
@@ -81,6 +81,6 @@ public class PasswordResetTokenService {
         userRepository.save(user);
 
         passwordResetToken.setUsed(true);
-        passwordResetTokenRepository.save(passwordResetToken);
+        return convertToDTO(passwordResetTokenRepository.save(passwordResetToken));
     }
 }
