@@ -32,5 +32,6 @@ public class User {
     private List<Event> events = new ArrayList<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @ToString.Exclude
     private List<PasswordResetToken> passwordResetTokens = new ArrayList<>();
 }
