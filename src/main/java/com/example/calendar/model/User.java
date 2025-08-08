@@ -1,5 +1,6 @@
 package com.example.calendar.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.ToString;
@@ -31,7 +32,16 @@ public class User {
     @ToString.Exclude
     private List<Event> events = new ArrayList<>();
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)//mappedBy как называется строчка в классе с которым связываем
     @ToString.Exclude
     private List<PasswordResetToken> passwordResetTokens = new ArrayList<>();
+
+    @ManyToOne
+    @JoinColumn(name = "company_id")//name как назовём столбец в БД
+    @JsonBackReference
+    private Company company;
+
+    @ManyToOne
+    @JoinColumn(name = "role_id")
+    private Role role;
 }

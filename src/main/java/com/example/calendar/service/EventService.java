@@ -26,6 +26,7 @@ public class EventService {
         this.userRepository = userRepository;
     }
 
+    //todo переделать чтобы не было постоянных запросов в БД при переходе на новый месяц, возможно сделать запрос на все сабытия и на фронте просто добавлять, сюда кстати можно будет прикрутить noSQL
     public List<EventDTO> getCurrentUserEvents(){
         User user = getCurrentUser();
         return eventRepository.findAllByUserEmail(user.getEmail()).stream()

@@ -25,11 +25,14 @@ public class CustomUserDetails implements UserDetails, Serializable {
     private final boolean credentialsNonExpired;//Не истёк ли срок пароля
     private final boolean accountNonLocked;//Заблокирован ли пользователь
 
-    CustomUserDetails(User user) {
+    private final User user;
+
+    CustomUserDetails(User user, Collection<? extends GrantedAuthority> authorities) {
+        this.user = user;
         this.userName = user.getUserName();
         this.password = user.getPassword();
 
-        this.authorities = AuthorityUtils.createAuthorityList("ROLE_USER");//AuthorityUtils для работы с полномочиями в Spring Security
+        this.authorities = authorities;
         this.enabled = true;
         this.accountNonExpired = true;
         this.credentialsNonExpired = true;

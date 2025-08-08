@@ -34,7 +34,7 @@ public class SecurityConfig {
 
         // Авторизация
         http.authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/api/users/login", "/api/users/register", "/forgot-password", "/reset-password").permitAll()
+                .requestMatchers("/", "/api/users/login", "/api/users/register", "/forgot-password", "/reset-password", "/role/all").permitAll()
                 .requestMatchers("/api/**").authenticated() // ✅ Только залогиненные
                 .requestMatchers("/profile/**").authenticated()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
