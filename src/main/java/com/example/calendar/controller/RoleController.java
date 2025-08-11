@@ -1,12 +1,12 @@
 package com.example.calendar.controller;
 
+import com.example.calendar.DTO.RoleDTO;
 import com.example.calendar.repository.RoleRepository;
 import com.example.calendar.service.RoleService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -15,7 +15,7 @@ import java.util.List;
 public class RoleController {
     private final RoleService roleService;
 
-    public RoleController(RoleService roleService, RoleRepository roleRepository) {
+    public RoleController(RoleService roleService) {
         this.roleService = roleService;
     }
 
@@ -25,4 +25,26 @@ public class RoleController {
                 .status(HttpStatus.OK)
                 .body(roleService.findAllRoles());
     }
+
+    @PostMapping("/add")//это тоже для админа
+    public ResponseEntity<RoleDTO> add(@RequestBody RoleDTO roleDTO) {
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(roleService.addRole(roleDTO));
+    }
+
+    @PostMapping("/updateRole")//это у админа только
+    public ResponseEntity<RoleDTO> update(@RequestBody RoleDTO roleDTO, @RequestParam String userName) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(roleService.updateRole(roleDTO, userName));
+    }
+
+    @DeleteMapping("/{roleId}")
+    public ResponseEntity<Void> delete(@PathVariable Long roleId) {
+        roleService.deleteRole(roleId);
+        return ResponseEntity.noContent().build();
+    }
+
+
 }
