@@ -26,4 +26,8 @@ public class Company {
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
     @ToString.Exclude
     private List<Role> roles = new ArrayList<>();
+
+    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
+    @ToString.Exclude
+    private List<Department> departments = new ArrayList<>();
 }
