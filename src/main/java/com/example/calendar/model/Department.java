@@ -3,6 +3,7 @@ package com.example.calendar.model;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -20,4 +21,10 @@ public class Department {
 
     @OneToMany(mappedBy = "department", cascade = CascadeType.ALL)
     private List<User> users;
+
+    @OneToMany(mappedBy = "sourceDepartment", cascade = CascadeType.ALL)
+    private List<AssignmentRule> sourceDepartment = new ArrayList<>();
+
+    @OneToMany(mappedBy = "targetDepartment", cascade = CascadeType.ALL)
+    private List<AssignmentRule> targetDepartment = new ArrayList<>();
 }

@@ -29,4 +29,8 @@ public class Role {
     @JoinColumn(name = "company_id", nullable = false)
     @JsonBackReference
     private Company company;
+
+    @OneToMany(mappedBy = "role")
+    @ToString.Exclude
+    private List<AssignmentRule> assignmentRules = new ArrayList<>();
 }
