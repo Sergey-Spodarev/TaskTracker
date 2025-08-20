@@ -19,6 +19,13 @@ public class Company {
     @Column(nullable = false, unique = true)
     private Long INN;//идентификационный номер налогоплательщика
 
+    @Column(unique = true)
+    private String workEmail; // noreply@company.com
+
+    private String smtpHost;  // smtp.yandex.ru
+    private Integer smtpPort; // 587
+    private String emailPassword; // App Password
+
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
     @ToString.Exclude
     private List<User> users = new ArrayList<>();
