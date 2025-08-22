@@ -66,7 +66,7 @@ public class RoleService {
 
         User user = userRepository.findByUserName(userName)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-        Role newRole = roleRepository.findByCodeAndCompany(user.getCompany(), roleDTO.getCode())
+        Role newRole = roleRepository.findByCodeAndCompany(roleDTO.getCode(), user.getCompany())
                 .orElseThrow(() -> new UsernameNotFoundException("Role not found"));
 
         user.setRole(newRole);

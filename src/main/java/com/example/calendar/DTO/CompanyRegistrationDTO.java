@@ -3,7 +3,7 @@ package com.example.calendar.DTO;
 import lombok.Data;
 
 @Data
-public class CompanyDTO {
+public class CompanyRegistrationDTO {
     private Long id;
     private String name;
     private Long INN;
@@ -11,4 +11,5 @@ public class CompanyDTO {
     private String workEmail;
     private String smtpHost;
     private Integer smtpPort;
+    private String emailPassword;
 }

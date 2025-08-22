@@ -1,6 +1,7 @@
 package com.example.calendar.controller;
 
 import com.example.calendar.DTO.CompanyDTO;
+import com.example.calendar.DTO.CompanyRegistrationDTO;
 import com.example.calendar.service.CompanyService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +21,7 @@ public class CompanyController {
 
     @PostMapping("/create")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<CompanyDTO> createCompany(@RequestBody CompanyDTO companyDTO) {
+    public ResponseEntity<CompanyDTO> createCompany(@RequestBody CompanyRegistrationDTO companyDTO) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(companyService.createCompany(companyDTO));

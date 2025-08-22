@@ -20,11 +20,6 @@ public class UserController {
         this.userService = userService;
     }
 
-    @GetMapping("/test")
-    public String test() {
-        return "Server is running!";
-    }
-
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody UserDTO userDTO) {
         try {

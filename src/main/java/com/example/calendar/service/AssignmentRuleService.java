@@ -72,7 +72,7 @@ public class AssignmentRuleService {
         }
 
         Company company = admin.getCompany();
-        Role role = roleRepository.findByCodeAndCompany(company, roleCode)
+        Role role = roleRepository.findByCodeAndCompany(roleCode, company)
                 .orElseThrow(() -> new IllegalArgumentException("role not found"));
 
         List<AssignmentRule> rules = assignmentRuleRepository.findByRole(role)

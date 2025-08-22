@@ -1,14 +1,17 @@
 package com.example.calendar.service;
 
 import com.example.calendar.DTO.CompanyDTO;
+import com.example.calendar.DTO.CompanyRegistrationDTO;
 import com.example.calendar.model.Company;
 import com.example.calendar.model.User;
 import com.example.calendar.repository.CompanyRepository;
 import com.example.calendar.security.CustomUserDetails;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,18 +19,25 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class CompanyService {
     private final CompanyRepository companyRepository;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
     public CompanyService(CompanyRepository companyRepository) {
         this.companyRepository = companyRepository;
     }
 
-    public CompanyDTO createCompany(CompanyDTO companyDTO) {
-        if (companyRepository.existsByINN(companyDTO.getId())) {
-            throw new UsernameNotFoundException("Company with this INN exists");
+    public CompanyDTO createCompany(CompanyRegistrationDTO companyDTO) {
+        if (companyRepository.existsByINN(companyDTO.getINN())) {
+            throw new IllegalArgumentException("Company with this INN already exists");
         }
 
         Company company = new Company();
         company.setName(companyDTO.getName());
         company.setINN(companyDTO.getINN());
+        company.setWorkEmail(companyDTO.getWorkEmail());
+        company.setSmtpHost(companyDTO.getSmtpHost());
+        company.setSmtpPort(companyDTO.getSmtpPort());
+
+        company.setEmailPassword(companyDTO.getEmailPassword());//потом может сделать чтобы было симметричное шифрование
 
         return convertToDTO(companyRepository.save(company));
     }
