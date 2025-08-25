@@ -63,8 +63,8 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/calendar")
-    public String showCalendar() {
-        return "forward:/calendar.html"; // Или имя вашего HTML-файла с календарём
+    @GetMapping("/tasks")
+    public String showTasks() {
+        return "task"; // resources/templates/task.html
     }
 }

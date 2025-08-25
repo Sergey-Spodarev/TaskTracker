@@ -21,15 +21,10 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody UserDTO userDTO) {
-        try {
-            UserDTO registeredUser = userService.registerUser(userDTO);
-            return ResponseEntity
-                    .status(HttpStatus.CREATED)
-                    .body(registeredUser);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    public ResponseEntity<?> registerUser(Long userId, String codeRole, String nameDepartment) {
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(userService.assignUser(userId, codeRole, nameDepartment));
     }
 
     @PostMapping("/update/dataUser")

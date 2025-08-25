@@ -1,149 +1,200 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Student App</title>
+    <title>TaskFlow — Управление задачами</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; margin: 40px; }
-        .container { max-width: 400px; margin: 0 auto; }
-        .form-group { margin-bottom: 15px; }
-        input { width: 100%; padding: 8px; }
-        button { background: #4CAF50; color: white; border: none; padding: 10px; width: 100%; }
-        .error { color: red; margin-top: 10px; }
-        .register-link { margin-top: 15px; text-align: center; }
-        .register-link a { color: #4CAF50; text-decoration: none; cursor: pointer; }
-        .hidden { display: none; }
+        body {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .auth-container {
+            max-width: 900px;
+            margin: 80px auto;
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            display: flex;
+        }
+        .auth-info {
+            flex: 1;
+            background: #f0f4ff;
+            padding: 60px 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .auth-info h2 {
+            color: #1a73e8;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        .auth-info p {
+            color: #555;
+            line-height: 1.6;
+        }
+        .auth-forms {
+            flex: 1;
+            padding: 40px;
+        }
+        .tab-content {
+            margin-top: 20px;
+        }
+        .btn-primary {
+            background: #1a73e8;
+            border: none;
+            padding: 10px 0;
+            font-size: 1.1rem;
+        }
+        .btn-outline-primary {
+            color: #1a73e8;
+            border-color: #1a73e8;
+        }
+        .form-title {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #333;
+            font-weight: 600;
+        }
+        .text-center a {
+            color: #1a73e8;
+            text-decoration: none;
+        }
+        .text-center a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
-<div class="container">
-    <h1>Добро пожаловать!</h1>
-
-    <!-- Форма входа -->
-    <div id="login-form">
-        <form id="loginForm">
-            <div class="form-group">
-                <input type="text" name="username" placeholder="Имя пользователя" required>
-            </div>
-            <div class="form-group">
-                <input type="password" name="password" placeholder="Пароль" required>
-            </div>
-            <button type="submit">Войти</button>
-        </form>
-        <div id="loginError" class="error"></div>
-        <div class="register-link">
-            Нет аккаунта? <a onclick="showForm('register')">Зарегистрироваться</a>
-        </div>
+<div class="auth-container">
+    <!-- Левая часть — информация -->
+    <div class="auth-info">
+        <h2>TaskFlow</h2>
+        <p>Система управления задачами и проектами для команд.</p>
+        <p>Создайте свою компанию, приглашайте сотрудников, назначайте задачи и отслеживайте прогресс.</p>
+        <p><i class="fas fa-check"></i> Управление ролями</p>
+        <p><i class="fas fa-check"></i> Приглашения по email</p>
+        <p><i class="fas fa-check"></i> Расписания и задачи</p>
     </div>
 
-    <!-- Форма регистрации -->
-    <div id="register-form" class="hidden">
-        <h2>Регистрация</h2>
-        <form id="registerForm">
-            <div class="form-group">
-                <input type="text" name="username" placeholder="Имя пользователя" required>
+    <!-- Правая часть — формы -->
+    <div class="auth-forms">
+        <ul class="nav nav-tabs" id="authTabs">
+            <li class="nav-item">
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#login">Вход</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#register">Создать компанию</button>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <!-- Вход -->
+            <div class="tab-pane fade show active" id="login">
+                <h4 class="form-title">Войдите в систему</h4>
+                <form th:action="@{/login}" method="post">
+                    <div th:if="${param.error}" class="alert alert-danger alert-sm">
+                        Неверный email или пароль.
+                    </div>
+                    <div class="mb-3">
+                        <label for="loginEmail" class="form-label">Email</label>
+                        <input type="email" id="loginEmail" name="username" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="loginPassword" class="form-label">Пароль</label>
+                        <input type="password" id="loginPassword" name="password" class="form-control" required />
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Войти</button>
+                </form>
+                <div class="text-center mt-3">
+                    <a th:href="@{/forgot-password}">Забыли пароль?</a>
+                </div>
             </div>
-            <div class="form-group">
-                <input type="email" name="email" placeholder="Email" required>
+
+            <!-- Регистрация новой компании -->
+            <div class="tab-pane fade" id="register">
+                <h4 class="form-title">Создать компанию</h4>
+                <form id="companyForm">
+                    <div class="mb-3">
+                        <label for="companyName" class="form-label">Название компании</label>
+                        <input type="text" id="companyName" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="inn" class="form-label">ИНН</label>
+                        <input type="text" id="inn" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="workEmail" class="form-label">Рабочая почта компании</label>
+                        <input type="email" id="workEmail" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="smtpHost" class="form-label">SMTP Host</label>
+                        <input type="text" id="smtpHost" class="form-control" placeholder="smtp.gmail.com" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="smtpPort" class="form-label">SMTP Port</label>
+                        <input type="number" id="smtpPort" class="form-control" value="587" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="emailPassword" class="form-label">Пароль от почты</label>
+                        <input type="password" id="emailPassword" class="form-control" required />
+                    </div>
+
+                    <hr>
+
+                    <h5>Ваши данные (администратор)</h5>
+                    <div class="mb-3">
+                        <label for="adminName" class="form-label">ФИО</label>
+                        <input type="text" id="adminName" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="adminEmail" class="form-label">Email</label>
+                        <input type="email" id="adminEmail" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="adminPassword" class="form-label">Пароль</label>
+                        <input type="password" id="adminPassword" class="form-control" required />
+                    </div>
+
+                    <button type="button" class="btn btn-primary w-100" onclick="createCompany()">
+                        Создать компанию
+                    </button>
+                </form>
             </div>
-            <div class="form-group">
-                <input type="password" name="password" placeholder="Пароль" required>
-            </div>
-            <button type="submit">Зарегистрироваться</button>
-        </form>
-        <div id="registerError" class="error"></div>
-        <div class="register-link">
-            Уже есть аккаунт? <a onclick="showForm('login')">Войти</a>
         </div>
     </div>
 </div>
 
+<!-- Bootstrap JS + Axios для запросов -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script>
-    // Функция для переключения между формами
-    function showForm(formType) {
-        if (formType === 'login') {
-            document.getElementById('login-form').classList.remove('hidden');
-            document.getElementById('register-form').classList.add('hidden');
-        } else if (formType === 'register') {
-            document.getElementById('register-form').classList.remove('hidden');
-            document.getElementById('login-form').classList.add('hidden');
-        }
+    function createCompany() {
+        const formData = {
+            name: document.getElementById('companyName').value,
+            inn: document.getElementById('inn').value,
+            workEmail: document.getElementById('workEmail').value,
+            smtpHost: document.getElementById('smtpHost').value,
+            smtpPort: parseInt(document.getElementById('smtpPort').value),
+            emailPassword: document.getElementById('emailPassword').value,
+            adminName: document.getElementById('adminName').value,
+            adminEmail: document.getElementById('adminEmail').value,
+            adminPassword: document.getElementById('adminPassword').value
+        };
+
+        axios.post('/api/companies/register', formData)
+            .then(response => {
+                alert('Компания создана! Проверьте почту.');
+                window.location.href = '/';
+            })
+            .catch(error => {
+                alert('Ошибка: ' + (error.response?.data || 'Не удалось создать компанию'));
+            });
     }
-
-    // Обработка формы регистрации
-    document.getElementById('registerForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-
-        const formData = {
-            userName: this.username.value,  // ← Изменили на userName (Java ожидает)
-            email: this.email.value,
-            password: this.password.value
-        };
-
-        try {
-            const response = await fetch('/api/users/register', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(formData)
-            });
-
-            if (response.ok) {
-                showForm('login');
-                document.getElementById('registerError').textContent = '';
-                alert('Регистрация успешна! Теперь вы можете войти.');
-            } else {
-                let errorMessage = 'Ошибка сервера';
-
-                // Пытаемся получить текст или JSON из ответа
-                const contentType = response.headers.get("content-type");
-                if (contentType && contentType.includes("application/json")) {
-                    const errorData = await response.json();
-                    errorMessage = errorData.message || JSON.stringify(errorData);
-                } else {
-                    errorMessage = await response.text(); // Если пришёл HTML или простой текст
-                }
-
-                throw new Error(errorMessage);
-            }
-        } catch (error) {
-            console.error('Ошибка регистрации:', error);
-            document.getElementById('registerError').textContent =
-                `Ошибка при регистрации: ${error.message || 'Проверьте подключение к серверу'}`;
-        }
-    });
-
-    // Обработка формы входа
-    document.getElementById('loginForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-
-        const formData = {
-            username: this.username.value,
-            password: this.password.value
-        };
-
-        try {
-            const response = await fetch('/api/users/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(formData)
-            });
-
-            if (response.ok) {
-                window.location.href = '/calendar';
-            } else {
-                const errorData = await response.json().catch(() => null);
-                throw new Error(errorData?.message || `Ошибка входа: ${response.status}`);
-            }
-        } catch (error) {
-            console.error('Ошибка входа:', error);
-            document.getElementById('loginError').textContent =
-                `Ошибка при входе: ${error.message || 'Проверьте подключение к серверу'}`;
-        }
-    });
 </script>
 </body>
 </html>

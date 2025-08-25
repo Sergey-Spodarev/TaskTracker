@@ -12,4 +12,5 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
     Optional<List<Department>> findByCompany(Company company);
 
     Optional<Department> findByName(String name);
+    Optional<Department> findByNameAndCompany(String name, Company company);
 }

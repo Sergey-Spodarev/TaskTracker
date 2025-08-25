@@ -12,15 +12,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
-@RequestMapping("/company")
+@RequestMapping("/api/companies")
 public class CompanyController {
     private final CompanyService companyService;
     public CompanyController(CompanyService companyService) {
         this.companyService = companyService;
     }
 
-    @PostMapping("/create")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/register")
     public ResponseEntity<CompanyDTO> createCompany(@RequestBody CompanyRegistrationDTO companyDTO) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)

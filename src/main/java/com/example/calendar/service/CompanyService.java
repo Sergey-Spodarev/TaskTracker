@@ -6,12 +6,10 @@ import com.example.calendar.model.Company;
 import com.example.calendar.model.User;
 import com.example.calendar.repository.CompanyRepository;
 import com.example.calendar.security.CustomUserDetails;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,10 +17,10 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class CompanyService {
     private final CompanyRepository companyRepository;
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-    public CompanyService(CompanyRepository companyRepository) {
+    private final UserService userService;
+    public CompanyService(CompanyRepository companyRepository, UserService userService) {
         this.companyRepository = companyRepository;
+        this.userService = userService;
     }
 
     public CompanyDTO createCompany(CompanyRegistrationDTO companyDTO) {
@@ -39,7 +37,10 @@ public class CompanyService {
 
         company.setEmailPassword(companyDTO.getEmailPassword());//потом может сделать чтобы было симметричное шифрование
 
-        return convertToDTO(companyRepository.save(company));
+        CompanyDTO resultCompany= convertToDTO(companyRepository.save(company));
+        userService.registerCompanyAdmin(company, companyDTO);
+        //тут нужен вызов для User где мы будем делать, так чтобы данный пользователь становился админом
+        return resultCompany;
     }
 
     public CompanyDTO updateCompany(CompanyDTO companyDTO) {

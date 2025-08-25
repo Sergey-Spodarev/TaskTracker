@@ -20,13 +20,13 @@ public class InvitationTokenService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserService userService;
-    @Autowired
-    private CompanyEmailService companyEmailService;
-    public InvitationTokenService(InvitationTokenRepository invitationTokenRepository, UserRepository userRepository, PasswordEncoder passwordEncoder, UserService userService) {
+    private final CompanyEmailService companyEmailService;
+    public InvitationTokenService(InvitationTokenRepository invitationTokenRepository, UserRepository userRepository, PasswordEncoder passwordEncoder, UserService userService, CompanyEmailService companyEmailService) {
         this.invitationTokenRepository = invitationTokenRepository;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.userService = userService;
+        this.companyEmailService = companyEmailService;
     }
 
     public InvitationTokenDTO createInvitationToken(String email) {//мы просто создаём токен

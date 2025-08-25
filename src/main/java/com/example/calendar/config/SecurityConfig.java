@@ -34,13 +34,19 @@ public class SecurityConfig {
 
         // Авторизация
         http.authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/api/users/login", "/api/users/register", "/forgot-password", "/reset-password", "/role/all").permitAll()
-                .requestMatchers("/api/**").authenticated() // ✅ Только залогиненные
-                .requestMatchers("/profile/**").authenticated()
-                .requestMatchers("/admin/**").hasRole("ADMIN")
+                .requestMatchers("/", "/api/users/login", "/api/users/register", "/forgot-password", "/reset-password", "/api/companies/register").permitAll()
+                .requestMatchers("/api/**", "/department/**", "/role/**").authenticated()
+                .requestMatchers("/profile/**", "/InvitationToken/**").authenticated()
+                .requestMatchers("/admin/**", "/assignmentRuleService/**", "/company/**").hasRole("ADMIN")
                 .anyRequest().permitAll()
         );
 
+        http.formLogin(login -> login
+                .loginPage("/")           // форма входа — на главной
+                .loginProcessingUrl("/login")
+                .defaultSuccessUrl("/tasks", true)  // ← ВАЖНО: после входа — на /tasks
+                .failureUrl("/?error=true")
+        );
 
         // Выход
         http.logout(logout -> logout

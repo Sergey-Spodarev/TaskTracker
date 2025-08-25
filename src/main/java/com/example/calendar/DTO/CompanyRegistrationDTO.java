@@ -12,4 +12,8 @@ public class CompanyRegistrationDTO {
     private String smtpHost;
     private Integer smtpPort;
     private String emailPassword;
+
+    private String adminName;
+    private String adminEmail;
+    private String adminPassword;
 }

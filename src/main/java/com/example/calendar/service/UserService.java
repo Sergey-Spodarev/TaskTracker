@@ -1,12 +1,18 @@
 package com.example.calendar.service;
 
+import com.example.calendar.DTO.CompanyRegistrationDTO;
 import com.example.calendar.DTO.UserDTO;
 import com.example.calendar.model.Company;
+import com.example.calendar.model.Department;
 import com.example.calendar.model.Role;
 import com.example.calendar.model.User;
 import com.example.calendar.repository.CompanyRepository;
+import com.example.calendar.repository.DepartmentRepository;
 import com.example.calendar.repository.RoleRepository;
 import com.example.calendar.repository.UserRepository;
+import com.example.calendar.security.CustomUserDetails;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -19,43 +25,83 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final RoleRepository roleRepository;
-    private final CompanyRepository companyRepository;
+    private final DepartmentRepository departmentRepository;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, RoleRepository roleRepository, CompanyRepository companyRepository) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, RoleRepository roleRepository, DepartmentRepository departmentRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.roleRepository = roleRepository;
-        this.companyRepository = companyRepository;
+        this.departmentRepository = departmentRepository;
     }
 
-    public Boolean checkUserRegistered(String email){
-        return userRepository.findByEmail(email).isPresent();
-    }
-
-    public UserDTO registerUser(UserDTO userDTO){
-        if (checkUserRegistered(userDTO.getEmail())){
-            throw new RuntimeException("Пользователь уже существует");//временно так потом надо сообщение пользователю выбивать
+    public UserDTO assignUser(Long userId, String codeRole, String nameDepartment){//это когда админ будет назначать пользователю как отдел так и роль
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        User admin = userDetails.getUser();
+        if (!"ADMIN".equals(admin.getRole().getCode())) {
+            throw new RuntimeException("Только администратор может назначать роль пользователю");
         }
 
-        User user = new User();
-        user.setUserName(userDTO.getUserName());
-        user.setEmail(userDTO.getEmail());
-        user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
 
-        Company company = companyRepository.findByINN((long)111)//todo надо сделать чтобы была проверка есть ли компания или нет
-                .orElseThrow(() -> new RuntimeException("компания не найдена"));
-        user.setCompany(company);
+        if (!user.getCompany().equals(admin.getCompany())) {
+            throw new RuntimeException("Можно назначать роль пользователю только внутри своей компании");
+        }
 
-        Role defaultRole = roleRepository.findByCode("USER")
-                .orElseGet(() -> createDefaultUserRole(company));
-        user.setRole(defaultRole);
+        Role role = roleRepository.findByCodeAndCompany(codeRole, admin.getCompany())
+                .orElseThrow(() -> new RuntimeException(codeRole + " роли не существует в данной компании"));
+
+        Department department = departmentRepository.findByNameAndCompany(nameDepartment, admin.getCompany())
+                        .orElseThrow(() -> new RuntimeException("Название данного департамента не существует в данной компании"));
+
+        user.setRole(role);
+        user.setDepartment(department);
         return convertUserToDTO(userRepository.save(user));
     }
 
-    private Role createDefaultUserRole(Company company) {
+    public void registerCompanyAdmin(Company company, CompanyRegistrationDTO companyRegistrationDTO){
+        User admin = new User();
+        admin.setUserName(companyRegistrationDTO.getAdminName());
+        admin.setEmail(companyRegistrationDTO.getAdminEmail());
+        admin.setPassword(passwordEncoder.encode(companyRegistrationDTO.getAdminPassword()));
+        admin.setCompany(company);
+        admin.setRole(createAdminRole(company));
+        userRepository.save(admin);
+    }
+
+    private Role createAdminRole(Company company) {
+        Role role = new Role();
+        role.setCode("ADMIN");
+        role.setDisplayName("Администратор");
+        role.setCompany(company);
+        return roleRepository.save(role);
+    }
+
+
+    public User createPendingUser(String email){
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        User admin = userDetails.getUser();
+
+        Role role = getDefaultUserRole(admin.getCompany());
+
+        User user = new User();
+        user.setEmail(email);
+        user.setRole(role);
+        user.setCompany(admin.getCompany());
+        return userRepository.save(user);
+    }
+
+    private Role getDefaultUserRole(Company company) {
+        return roleRepository.findByCodeAndCompany("AWAITING", company)
+                .orElseGet(() -> createAndSaveAwaitingRole(company));
+    }
+
+    private Role createAndSaveAwaitingRole(Company company) {
         Role role = new Role();
         role.setCode("AWAITING");
-        role.setDisplayName("Пользователь");
+        role.setDisplayName("Ожидает регистрации");
         role.setCompany(company);
         return roleRepository.save(role);
     }
@@ -69,7 +115,7 @@ public class UserService {
     }
 
     public UserDTO updateUser(UserDTO userDTO){
-        User user = userRepository.findByEmail(userDTO.getUserName())
+        User user = userRepository.findByEmail(userDTO.getEmail())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email:" + userDTO.getEmail()));
         user.setUserName(userDTO.getUserName());
         user.setEmail(userDTO.getEmail());

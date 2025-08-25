@@ -31,7 +31,7 @@ public class AssignmentRuleService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         User admin = userDetails.getUser();
-        if ("ADMIN".equals(admin.getRole())) {
+        if (!"ADMIN".equals(admin.getRole().getCode())) {
             throw new AccessDeniedException("Only the admin can create the rules.");
         }
 
@@ -56,7 +56,7 @@ public class AssignmentRuleService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         User admin = userDetails.getUser();
-        if ("ADMIN".equals(admin.getRole().getCode())) {
+        if (!"ADMIN".equals(admin.getRole().getCode())) {
             throw new AccessDeniedException("Only the admin can remove the rules.");
         }
         //возможно добавить проверку, что из той же компании
