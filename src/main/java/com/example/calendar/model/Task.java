@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @Entity
@@ -19,10 +21,23 @@ public class Task {
 
     private LocalDateTime endTime;
 
-    private boolean allDay;
+    @ManyToOne
+    @JoinColumn(name = "assignee_id")
+    @JsonBackReference
+    private User assignee;
 
     @ManyToOne
-    @JoinColumn(name = "user_id", referencedColumnName = "user_id")
+    @JoinColumn(name = "reporter_id")
     @JsonBackReference
-    private User user;
+    private User reporter;
+
+    @ManyToOne
+    @JoinColumn(name = "project_id")
+    private Project project;
+
+    @OneToMany(mappedBy = "task")
+    private List<TaskComment> comments = new ArrayList<>();
+
+    @OneToMany(mappedBy = "task")
+    private List<TaskHistory> history = new ArrayList<>();
 }

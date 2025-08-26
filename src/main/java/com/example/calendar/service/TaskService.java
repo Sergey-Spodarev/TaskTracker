@@ -1,10 +1,13 @@
 package com.example.calendar.service;
 
 import com.example.calendar.DTO.TaskDTO;
+import com.example.calendar.model.Project;
 import com.example.calendar.model.Task;
 import com.example.calendar.model.User;
+import com.example.calendar.repository.ProjectRepository;
 import com.example.calendar.repository.TaskRepository;
 import com.example.calendar.repository.UserRepository;
+import com.example.calendar.security.CustomUserDetails;
 import jakarta.transaction.Transactional;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -18,81 +21,51 @@ import java.util.Optional;
 @Service
 @Transactional
 public class TaskService {
-    private final TaskRepository eventRepository;
+    private final TaskRepository taskRepository;
     private final UserRepository userRepository;
+    private final ProjectRepository projectRepository;
 
-    public TaskService(TaskRepository eventRepository, UserRepository userRepository) {
-        this.eventRepository = eventRepository;
+    public TaskService(TaskRepository taskRepository, UserRepository userRepository, ProjectRepository projectRepository) {
+        this.taskRepository = taskRepository;
         this.userRepository = userRepository;
+        this.projectRepository = projectRepository;
     }
 
-    //todo переделать чтобы не было постоянных запросов в БД при переходе на новый месяц, возможно сделать запрос на все сабытия и на фронте просто добавлять, сюда кстати можно будет прикрутить noSQL
-    public List<TaskDTO> getCurrentUserEvents(){//может это переделать под noSQL ибо мы берём все задачи
+    public TaskDTO createTask(TaskDTO taskDTO) {
         User user = getCurrentUser();
-        return eventRepository.findAllByUserEmail(user.getEmail()).stream()
-                .map(this::convertEventToDTO)
-                .toList();
+        //тут надо будет потом дописать ещё проверку на права, ибо не любой может дать задание любому у меня есть специальный класс для этого
+        Project project = projectRepository.findByIdAndCompany(taskDTO.getProjectId(), user.getCompany())
+                .orElseThrow(() -> new UsernameNotFoundException("Нельзя дать задачу не своей группе"));
+
+        Task task = new Task();
+        task.setTitle(taskDTO.getTitle());
+        task.setStartTime(taskDTO.getStart());
+        task.setEndTime(taskDTO.getEnd());
+        task.setReporter(user);
+        task.setProject(project);
+        User assigneeUser = userRepository.findById(taskDTO.getAssigneeId())
+                .orElseThrow(() -> new UsernameNotFoundException("Пользователь не найден"));
+        task.setAssignee(assigneeUser);
+        return convertTaskToDTO(taskRepository.save(task));
     }
 
-    public TaskDTO saveEvent(TaskDTO eventDTO) {
+    public List<TaskDTO> getAllTasks() {
         User user = getCurrentUser();
-
-        Task event = new Task();
-        event.setTitle(eventDTO.getTitle());
-        event.setStartTime(eventDTO.getStart());
-        event.setEndTime(eventDTO.getEnd());
-        event.setUser(user);
-
-        System.out.println("Saving event: " + event);
-        return convertEventToDTO(eventRepository.save(event));
+        return taskRepository.findByProject(user.getCompany().getProjects())
     }
 
-    public TaskDTO updateEvent(TaskDTO eventDTO) {
-        Task event = eventRepository.findById(eventDTO.getId())
-                .orElseThrow(() -> new UsernameNotFoundException("Event not found"));
-        event.setTitle(eventDTO.getTitle());
-        event.setStartTime(eventDTO.getStart());
-        event.setEndTime(eventDTO.getEnd());
-        event.setAllDay(eventDTO.isAllDay());
-        return convertEventToDTO(eventRepository.save(event));
-    }
-
-    private TaskDTO convertEventToDTO(Task event) {
-        TaskDTO eventDTO = new TaskDTO();
-        eventDTO.setId(event.getId());
-        eventDTO.setTitle(event.getTitle());
-        eventDTO.setStart(event.getStartTime());
-        eventDTO.setEnd(event.getEndTime());
-        eventDTO.setAllDay(event.isAllDay());
-        return eventDTO;
-    }
-
-    public void deleteEvent(Long id) {
-        User user = getCurrentUser();
-        Task event = eventRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Событие с ID " + id + " не найдено"));
-        if (!event.getUser().getUserId().equals(user.getUserId())) {
-            throw new IllegalArgumentException("Вы не можете удалить чужое событие");//надо будет переделать на AccessDeniedException, но пока там ошибка
-        }
-        eventRepository.deleteById(id);
-    }
-
-    public User getCurrentUser() {
+    private User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        return userDetails.getUser();
+    }
 
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new IllegalStateException("Пользователь не авторизован");
-        }
-
-        String name;
-        if (authentication.getPrincipal() instanceof UserDetails userDetails){
-            name = userDetails.getUsername();
-        } else {
-            name = authentication.getName();
-        }
-
-        Optional<User> userOptional = userRepository.findByUserName(name);
-        return userOptional.
-                orElseThrow(() -> new UsernameNotFoundException("Пользователь с именем " + name + " не найден"));
+    private TaskDTO convertTaskToDTO(Task task) {
+        TaskDTO taskDTO = new TaskDTO();
+        taskDTO.setId(task.getId());
+        taskDTO.setTitle(task.getTitle());
+        taskDTO.setStart(task.getStartTime());
+        taskDTO.setEnd(task.getEndTime());
+        return taskDTO;
     }
 }

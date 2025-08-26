@@ -24,14 +24,14 @@ public class ProjectService {
     public ProjectDTO create(ProjectDTO projectDTO) {
         User user = getCurrentUser();
         Company company = user.getCompany();
+
         if (projectRepository.existsByProjectKeyAndCompany(projectDTO.getProjectKey(), company)) {
             throw new IllegalArgumentException("Проект с таким ключом уже существует");
         }
 
-
         Project project = new Project();
         project.setName(projectDTO.getName());
-        project.setProjectKey(projectDTO.getProjectKey());
+        project.setProjectKey(project.getProjectKey());
         project.setCompany(company);
         //тут мы так же должны вызвать функию для Task
         return convertToDTO(projectRepository.save(project));
@@ -51,9 +51,7 @@ public class ProjectService {
     public List<ProjectDTO> findAll() {
         User user = getCurrentUser();
 
-        return projectRepository.findAllByCompany(user.getCompany())
-                .orElseThrow(() -> new IllegalArgumentException("У данной компании нет задач"))
-                .stream()
+        return projectRepository.findAllByCompany(user.getCompany()).stream()
                 .map(this::convertToDTO)
                 .toList();
     }

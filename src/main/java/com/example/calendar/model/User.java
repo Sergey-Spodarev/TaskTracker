@@ -1,6 +1,5 @@
 package com.example.calendar.model;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.ToString;
@@ -8,18 +7,16 @@ import lombok.ToString;
 import java.util.ArrayList;
 import java.util.List;
 
-
-// Сущности БД (классы-таблицы):данные пользователя.
-@Data//lombok здесь реализуется get,set,tostring,equals,hascod
-@Entity//Помечает класс как сущность БД.
+@Data
+@Entity
 @Table(name = "users") //(опционально) – Указывает имя таблицы, если оно отличается от имени класса.
 public class User {
-    @Id //Обозначает первичный ключ.
-    @GeneratedValue(strategy = GenerationType.IDENTITY)//Указывает стратегию генерации ID (автоинкремент, sequence и т. д.).
-    @Column(name = "user_id")//unique - говорит что должно быть уникальное значение
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "user_id")
     private Long userId;
 
-    @Column(name = "userName", nullable = false, unique = true) //Позволяет задать имя столбца, ограничения и другие параметры.
+    @Column(name = "userName", nullable = false, unique = true)
     private String userName;
 
     @Column(name = "password", nullable = false)
@@ -28,9 +25,13 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "reporter", cascade = CascadeType.ALL)
     @ToString.Exclude
-    private List<Task> events = new ArrayList<>();
+    private List<Task> reporter = new ArrayList<>();
+
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL)
+    @ToString.Exclude
+    private List<Task> projects = new ArrayList<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)//mappedBy как называется строчка в классе с которым связываем
     @ToString.Exclude
@@ -38,7 +39,6 @@ public class User {
 
     @ManyToOne
     @JoinColumn(name = "company_id")//name как назовём столбец в БД
-    @JsonBackReference
     private Company company;
 
     @ManyToOne
@@ -51,4 +51,10 @@ public class User {
 
     @OneToOne
     private InvitationToken invitationToken;
+
+    @OneToMany(mappedBy = "autor_id")
+    private List<TaskComment> taskComments = new ArrayList<>();
+
+    @OneToMany(mappedBy = "changed_by_id")
+    private List<TaskHistory> taskHistories = new ArrayList<>();
 }

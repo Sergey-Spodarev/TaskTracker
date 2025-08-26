@@ -18,5 +18,6 @@ public class TaskDTO {
     @NotNull(message = "Время конца выполнения задачи обязательно")
     private LocalDateTime end;
 
-    private boolean allDay;
+    private Long assigneeId;
+    private Long projectId;
 }

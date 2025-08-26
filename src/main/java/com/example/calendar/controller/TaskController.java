@@ -11,32 +11,20 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/event")
 public class TaskController {
-    private final TaskService eventService;
-    public TaskController(TaskService eventService) {
-        this.eventService = eventService;
+    private final TaskService taskService;
+    public TaskController(TaskService taskService) {
+        this.taskService = taskService;
     }
 
-    @PostMapping("/add")
-    public ResponseEntity<TaskDTO> addEvent(@RequestBody TaskDTO eventDTO) {
+    @PostMapping("/create")
+    public ResponseEntity<TaskDTO> createTask(@RequestBody TaskDTO taskDTO) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(eventService.saveEvent(eventDTO));
-    }
-    
-    @GetMapping("/get")
-    public List<TaskDTO> getEvents() {
-        return eventService.getCurrentUserEvents();
+                .body(taskService.createTask(taskDTO));
     }
 
-    @PutMapping("/update")
-    public ResponseEntity<?> updateEvent(@RequestBody TaskDTO eventDTO) {
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(eventService.updateEvent(eventDTO));
-    }
+    @GetMapping("/getAll")
+    public ResponseEntity<List<TaskDTO>> getTasks() {
 
-    @DeleteMapping("/{id}")
-    public void deleteEvent(@PathVariable Long id) {
-        eventService.deleteEvent(id);
     }
 }
