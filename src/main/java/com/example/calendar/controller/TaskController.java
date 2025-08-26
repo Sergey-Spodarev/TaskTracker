@@ -1,10 +1,7 @@
 package com.example.calendar.controller;
 
-import com.example.calendar.DTO.CalendarEventDto;
-import com.example.calendar.DTO.EventDTO;
-import com.example.calendar.model.Event;
-import com.example.calendar.repository.UserRepository;
-import com.example.calendar.service.EventService;
+import com.example.calendar.DTO.TaskDTO;
+import com.example.calendar.service.TaskService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,26 +10,26 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/event")
-public class EventController {
-    private final EventService eventService;
-    public EventController(EventService eventService) {
+public class TaskController {
+    private final TaskService eventService;
+    public TaskController(TaskService eventService) {
         this.eventService = eventService;
     }
 
     @PostMapping("/add")
-    public ResponseEntity<EventDTO> addEvent(@RequestBody EventDTO eventDTO) {
+    public ResponseEntity<TaskDTO> addEvent(@RequestBody TaskDTO eventDTO) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(eventService.saveEvent(eventDTO));
     }
-
+    
     @GetMapping("/get")
-    public List<EventDTO> getEvents() {
+    public List<TaskDTO> getEvents() {
         return eventService.getCurrentUserEvents();
     }
 
     @PutMapping("/update")
-    public ResponseEntity<?> updateEvent(@RequestBody EventDTO eventDTO) {
+    public ResponseEntity<?> updateEvent(@RequestBody TaskDTO eventDTO) {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(eventService.updateEvent(eventDTO));

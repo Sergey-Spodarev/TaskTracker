@@ -1,9 +1,9 @@
 package com.example.calendar.service;
 
-import com.example.calendar.DTO.EventDTO;
-import com.example.calendar.model.Event;
+import com.example.calendar.DTO.TaskDTO;
+import com.example.calendar.model.Task;
 import com.example.calendar.model.User;
-import com.example.calendar.repository.EventRepository;
+import com.example.calendar.repository.TaskRepository;
 import com.example.calendar.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.security.core.Authentication;
@@ -17,27 +17,27 @@ import java.util.Optional;
 
 @Service
 @Transactional
-public class EventService {
-    private final EventRepository eventRepository;
+public class TaskService {
+    private final TaskRepository eventRepository;
     private final UserRepository userRepository;
 
-    public EventService(EventRepository eventRepository, UserRepository userRepository) {
+    public TaskService(TaskRepository eventRepository, UserRepository userRepository) {
         this.eventRepository = eventRepository;
         this.userRepository = userRepository;
     }
 
     //todo переделать чтобы не было постоянных запросов в БД при переходе на новый месяц, возможно сделать запрос на все сабытия и на фронте просто добавлять, сюда кстати можно будет прикрутить noSQL
-    public List<EventDTO> getCurrentUserEvents(){
+    public List<TaskDTO> getCurrentUserEvents(){//может это переделать под noSQL ибо мы берём все задачи
         User user = getCurrentUser();
         return eventRepository.findAllByUserEmail(user.getEmail()).stream()
                 .map(this::convertEventToDTO)
                 .toList();
     }
 
-    public EventDTO saveEvent(EventDTO eventDTO) {
+    public TaskDTO saveEvent(TaskDTO eventDTO) {
         User user = getCurrentUser();
 
-        Event event = new Event();
+        Task event = new Task();
         event.setTitle(eventDTO.getTitle());
         event.setStartTime(eventDTO.getStart());
         event.setEndTime(eventDTO.getEnd());
@@ -47,8 +47,8 @@ public class EventService {
         return convertEventToDTO(eventRepository.save(event));
     }
 
-    public EventDTO updateEvent(EventDTO eventDTO) {
-        Event event = eventRepository.findById(eventDTO.getId())
+    public TaskDTO updateEvent(TaskDTO eventDTO) {
+        Task event = eventRepository.findById(eventDTO.getId())
                 .orElseThrow(() -> new UsernameNotFoundException("Event not found"));
         event.setTitle(eventDTO.getTitle());
         event.setStartTime(eventDTO.getStart());
@@ -57,8 +57,8 @@ public class EventService {
         return convertEventToDTO(eventRepository.save(event));
     }
 
-    private EventDTO convertEventToDTO(Event event) {
-        EventDTO eventDTO = new EventDTO();
+    private TaskDTO convertEventToDTO(Task event) {
+        TaskDTO eventDTO = new TaskDTO();
         eventDTO.setId(event.getId());
         eventDTO.setTitle(event.getTitle());
         eventDTO.setStart(event.getStartTime());
@@ -69,7 +69,7 @@ public class EventService {
 
     public void deleteEvent(Long id) {
         User user = getCurrentUser();
-        Event event = eventRepository.findById(id)
+        Task event = eventRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Событие с ID " + id + " не найдено"));
         if (!event.getUser().getUserId().equals(user.getUserId())) {
             throw new IllegalArgumentException("Вы не можете удалить чужое событие");//надо будет переделать на AccessDeniedException, но пока там ошибка

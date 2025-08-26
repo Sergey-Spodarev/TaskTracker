@@ -30,7 +30,7 @@ public class User {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     @ToString.Exclude
-    private List<Event> events = new ArrayList<>();
+    private List<Task> events = new ArrayList<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)//mappedBy как называется строчка в классе с которым связываем
     @ToString.Exclude

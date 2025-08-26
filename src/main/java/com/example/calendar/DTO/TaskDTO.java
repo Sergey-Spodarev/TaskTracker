@@ -7,7 +7,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-public class EventDTO {
+public class TaskDTO {
     private Long id;
     @NotBlank(message = "Название задачи обязательно")
     private String title;
