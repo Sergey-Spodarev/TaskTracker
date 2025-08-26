@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ProjectRepository extends JpaRepository<Project, Long> {
-    Optional<Project> findByProjectKeyAndCompany(String projectName, Company company);
     Optional<Project> findByIdAndCompany(Long projectId, Company company);
 
     boolean existsByProjectKeyAndCompany(String projectKey, Company company);
