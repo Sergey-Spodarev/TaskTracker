@@ -75,8 +75,7 @@ public class AssignmentRuleService {
         Role role = roleRepository.findByCodeAndCompany(roleCode, company)
                 .orElseThrow(() -> new IllegalArgumentException("role not found"));
 
-        List<AssignmentRule> rules = assignmentRuleRepository.findByRole(role)
-                .orElseThrow(() -> new IllegalArgumentException("No rule exists."));
+        List<AssignmentRule> rules = assignmentRuleRepository.findByRole(role);
 
         return rules.stream()
                 .map(this::convertToDTO)
@@ -93,12 +92,17 @@ public class AssignmentRuleService {
         }
 
         Company company = admin.getCompany();
-        List<AssignmentRule> rules = assignmentRuleRepository.findByRole_Company(company)
-                .orElseThrow(() -> new IllegalArgumentException("No rule exists."));
+        List<AssignmentRule> rules = assignmentRuleRepository.findByRole_Company(company);
 
         return rules.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
+    }
+
+    public boolean canUserAssignToUser(User fromUser, User toUser){
+        return assignmentRuleRepository.existsByRoleAndSourceDepartmentAndTargetDepartmentAndAllowedTrue(
+                fromUser.getRole(), fromUser.getDepartment(), toUser.getDepartment()
+        );
     }
 
     private AssignmentRuleDTO convertToDTO(AssignmentRule rule) {
