@@ -48,7 +48,6 @@ public class TaskService {
             );
         }
 
-
         Task task = new Task();
         task.setTitle(taskDTO.getTitle());
         task.setStartTime(taskDTO.getStart());
@@ -58,6 +57,7 @@ public class TaskService {
         task.setAssignee(assigneeUser);
         return convertTaskToDTO(taskRepository.save(task));
     }
+
     public List<TaskDTO> getTasksByAssignee(){
         User user = getCurrentUser();
         return taskRepository.findByAssignee(user).stream()
@@ -65,14 +65,14 @@ public class TaskService {
                 .collect(Collectors.toList());
     }
 
-    List<TaskDTO> getTasksByReporter(){
+    public List<TaskDTO> getTasksByReporter(){
         User user = getCurrentUser();
         return taskRepository.findByReporter(user).stream()
                 .map(this::convertTaskToDTO)
                 .toList();
     }
 
-    List<TaskDTO> getTasksByProjectId(Long projectId){
+    public List<TaskDTO> getTasksByProjectId(Long projectId){
         User user = getCurrentUser();
         Project project = projectRepository.findByIdAndCompany(projectId, user.getCompany())
                 .orElseThrow(() -> new UsernameNotFoundException("Данная задача не найдена внутри вашего проекта"));
@@ -81,7 +81,7 @@ public class TaskService {
                 .toList();
     }
 
-    List<TaskDTO> getAllTasksInCompany(){
+    public List<TaskDTO> getAllTasksInCompany(){
         User user = getCurrentUser();
         Company company = user.getCompany();
         List<Task> task = taskRepository.findByProject_Company(company);
