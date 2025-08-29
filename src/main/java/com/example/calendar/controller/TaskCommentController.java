@@ -8,6 +8,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @Controller
 @RequestMapping("/api/v1/task")
 public class TaskCommentController {
@@ -23,10 +25,23 @@ public class TaskCommentController {
                 .body(taskCommentService.createTaskComment(taskCommentDTO, taskId));
     }
 
-    @PutMapping("/{taskCommentId}/update")
-    public ResponseEntity<TaskCommentDTO> updateTaskComment(@RequestBody @Valid TaskCommentDTO taskCommentDTO, @PathVariable Long taskCommentId) {
+    @PutMapping("/{taskId}/comments/{commentId}")
+    public ResponseEntity<TaskCommentDTO> updateTaskComment(@PathVariable Long taskId, @RequestBody @Valid TaskCommentDTO taskCommentDTO, @PathVariable Long commentId) {
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body(taskCommentService.updateTaskComment(taskCommentDTO, taskCommentId));
+                .body(taskCommentService.updateTaskComment(taskCommentDTO, taskId, commentId));
+    }
+
+    @GetMapping("/{taskId}/comments")
+    public ResponseEntity<List<TaskCommentDTO>> getTaskComments(@PathVariable Long taskId) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(taskCommentService.getTaskComment(taskId));
+    }
+
+    @DeleteMapping("/{taskId}/comments/{commentId}")
+    public ResponseEntity<Void> deleteTaskComment(@PathVariable Long taskId, @PathVariable Long commentId) {
+        taskCommentService.deleteTaskComment(taskId, commentId);
+        return ResponseEntity.noContent().build();
     }
 }

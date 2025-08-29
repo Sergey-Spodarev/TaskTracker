@@ -14,6 +14,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @Transactional
 public class TaskCommentService {
@@ -29,6 +31,7 @@ public class TaskCommentService {
 
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Задачи которой вы хотите сделать комментарий не существует"));
+
         if (!task.getProject().getCompany().equals(user.getCompany())) {
             throw new AccessDeniedException("Доступ к задаче запрещён");
         }
@@ -44,14 +47,15 @@ public class TaskCommentService {
         return convertToDTO(taskCommentRepository.save(taskComment));
     }
 
-    public TaskCommentDTO updateTaskComment(TaskCommentDTO taskCommentDTO, Long taskId) {//переделать надо чтобы ещё id передовала задачи
+    public TaskCommentDTO updateTaskComment(TaskCommentDTO taskCommentDTO, Long taskId, Long commentId) {//переделать надо чтобы ещё id передовала задачи
         User user = getCurrentUser();
 
         if (!taskRepository.existsByAssigneeAndId(user, taskId)){
             throw new RuntimeException("Вы не можете сделать комментарий к данной задаче");
         }
-        TaskComment taskComment = taskCommentRepository.findById(taskCommentDTO.getId())
+        TaskComment taskComment = taskCommentRepository.findById(commentId)
                 .orElseThrow(() -> new EntityNotFoundException("Комментарий не найден"));
+
         if (!taskComment.getTask().getId().equals(taskId)) {
             throw new IllegalArgumentException("Комментарий не принадлежит указанной задаче");
         }
@@ -62,6 +66,41 @@ public class TaskCommentService {
         taskComment.setComment(taskCommentDTO.getComment());
         taskComment.setUser(user);
         return convertToDTO(taskCommentRepository.save(taskComment));
+    }
+
+    public void deleteTaskComment(Long taskId, Long commentId) {
+        User user = getCurrentUser();
+
+        TaskComment taskComment = taskCommentRepository.findByIdAndUser(commentId, user)
+                .orElseThrow(() -> new EntityNotFoundException("Комментарий не найден"));
+
+        if (!taskComment.getTask().getProject().getCompany().equals(user.getCompany())) {
+            throw new AccessDeniedException("Доступ запрещён");
+        }
+        if (!taskComment.getTask().getId().equals(taskId)) {
+            throw new IllegalArgumentException("Комментарий не принадлежит указанной задаче");
+        }
+        if (!taskComment.getUser().equals(user)) {
+            throw  new RuntimeException("Удалять можно только свои комментарии");
+        }
+
+        taskCommentRepository.delete(taskComment);
+    }
+
+    public List<TaskCommentDTO> getTaskComment(Long taskId) {
+        User user = getCurrentUser();
+
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new EntityNotFoundException("Данной задачи не существует"));
+
+        if (!task.getProject().getCompany().equals(user.getCompany())) {
+            throw new AccessDeniedException("Доступ запрещён");
+        }
+
+        List<TaskComment> taskComments = taskCommentRepository.findByTask(task);
+        return taskComments.stream()
+                .map(this::convertToDTO)
+                .toList();
     }
 
     private User getCurrentUser() {
