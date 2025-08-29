@@ -40,7 +40,7 @@ public class TaskController {
     }
 
     @GetMapping("/project/{projectId}")
-    public ResponseEntity<List<TaskDTO>> getTasksByCompanyId(Long projectId) {
+    public ResponseEntity<List<TaskDTO>> getTasksByCompanyId(@PathVariable Long projectId) {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(taskService.getTasksByProjectId(projectId));

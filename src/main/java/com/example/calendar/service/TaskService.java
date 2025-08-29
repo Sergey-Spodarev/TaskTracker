@@ -34,10 +34,16 @@ public class TaskService {
         this.projectRepository = projectRepository;
         this.assignmentRuleService = assignmentRuleService;
     }
+    /*
+    надо написать функцию чтобы исполнитель мог меняться
+
+    потом сделать новую таблицу чтобы можно было делать под задачи, чтобы одну главную задачу можно разбить
+    Пример: задача крупная надо что-то разбить на фронт и бэк и они должны тоже закрыться
+    и пока под задачи не закроются нельзя закрыть основную
+     */
 
     public TaskDTO createTask(TaskDTO taskDTO) {
         User user = getCurrentUser();
-        //тут надо будет потом дописать ещё проверку на права, ибо не любой может дать задание любому у меня есть специальный класс для этого
         Project project = projectRepository.findByIdAndCompany(taskDTO.getProjectId(), user.getCompany())
                 .orElseThrow(() -> new UsernameNotFoundException("Нельзя дать задачу не своей группе"));
         User assigneeUser = userRepository.findById(taskDTO.getAssigneeId())

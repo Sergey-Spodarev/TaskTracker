@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface TaskRepository extends JpaRepository<Task, Long> {
@@ -15,4 +16,8 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findByAssignee(User user);
     List<Task> findByReporter(User user);
     List<Task> findByProject_Company(Company company);
+    Optional<Task> findById(Long id);
+    boolean existsByAssigneeAndId(User user, Long id);
+    boolean notExistsByAssigneeAndId(User user, Long id);
+    boolean notExistsByReporterAndId(User user, Long id);
 }
