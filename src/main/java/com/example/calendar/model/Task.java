@@ -18,8 +18,9 @@ public class Task {
     private String title;
 
     private LocalDateTime startTime;
-
     private LocalDateTime endTime;
+
+    private TaskStatus status;
 
     @ManyToOne
     @JoinColumn(name = "assignee_id")

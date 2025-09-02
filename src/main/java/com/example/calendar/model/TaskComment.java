@@ -16,7 +16,6 @@ public class TaskComment {
 
     private LocalDateTime createdAt = LocalDateTime.now();
 
-
     @ManyToOne
     @JoinColumn(name = "task_id", nullable = false)
     private Task task;

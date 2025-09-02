@@ -1,5 +1,6 @@
 package com.example.calendar.DTO;
 
+import com.example.calendar.model.TaskStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -17,6 +18,8 @@ public class TaskDTO {
 
     @NotNull(message = "Время конца выполнения задачи обязательно")
     private LocalDateTime end;
+
+    private TaskStatus status;
 
     private Long assigneeId;
     private Long projectId;

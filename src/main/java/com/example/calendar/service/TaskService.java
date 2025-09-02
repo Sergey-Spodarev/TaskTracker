@@ -1,15 +1,13 @@
 package com.example.calendar.service;
 
 import com.example.calendar.DTO.TaskDTO;
-import com.example.calendar.model.Company;
-import com.example.calendar.model.Project;
-import com.example.calendar.model.Task;
-import com.example.calendar.model.User;
+import com.example.calendar.model.*;
 import com.example.calendar.repository.CompanyRepository;
 import com.example.calendar.repository.ProjectRepository;
 import com.example.calendar.repository.TaskRepository;
 import com.example.calendar.repository.UserRepository;
 import com.example.calendar.security.CustomUserDetails;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
@@ -27,12 +25,14 @@ public class TaskService {
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
     private final AssignmentRuleService assignmentRuleService;
+    private final TaskHistoryService taskHistoryService;
 
-    public TaskService(TaskRepository taskRepository, UserRepository userRepository, ProjectRepository projectRepository, AssignmentRuleService assignmentRuleService) {
+    public TaskService(TaskRepository taskRepository, UserRepository userRepository, ProjectRepository projectRepository, AssignmentRuleService assignmentRuleService, TaskHistoryService taskHistoryService) {
         this.taskRepository = taskRepository;
         this.userRepository = userRepository;
         this.projectRepository = projectRepository;
         this.assignmentRuleService = assignmentRuleService;
+        this.taskHistoryService = taskHistoryService;
     }
     /*
     надо написать функцию чтобы исполнитель мог меняться
@@ -61,6 +61,56 @@ public class TaskService {
         task.setReporter(user);
         task.setProject(project);
         task.setAssignee(assigneeUser);
+        task.setStatus(TaskStatus.TODO);
+        return convertTaskToDTO(taskRepository.save(task));
+    }
+
+    public TaskDTO changeAssignee(Long taskId, Long assigneeId) {
+        if (assigneeId == null || assigneeId <= 0) {
+            throw new IllegalArgumentException("Некорректный assigneeId");
+        }
+        User newUser = userRepository.findById(assigneeId)
+                .orElseThrow(() -> new EntityNotFoundException("Пользователь не найден"));
+
+        User user = getCurrentUser();
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new UsernameNotFoundException("Данной задачи не существует"));
+
+        if (!user.getCompany().getId().equals(task.getProject().getCompany().getId())) {
+            throw new AccessDeniedException("Вы можете менять задачи только в своей компании");
+        }
+        if (!task.getProject().getCompany().getId().equals(newUser.getCompany().getId())) {
+            throw new AccessDeniedException("Исполнитель должен быть из той же компании как и сама задача");
+        }
+        if (!assignmentRuleService.canUserAssignToUser(user, newUser)) {
+            throw new AccessDeniedException("Вы не можете поставить задачу на " + newUser.getUserName());
+        }
+
+        taskHistoryService.logTaskChange(task, user, "Assignee", task.getAssignee().getUserName(), newUser.getUserName());
+        task.setAssignee(newUser);
+        return convertTaskToDTO(taskRepository.save(task));
+    }
+
+    public TaskDTO changeStatus(Long taskId, TaskStatus newStatus) {
+        User user = getCurrentUser();
+
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new EntityNotFoundException("Данной задачи не существует"));
+
+        if (!user.getCompany().getId().equals(task.getProject().getCompany().getId())) {
+            throw new AccessDeniedException("Вы можете менять задачи только в своей компании");
+        }
+        if (!task.getAssignee().getUserId().equals(user.getUserId())){
+            throw new AccessDeniedException("Только исполнитель может менять статус задачи");
+        }
+
+        TaskStatus oldStatus = task.getStatus();
+        if (!TaskStatus.canTransition(oldStatus, newStatus)){
+            throw new IllegalStateException("Переход из " + task.getStatus() + " в " + newStatus + " запрещён");
+        }
+
+        task.setStatus(newStatus);
+        taskHistoryService.logTaskChange(task, user, "Status", oldStatus.toString(), newStatus.toString());
         return convertTaskToDTO(taskRepository.save(task));
     }
 
@@ -108,6 +158,7 @@ public class TaskService {
         taskDTO.setTitle(task.getTitle());
         taskDTO.setStart(task.getStartTime());
         taskDTO.setEnd(task.getEndTime());
+        taskDTO.setStatus(task.getStatus());
         return taskDTO;
     }
 }

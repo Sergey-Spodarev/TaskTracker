@@ -1,6 +1,8 @@
 package com.example.calendar.controller;
 
 import com.example.calendar.DTO.TaskDTO;
+import com.example.calendar.model.TaskStatus;
+import com.example.calendar.model.User;
 import com.example.calendar.service.TaskService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -23,6 +25,20 @@ public class TaskController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(taskService.createTask(taskDTO));
+    }
+
+    @PatchMapping("/{taskId}/assignee")
+    public ResponseEntity<TaskDTO> changeAssignee(@PathVariable Long taskId, @RequestBody Long assigneeId){
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(taskService.changeAssignee(taskId, assigneeId));
+    }
+
+    @PatchMapping("/{taskId}/status")
+    public ResponseEntity<TaskDTO> changeStatus(@PathVariable Long taskId, @RequestParam TaskStatus status){
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(taskService.changeStatus(taskId, status));
     }
 
     @GetMapping("/my")

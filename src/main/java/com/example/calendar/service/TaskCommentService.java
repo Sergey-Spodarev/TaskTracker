@@ -43,7 +43,6 @@ public class TaskCommentService {
         taskComment.setTask(task);
         taskComment.setUser(user);
         taskComment.setComment(taskCommentDTO.getComment());
-
         return convertToDTO(taskCommentRepository.save(taskComment));
     }
 
