@@ -7,6 +7,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class CalendarController {
     @GetMapping("/calendar")
     public String showCalendar() {
-        return "calendar"; // Имя файла без .html
+        return "task"; // Имя файла без .html
     }
 }
