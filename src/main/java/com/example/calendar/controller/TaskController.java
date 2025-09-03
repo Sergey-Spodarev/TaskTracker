@@ -2,7 +2,6 @@ package com.example.calendar.controller;
 
 import com.example.calendar.DTO.TaskDTO;
 import com.example.calendar.model.TaskStatus;
-import com.example.calendar.model.User;
 import com.example.calendar.service.TaskService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -10,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Controller
@@ -27,6 +27,13 @@ public class TaskController {
                 .body(taskService.createTask(taskDTO));
     }
 
+    @PostMapping("/{parentTaskId}/parentTask")
+    public ResponseEntity<TaskDTO> createSubtask(@PathVariable Long parentTaskId, @RequestBody @Valid TaskDTO taskDTO) {
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(taskService.createSubtask(parentTaskId, taskDTO));
+    }//сделать еще delete
+
     @PatchMapping("/{taskId}/assignee")
     public ResponseEntity<TaskDTO> changeAssignee(@PathVariable Long taskId, @RequestBody Long assigneeId){
         return ResponseEntity
@@ -39,6 +46,20 @@ public class TaskController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(taskService.changeStatus(taskId, status));
+    }
+
+    @PatchMapping("/{taskId}/endTime")
+    public ResponseEntity<TaskDTO> changeEndTime(@PathVariable Long taskId, @RequestBody LocalDateTime endTime){
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(taskService.changeEndTime(taskId, endTime));
+    }
+
+    @PatchMapping("/{taskId}/title")
+    public ResponseEntity<TaskDTO> changeTitle(@PathVariable Long taskId, @RequestBody String title){
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(taskService.changeTitle(taskId, title));
     }
 
     @GetMapping("/my")
@@ -60,6 +81,12 @@ public class TaskController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(taskService.getTasksByProjectId(projectId));
+    }
+    @GetMapping("/{taskId}/subtasks")
+    public ResponseEntity<List<TaskDTO>> getSubTasksByTaskId(@PathVariable Long taskId) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(taskService.getSubTasksByTaskId(taskId));
     }
 
     @GetMapping("/getAll")

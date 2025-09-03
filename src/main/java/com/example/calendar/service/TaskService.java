@@ -2,7 +2,6 @@ package com.example.calendar.service;
 
 import com.example.calendar.DTO.TaskDTO;
 import com.example.calendar.model.*;
-import com.example.calendar.repository.CompanyRepository;
 import com.example.calendar.repository.ProjectRepository;
 import com.example.calendar.repository.TaskRepository;
 import com.example.calendar.repository.UserRepository;
@@ -15,6 +14,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -34,13 +34,6 @@ public class TaskService {
         this.assignmentRuleService = assignmentRuleService;
         this.taskHistoryService = taskHistoryService;
     }
-    /*
-    надо написать функцию чтобы исполнитель мог меняться
-
-    потом сделать новую таблицу чтобы можно было делать под задачи, чтобы одну главную задачу можно разбить
-    Пример: задача крупная надо что-то разбить на фронт и бэк и они должны тоже закрыться
-    и пока под задачи не закроются нельзя закрыть основную
-     */
 
     public TaskDTO createTask(TaskDTO taskDTO) {
         User user = getCurrentUser();
@@ -62,7 +55,54 @@ public class TaskService {
         task.setProject(project);
         task.setAssignee(assigneeUser);
         task.setStatus(TaskStatus.TODO);
+
+        taskHistoryService.logTaskChange(task, user, "Task", "Task created", "Status: TODO");
         return convertTaskToDTO(taskRepository.save(task));
+    }
+
+    public TaskDTO createSubtask(Long taskId, TaskDTO parentTaskDTO) {
+        User user = getCurrentUser();
+        Task parentTask = taskRepository.findById(taskId)
+                .orElseThrow(() -> new UsernameNotFoundException("Данной задачи не существует"));
+
+        if (!parentTask.getAssignee().getCompany().equals(user.getCompany())) {
+            throw new RuntimeException("Только сотрудник компании может делать подзадачи");
+        }
+        if (parentTask.getStatus() == TaskStatus.DONE){
+            throw new RuntimeException("Данная задача уже выполнена к ней нельзя сделать подзадачу");
+        }
+        if (!parentTask.getAssignee().equals(user) && !parentTask.getReporter().equals(user)) {
+            throw new RuntimeException("Только исполнитель или создатель задачи может делать подзадачи");
+        }
+
+        User assignee = userRepository.findById(parentTaskDTO.getAssigneeId())
+                .orElseThrow(() -> new EntityNotFoundException("Исполнитель не найден"));
+        if (!assignee.getCompany().equals(user.getCompany())) {
+            throw new RuntimeException("Исполнитель должен быть из той же компании что и задача");
+        }
+        if (!assignmentRuleService.canUserAssignToUser(user, assignee)) {
+            throw new RuntimeException("Вы не можете назначить задачу на " + assignee.getUserName());
+        }
+
+        Task subtask = new Task();
+        subtask.setTitle(parentTaskDTO.getTitle());
+        subtask.setStartTime(parentTaskDTO.getStart());
+        subtask.setEndTime(parentTaskDTO.getEnd());
+        subtask.setProject(parentTask.getProject());
+        subtask.setAssignee(assignee);
+        subtask.setReporter(user);
+        subtask.setStatus(TaskStatus.TODO);
+        subtask.setParentTask(parentTask);
+
+        long count = parentTask.getSubtasks().size();
+        if (count == 0) {
+            taskHistoryService.logTaskChange(parentTask, user, "Subtask", "None", "Created");
+        }
+        else {
+            taskHistoryService.logTaskChange(parentTask, user, "Subtask", count + " subtask", (count + 1) + " subtask");
+        }
+
+        return convertTaskToDTO(taskRepository.save(subtask));
     }
 
     public TaskDTO changeAssignee(Long taskId, Long assigneeId) {
@@ -104,6 +144,10 @@ public class TaskService {
             throw new AccessDeniedException("Только исполнитель может менять статус задачи");
         }
 
+        if (!task.getSubtasks().isEmpty() && newStatus == TaskStatus.DONE) {//надо будет сделать что это условие выполняется только если он родитель
+            throw new AccessDeniedException("Пока не закрыты все подзадачи нельзя закрыть основную");
+        }
+
         TaskStatus oldStatus = task.getStatus();
         if (!TaskStatus.canTransition(oldStatus, newStatus)){
             throw new IllegalStateException("Переход из " + task.getStatus() + " в " + newStatus + " запрещён");
@@ -111,6 +155,46 @@ public class TaskService {
 
         task.setStatus(newStatus);
         taskHistoryService.logTaskChange(task, user, "Status", oldStatus.toString(), newStatus.toString());
+        return convertTaskToDTO(taskRepository.save(task));
+    }
+
+    public TaskDTO changeEndTime(Long taskId, LocalDateTime endTime) {
+        User user = getCurrentUser();
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new EntityNotFoundException("Данной задачи не существует"));
+
+        if (!user.getCompany().getId().equals(task.getProject().getCompany().getId())) {
+            throw new AccessDeniedException("Вы можете менять задачи только в своей компании");
+        }
+        if (!task.getReporter().getUserId().equals(user.getUserId())){
+            throw new AccessDeniedException("Только тот кто поставил задачу может менять срок выполнения задачи");
+        }
+        if (!task.getStartTime().isAfter(endTime)) {
+            throw new IllegalArgumentException("Неверное выбранное время окончания выполнения задачи: конец задачи должен быть позже начала");
+        }
+
+        taskHistoryService.logTaskChange(task, user, "EndTime", task.getEndTime().toString(), endTime.toString());
+        task.setEndTime(endTime);
+        return convertTaskToDTO(taskRepository.save(task));
+    }
+
+    public TaskDTO changeTitle(Long taskId, String title) {
+        User user = getCurrentUser();
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new EntityNotFoundException("Данной задачи не существует"));
+
+        if (!user.getCompany().getId().equals(task.getProject().getCompany().getId())) {
+            throw new AccessDeniedException("Вы можете менять данные задачи только в своей компании");
+        }
+        if (!task.getReporter().getUserId().equals(user.getUserId())){
+            throw new AccessDeniedException("Только тот кто поставил задачу может менять название задачи");
+        }
+        if (!task.getTitle().equals(title)) {
+            throw new IllegalArgumentException("Название задачи одинаково с предыдущему");
+        }
+
+        taskHistoryService.logTaskChange(task, user, "Title", task.getTitle(), title);
+        task.setTitle(title);
         return convertTaskToDTO(taskRepository.save(task));
     }
 
@@ -133,6 +217,21 @@ public class TaskService {
         Project project = projectRepository.findByIdAndCompany(projectId, user.getCompany())
                 .orElseThrow(() -> new UsernameNotFoundException("Данная задача не найдена внутри вашего проекта"));
         return taskRepository.findByProject(project).stream()
+                .map(this::convertTaskToDTO)
+                .toList();
+    }
+
+    public List<TaskDTO> getSubTasksByTaskId(Long taskId){
+        User user = getCurrentUser();
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new EntityNotFoundException("Данной задачи не существует"));
+
+        if (!user.getCompany().getId().equals(task.getProject().getCompany().getId())) {
+            throw new AccessDeniedException("Вы не можете получить задачи другой компании");
+        }//надо подумать все могут смотреть подзадачи или нет
+
+        List<Task> subtasks = task.getSubtasks();
+        return subtasks.stream()
                 .map(this::convertTaskToDTO)
                 .toList();
     }

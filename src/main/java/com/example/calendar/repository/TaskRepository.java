@@ -18,6 +18,4 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findByProject_Company(Company company);
     Optional<Task> findById(Long id);
     boolean existsByAssigneeAndId(User user, Long id);
-    boolean notExistsByAssigneeAndId(User user, Long id);
-    boolean notExistsByReporterAndId(User user, Long id);
 }
