@@ -5,6 +5,8 @@ import com.example.calendar.model.Project;
 import com.example.calendar.model.Task;
 import com.example.calendar.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -18,4 +20,6 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findByProject_Company(Company company);
     Optional<Task> findById(Long id);
     boolean existsByAssigneeAndId(User user, Long id);
+    @Query("SELECT t FROM Task t LEFT JOIN FETCH t.subtasks WHERE t.id = :id")
+    Optional<Task> findByIdWithSubtasks(@Param("id") Long id);
 }

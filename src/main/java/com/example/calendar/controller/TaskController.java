@@ -1,6 +1,7 @@
 package com.example.calendar.controller;
 
 import com.example.calendar.DTO.TaskDTO;
+import com.example.calendar.model.TaskPriority;
 import com.example.calendar.model.TaskStatus;
 import com.example.calendar.service.TaskService;
 import jakarta.validation.Valid;
@@ -62,6 +63,13 @@ public class TaskController {
                 .body(taskService.changeTitle(taskId, title));
     }
 
+    @PatchMapping("/{taskId}/priority")
+    public ResponseEntity<TaskDTO> changePriority(@PathVariable Long taskId, @RequestParam TaskPriority priority){
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(taskService.changePriority(taskId, priority));
+    }
+
     @GetMapping("/my")
     public ResponseEntity<List<TaskDTO>> getTasksByAssignee() {
         return ResponseEntity
@@ -82,6 +90,7 @@ public class TaskController {
                 .status(HttpStatus.OK)
                 .body(taskService.getTasksByProjectId(projectId));
     }
+
     @GetMapping("/{taskId}/subtasks")
     public ResponseEntity<List<TaskDTO>> getSubTasksByTaskId(@PathVariable Long taskId) {
         return ResponseEntity
@@ -94,5 +103,11 @@ public class TaskController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(taskService.getAllTasksInCompany());
+    }
+
+    @DeleteMapping("/{taskId}/delete")
+    public ResponseEntity<Void> deleteTask(@PathVariable Long taskId) {
+        taskService.deleteTask(taskId);
+        return ResponseEntity.noContent().build();
     }
 }

@@ -21,6 +21,7 @@ public class Task {
     private LocalDateTime endTime;
 
     private TaskStatus status;
+    private TaskPriority priority;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_task_id")

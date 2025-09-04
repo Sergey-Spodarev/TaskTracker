@@ -55,6 +55,7 @@ public class TaskService {
         task.setProject(project);
         task.setAssignee(assigneeUser);
         task.setStatus(TaskStatus.TODO);
+        task.setPriority(taskDTO.getPriority());
 
         taskHistoryService.logTaskChange(task, user, "Task", "Task created", "Status: TODO");
         return convertTaskToDTO(taskRepository.save(task));
@@ -62,7 +63,7 @@ public class TaskService {
 
     public TaskDTO createSubtask(Long taskId, TaskDTO parentTaskDTO) {
         User user = getCurrentUser();
-        Task parentTask = taskRepository.findById(taskId)
+        Task parentTask = taskRepository.findByIdWithSubtasks(taskId)
                 .orElseThrow(() -> new UsernameNotFoundException("Данной задачи не существует"));
 
         if (!parentTask.getAssignee().getCompany().equals(user.getCompany())) {
@@ -144,8 +145,12 @@ public class TaskService {
             throw new AccessDeniedException("Только исполнитель может менять статус задачи");
         }
 
-        if (!task.getSubtasks().isEmpty() && newStatus == TaskStatus.DONE) {//надо будет сделать что это условие выполняется только если он родитель
-            throw new AccessDeniedException("Пока не закрыты все подзадачи нельзя закрыть основную");
+        if (newStatus == TaskStatus.DONE && !task.getSubtasks().isEmpty()) {
+            boolean allDone = task.getSubtasks().stream()
+                    .allMatch(subtask -> subtask.getStatus() == TaskStatus.DONE);
+            if (!allDone) {
+                throw new AccessDeniedException("Нельзя закрыть задачу: не все подзадачи выполнены");
+            }
         }
 
         TaskStatus oldStatus = task.getStatus();
@@ -169,8 +174,8 @@ public class TaskService {
         if (!task.getReporter().getUserId().equals(user.getUserId())){
             throw new AccessDeniedException("Только тот кто поставил задачу может менять срок выполнения задачи");
         }
-        if (!task.getStartTime().isAfter(endTime)) {
-            throw new IllegalArgumentException("Неверное выбранное время окончания выполнения задачи: конец задачи должен быть позже начала");
+        if (!endTime.isAfter(task.getStartTime())) {
+            throw new IllegalArgumentException("Время окончания должно быть позже начала");
         }
 
         taskHistoryService.logTaskChange(task, user, "EndTime", task.getEndTime().toString(), endTime.toString());
@@ -189,12 +194,32 @@ public class TaskService {
         if (!task.getReporter().getUserId().equals(user.getUserId())){
             throw new AccessDeniedException("Только тот кто поставил задачу может менять название задачи");
         }
-        if (!task.getTitle().equals(title)) {
+        if (task.getTitle().equals(title)) {
             throw new IllegalArgumentException("Название задачи одинаково с предыдущему");
         }
 
         taskHistoryService.logTaskChange(task, user, "Title", task.getTitle(), title);
         task.setTitle(title);
+        return convertTaskToDTO(taskRepository.save(task));
+    }
+
+    public TaskDTO changePriority(Long taskId, TaskPriority priority) {
+        User user = getCurrentUser();
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new EntityNotFoundException("Данной задачи не существует"));
+
+        if (!user.getCompany().getId().equals(task.getProject().getCompany().getId())) {
+            throw new AccessDeniedException("Вы можете менять данные задачи только в своей компании");
+        }
+        if (!task.getReporter().getUserId().equals(user.getUserId())){
+            throw new AccessDeniedException("Только тот кто поставил задачу может менять её приоритет");
+        }
+        if (task.getPriority().equals(priority)) {
+            throw new IllegalArgumentException("Приоритет не изменился");
+        }
+
+        taskHistoryService.logTaskChange(task, user, "Priority", task.getPriority().toString(), priority.toString());
+        task.setPriority(priority);
         return convertTaskToDTO(taskRepository.save(task));
     }
 
@@ -245,6 +270,22 @@ public class TaskService {
                 .toList();
     }
 
+    public void deleteTask(Long taskId){
+        User user = getCurrentUser();
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new EntityNotFoundException("Данной задачи не существует"));
+
+        if (!user.getCompany().getId().equals(task.getProject().getCompany().getId())) {
+            throw new AccessDeniedException("Вы не можете получить задачи другой компании");
+        }
+        if (!task.getReporter().getUserId().equals(user.getUserId())){
+            throw new AccessDeniedException("Только создатель может удалить задачу");
+        }
+
+        taskHistoryService.logTaskChange(task, user, "Delete Task", task.getTitle(), task.getTitle());
+        taskRepository.delete(task);
+    }
+
     private User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
@@ -258,6 +299,7 @@ public class TaskService {
         taskDTO.setStart(task.getStartTime());
         taskDTO.setEnd(task.getEndTime());
         taskDTO.setStatus(task.getStatus());
+        taskDTO.setPriority(task.getPriority());
         return taskDTO;
     }
 }

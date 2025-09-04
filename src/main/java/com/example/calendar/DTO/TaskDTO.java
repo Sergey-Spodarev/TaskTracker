@@ -1,5 +1,6 @@
 package com.example.calendar.DTO;
 
+import com.example.calendar.model.TaskPriority;
 import com.example.calendar.model.TaskStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -20,6 +21,7 @@ public class TaskDTO {
     private LocalDateTime end;
 
     private TaskStatus status;
+    private TaskPriority priority;
 
     private Long assigneeId;
     private Long projectId;
