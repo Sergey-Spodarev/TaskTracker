@@ -33,7 +33,7 @@ public class TaskController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(taskService.createSubtask(parentTaskId, taskDTO));
-    }//сделать еще delete
+    }
 
     @PatchMapping("/{taskId}/assignee")
     public ResponseEntity<TaskDTO> changeAssignee(@PathVariable Long taskId, @RequestBody Long assigneeId){

@@ -108,7 +108,7 @@
 <!-- Навигация -->
 <nav class="navbar navbar-expand-lg navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="/tasks">TaskFlow</a>
+        <a class="navbar-brand" href="/task">TaskFlow</a>
         <div class="navbar-nav ms-auto">
             <span class="nav-link">Привет, <b th:text="${#authentication.principal.userName}">Пользователь</b></span>
             <a th:href="@{/logout}" class="nav-link">Выход</a>
@@ -224,10 +224,10 @@
         if (currentView === 'status') {
             groups = { TODO: [], IN_PROGRESS: [], REVIEW: [], DONE: [] };
             titles = {
-                TODO: 'To Do',
-                IN_PROGRESS: 'In Progress',
-                REVIEW: 'Review',
-                DONE: 'Done'
+                TODO: 'Новая',
+                IN_PROGRESS: 'В работе',
+                REVIEW: 'Проверка',
+                DONE: 'Завершено'
             };
         } else {
             groups = { CRITICAL: [], HIGH: [], MEDIUM: [], LOW: [] };
@@ -299,6 +299,13 @@
 
     // Создать задачу
     function createTask() {
+        console.log("createTask вызвана");
+        if (typeof axios === 'undefined') {
+            alert('Ошибка: axios не загружен. Проверь подключение скриптов.');
+            console.error('axios is not defined');
+            return;
+        }
+
         const title = document.getElementById('taskTitle').value;
         if (!title) {
             alert('Введите заголовок');
@@ -315,11 +322,15 @@
         axios.post('/api/v1/task/create', dto)
             .then(response => {
                 alert('Задача создана!');
-                document.getElementById('createTaskModal').querySelector('.modal').style.display = 'none';
+                var modal = bootstrap.Modal.getInstance(document.getElementById('createTaskModal'));
+                if (modal) modal.hide();
                 loadTasks();
             })
             .catch(error => {
-                alert('Ошибка: ' + (error.response?.data || 'Не удалось создать задачу'));
+                const msg = error.response?.data?.message ||
+                    error.response?.data ||
+                    'Не удалось создать задачу';
+                alert('Ошибка: ' + msg);
             });
     }
 

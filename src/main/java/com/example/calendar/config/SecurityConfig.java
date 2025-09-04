@@ -32,19 +32,65 @@ public class SecurityConfig {
                 c.securityContextRepository(new HttpSessionSecurityContextRepository())
         );
 
-        // Авторизация
+        //Авторизация
         http.authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/api/users/login", "/api/users/register", "/forgot-password", "/reset-password", "/api/companies/register").permitAll()
-                .requestMatchers("/api/**", "/department/**", "/role/**").authenticated()
-                .requestMatchers("/profile/**", "/InvitationToken/**").authenticated()
-                .requestMatchers("/admin/**", "/assignmentRuleService/**", "/company/**").hasRole("ADMIN")
-                .anyRequest().permitAll()
+                .requestMatchers("/", "/login", "/api/users/login", "/api/users/register",
+                        "/forgot-password", "/reset-password", "/api/companies/register").permitAll()
+
+                // API задач
+                .requestMatchers("/api/v1/task/create",
+                        "/api/v1/task/my",
+                        "/api/v1/task/created-by-me",
+                        "/api/v1/task/getAll",
+                        "/api/v1/task/project/{projectId}",
+                        "/api/v1/task/{taskId}/subtasks",
+                        "/api/v1/task/{taskId}/assignee",
+                        "/api/v1/task/{taskId}/status",
+                        "/api/v1/task/{taskId}/endTime",
+                        "/api/v1/task/{taskId}/title",
+                        "/api/v1/task/{taskId}/priority",
+                        "/api/v1/task/{taskId}/delete").authenticated()
+
+                .requestMatchers("/api/v1/task/{parentTaskId}/parentTask").authenticated()
+
+                // История задач
+                .requestMatchers("/api/v1/task/{taskId}/history").authenticated()
+
+                // Комментарии
+                .requestMatchers("/api/v1/task/{taskId}/comments").authenticated()
+                .requestMatchers("/api/v1/task/{taskId}/comments/{commentId}").authenticated()
+
+                // Роли
+                .requestMatchers("/role/all", "/role/add", "/role/updateRole", "/role/{roleId}").authenticated()
+                .requestMatchers("/role/all", "/role/add", "/role/updateRole", "/role/{roleId}").hasRole("ADMIN")
+
+                // Проекты
+                .requestMatchers("/project/create", "/project/update", "/project/{id}", "/project/delete/{id}").hasRole("ADMIN")
+                .requestMatchers("/project/getAll", "/project/{id}").authenticated()
+
+                // Отделы
+                .requestMatchers("/department/addDepartment", "/department/updateName", "/department/{department_id}").hasRole("ADMIN")
+                .requestMatchers("/department/get").authenticated()
+
+                // Приглашения
+                .requestMatchers("/InvitationToken/addInvitationToken").hasRole("ADMIN")
+                .requestMatchers("/InvitationToken/completeRegistration").authenticated()
+
+                // Компания
+                .requestMatchers("/api/companies/register").permitAll()
+                .requestMatchers("/api/companies/update").hasRole("ADMIN")
+
+                // Профиль
+                .requestMatchers("/profile/**").authenticated()
+
+                // ВСЁ ОСТАЛЬНОЕ
+                .anyRequest().authenticated()
         );
 
         http.formLogin(login -> login
-                .loginPage("/")           // форма входа — на главной
+                .loginPage("/")
                 .loginProcessingUrl("/login")
-                .defaultSuccessUrl("/tasks", true)  // ← ВАЖНО: после входа — на /tasks
+                .defaultSuccessUrl("/task", true)
                 .failureUrl("/?error=true")
         );
 

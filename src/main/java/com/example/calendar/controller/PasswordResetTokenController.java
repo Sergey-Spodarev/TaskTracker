@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-//todo проверить на работа спасобность и ещё надо разобраться на счёт get а то я пока не понял почему они одинаковые ссылки
+
 @Controller
 @RequestMapping
 public class PasswordResetTokenController {

@@ -10,7 +10,6 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.Collection;
 
-@Getter
 public class CustomUserDetails implements UserDetails, Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
@@ -37,6 +36,14 @@ public class CustomUserDetails implements UserDetails, Serializable {
         this.accountNonExpired = true;
         this.credentialsNonExpired = true;
         this.accountNonLocked = true;
+    }
+
+    public String getUserName() {
+        return userName;
+    }
+
+    public User getUser() {
+        return user;
     }
 
     @Override
