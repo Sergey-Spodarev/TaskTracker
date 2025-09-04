@@ -46,36 +46,62 @@
             color: #172b4d;
             margin-bottom: 20px;
         }
-        .task-card {
-            background: white;
+        .btn-group .btn-check:checked + .btn {
+            background-color: #0052cc;
+            color: white;
+        }
+        #kanban-board {
+            display: flex;
+            gap: 16px;
+            overflow-x: auto;
+            padding: 8px 0;
+            min-height: calc(100vh - 200px);
+        }
+        .kanban-column {
+            min-width: 300px;
+            max-width: 300px;
+            background-color: #ebecf0;
             border-radius: 8px;
             padding: 12px;
+        }
+        .kanban-column-header {
+            font-weight: 600;
+            color: #172b4d;
             margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #ddd;
+            text-align: center;
+        }
+        .kanban-task {
+            background: white;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 8px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            border-left: 4px solid #0052cc;
+            cursor: pointer;
+            transition: box-shadow 0.2s;
         }
-        .task-card.high {
-            border-left-color: #d93f3c;
+        .kanban-task:hover {
+            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
         }
-        .task-card.medium {
-            border-left-color: #ffab00;
-        }
-        .task-card.low {
-            border-left-color: #00c853;
-        }
-        .task-key {
+        .kanban-task .task-key {
             font-weight: 600;
             color: #0052cc;
         }
-        .task-summary {
+        .kanban-task .task-title {
             font-size: 0.95rem;
             color: #172b4d;
-            margin: 6px 0;
+            margin: 4px 0;
         }
-        .task-meta {
-            font-size: 0.85rem;
+        .kanban-task .task-meta {
+            font-size: 0.8rem;
             color: #6b778c;
         }
+        /* Приоритеты */
+        .priority-critical { border-left: 4px solid #d93f3c; }
+        .priority-high { border-left: 4px solid #ffab00; }
+        .priority-medium { border-left: 4px solid #0052cc; }
+        .priority-low { border-left: 4px solid #00c853; }
     </style>
 </head>
 <body>
@@ -84,7 +110,7 @@
     <div class="container-fluid">
         <a class="navbar-brand" href="/tasks">TaskFlow</a>
         <div class="navbar-nav ms-auto">
-            <span class="nav-link">Привет, <b th:text="${#authentication.principal.username}">Пользователь</b></span>
+            <span class="nav-link">Привет, <b th:text="${#authentication.principal.userName}">Пользователь</b></span>
             <a th:href="@{/logout}" class="nav-link">Выход</a>
         </div>
     </div>
@@ -93,65 +119,221 @@
 <div class="main-layout">
     <!-- Левое меню -->
     <div class="sidebar">
-        <div class="sidebar-item active">
-            <i class="fas fa-tasks"></i> Мои задачи
-        </div>
-        <div class="sidebar-item">
-            <i class="fas fa-project-diagram"></i> Проекты
-        </div>
-        <div class="sidebar-item">
-            <i class="fas fa-users"></i> Команда
-        </div>
-        <div class="sidebar-item">
-            <i class="fas fa-calendar-alt"></i> Календарь
-        </div>
+        <div class="sidebar-item active" onclick="switchView('status')">📋 По статусу</div>
+        <div class="sidebar-item" onclick="switchView('priority')">🔥 По приоритету</div>
+        <div class="sidebar-item" onclick="openCreateTaskModal()">➕ Создать задачу</div>
         <hr>
-        <div class="sidebar-item">
-            <i class="fas fa-cog"></i> Настройки
-        </div>
+        <div class="sidebar-item">Проекты</div>
+        <div class="sidebar-item">Календарь</div>
     </div>
 
     <!-- Основной контент -->
     <div class="main-content">
-        <h1 class="page-title">Мои задачи</h1>
+        <h1 class="page-title">Задачи</h1>
 
-        <!-- Фильтры -->
-        <div class="mb-4">
-            <div class="btn-group">
-                <button class="btn btn-outline-secondary btn-sm">Все</button>
-                <button class="btn btn-outline-secondary btn-sm">Назначенные мне</button>
-                <button class="btn btn-outline-secondary btn-sm">В работе</button>
+        <!-- Переключатель вида -->
+        <div class="mb-3">
+            <div class="btn-group" role="group">
+                <input type="radio" class="btn-check" name="viewMode" id="view-status" autocomplete="off" checked>
+                <label class="btn btn-outline-primary btn-sm" for="view-status">По статусу</label>
+
+                <input type="radio" class="btn-check" name="viewMode" id="view-priority" autocomplete="off">
+                <label class="btn btn-outline-primary btn-sm" for="view-priority">По приоритету</label>
             </div>
         </div>
 
-        <!-- Список задач -->
-        <div class="task-list">
-            <div class="task-card high">
-                <div class="task-key">TASK-101</div>
-                <div class="task-summary">Реализовать отправку email при создании задачи</div>
-                <div class="task-meta">
-                    Приоритет: Высокий | Срок: 25.08.2025
+        <!-- Kanban доска -->
+        <div id="kanban-board">
+            <!-- Сюда будут добавлены колонки -->
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно создания задачи -->
+<div class="modal fade" id="createTaskModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Создать задачу</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Заголовок</label>
+                    <input type="text" id="taskTitle" class="form-control" required />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Описание</label>
+                    <textarea id="taskDescription" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Приоритет</label>
+                    <select id="taskPriority" class="form-control">
+                        <option value="LOW">Низкий</option>
+                        <option value="MEDIUM" selected>Средний</option>
+                        <option value="HIGH">Высокий</option>
+                        <option value="CRITICAL">Критический</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Срок</label>
+                    <input type="datetime-local" id="taskDueDate" class="form-control" />
                 </div>
             </div>
-
-            <div class="task-card medium">
-                <div class="task-key">TASK-102</div>
-                <div class="task-summary">Настроить восстановление пароля через токен</div>
-                <div class="task-meta">
-                    Приоритет: Средний | Срок: 26.08.2025
-                </div>
-            </div>
-
-            <div class="task-card low">
-                <div class="task-key">TASK-103</div>
-                <div class="task-summary">Добавить валидацию на ИНН компании</div>
-                <div class="task-meta">
-                    Приоритет: Низкий | Срок: 30.08.2025
-                </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" onclick="createTask()">Создать</button>
             </div>
         </div>
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+    let currentView = 'status'; // 'status' или 'priority'
+    let allTasks = [];
+
+    // Переключение вида
+    function switchView(view) {
+        currentView = view;
+        document.getElementById('view-' + view).checked = true;
+        renderKanban();
+    }
+
+    // Загрузка всех задач
+    function loadTasks() {
+        axios.get('/api/v1/task/getAll')
+            .then(response => {
+                allTasks = response.data;
+                renderKanban();
+            })
+            .catch(error => {
+                alert('Ошибка загрузки задач: ' + (error.response?.data || 'Неизвестная ошибка'));
+            });
+    }
+
+    // Отрисовка Kanban-доски
+    function renderKanban() {
+        const container = document.getElementById('kanban-board');
+        container.innerHTML = '';
+
+        let groups = {};
+        let titles = {};
+
+        if (currentView === 'status') {
+            groups = { TODO: [], IN_PROGRESS: [], REVIEW: [], DONE: [] };
+            titles = {
+                TODO: 'To Do',
+                IN_PROGRESS: 'In Progress',
+                REVIEW: 'Review',
+                DONE: 'Done'
+            };
+        } else {
+            groups = { CRITICAL: [], HIGH: [], MEDIUM: [], LOW: [] };
+            titles = {
+                CRITICAL: 'Критический',
+                HIGH: 'Высокий',
+                MEDIUM: 'Средний',
+                LOW: 'Низкий'
+            };
+        }
+
+        // Распределяем задачи
+        allTasks.forEach(task => {
+            const key = currentView === 'status' ? task.status : task.priority;
+            if (groups[key]) {
+                groups[key].push(task);
+            }
+        });
+
+        // Создаём колонки
+        Object.keys(groups).forEach(key => {
+            const column = document.createElement('div');
+            column.className = 'kanban-column';
+
+            const header = document.createElement('div');
+            header.className = 'kanban-column-header';
+            header.textContent = titles[key];
+            column.appendChild(header);
+
+            const taskList = document.createElement('div');
+
+            groups[key].forEach(task => {
+                const item = document.createElement('div');
+                item.className = `kanban-task ${getPriorityClass(task.priority)}`;
+                item.innerHTML = `
+                    <div class="task-key">${task.projectKey || 'TASK'}-${task.id}</div>
+                    <div class="task-title">${task.title}</div>
+                    <div class="task-meta">
+                        Исполнитель: ${task.assigneeName || '—'}<br>
+                        Срок: ${formatDate(task.dueDate)}
+                    </div>
+                `;
+                item.onclick = () => openViewTaskModal(task.id);
+                taskList.appendChild(item);
+            });
+
+            column.appendChild(taskList);
+            container.appendChild(column);
+        });
+    }
+
+    // Возвращает класс по приоритету
+    function getPriorityClass(priority) {
+        switch (priority) {
+            case 'CRITICAL': return 'priority-critical';
+            case 'HIGH': return 'priority-high';
+            case 'MEDIUM': return 'priority-medium';
+            case 'LOW': return 'priority-low';
+            default: return 'priority-medium';
+        }
+    }
+
+    // Форматирует дату
+    function formatDate(dateStr) {
+        if (!dateStr) return '—';
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('ru-RU');
+    }
+
+    // Создать задачу
+    function createTask() {
+        const title = document.getElementById('taskTitle').value;
+        if (!title) {
+            alert('Введите заголовок');
+            return;
+        }
+
+        const dto = {
+            title: title,
+            description: document.getElementById('taskDescription').value,
+            priority: document.getElementById('taskPriority').value,
+            dueDate: document.getElementById('taskDueDate').value || null
+        };
+
+        axios.post('/api/v1/task/create', dto)
+            .then(response => {
+                alert('Задача создана!');
+                document.getElementById('createTaskModal').querySelector('.modal').style.display = 'none';
+                loadTasks();
+            })
+            .catch(error => {
+                alert('Ошибка: ' + (error.response?.data || 'Не удалось создать задачу'));
+            });
+    }
+
+    // Открыть просмотр задачи (заглушка)
+    function openViewTaskModal(taskId) {
+        alert(`Просмотр задачи #${taskId}\n(реализуется в следующем шаге)`);
+    }
+
+    // Обработка переключателей
+    document.getElementById('view-status').addEventListener('change', () => switchView('status'));
+    document.getElementById('view-priority').addEventListener('change', () => switchView('priority'));
+
+    // Загрузка при старте
+    document.addEventListener('DOMContentLoaded', loadTasks);
+</script>
 </body>
 </html>
