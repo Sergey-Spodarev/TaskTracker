@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Data
+@Table(name = "password_reset_tokens")
 public class PasswordResetToken {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,6 +21,5 @@ public class PasswordResetToken {
     private User user;
 
     private LocalDateTime expiresAt;
-
     private boolean used = false;
 }

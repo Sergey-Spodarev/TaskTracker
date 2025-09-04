@@ -9,6 +9,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface TaskCommentRepository extends JpaRepository<TaskComment, Long> {
-    Optional<TaskComment> findByIdAndUser(Long id, User user);
+    Optional<TaskComment> findByIdAndAuthor(Long id, User user);
     List<TaskComment> findByTask(Task task);
 }

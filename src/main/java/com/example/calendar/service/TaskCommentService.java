@@ -41,7 +41,7 @@ public class TaskCommentService {
 
         TaskComment taskComment = new TaskComment();
         taskComment.setTask(task);
-        taskComment.setUser(user);
+        taskComment.setAuthor(user);
         taskComment.setComment(taskCommentDTO.getComment());
         return convertToDTO(taskCommentRepository.save(taskComment));
     }
@@ -58,19 +58,19 @@ public class TaskCommentService {
         if (!taskComment.getTask().getId().equals(taskId)) {
             throw new IllegalArgumentException("Комментарий не принадлежит указанной задаче");
         }
-        if (!taskComment.getUser().equals(user)) {
+        if (!taskComment.getAuthor().equals(user)) {
             throw new AccessDeniedException("Вы можете редактировать только свои комментарии");
         }
 
         taskComment.setComment(taskCommentDTO.getComment());
-        taskComment.setUser(user);
+        taskComment.setAuthor(user);
         return convertToDTO(taskCommentRepository.save(taskComment));
     }
 
     public void deleteTaskComment(Long taskId, Long commentId) {
         User user = getCurrentUser();
 
-        TaskComment taskComment = taskCommentRepository.findByIdAndUser(commentId, user)
+        TaskComment taskComment = taskCommentRepository.findByIdAndAuthor(commentId, user)
                 .orElseThrow(() -> new EntityNotFoundException("Комментарий не найден"));
 
         if (!taskComment.getTask().getProject().getCompany().equals(user.getCompany())) {
@@ -79,7 +79,7 @@ public class TaskCommentService {
         if (!taskComment.getTask().getId().equals(taskId)) {
             throw new IllegalArgumentException("Комментарий не принадлежит указанной задаче");
         }
-        if (!taskComment.getUser().equals(user)) {
+        if (!taskComment.getAuthor().equals(user)) {
             throw  new RuntimeException("Удалять можно только свои комментарии");
         }
 

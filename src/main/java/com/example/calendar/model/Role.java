@@ -10,27 +10,28 @@ import java.util.List;
 
 @Entity
 @Data
+@Table(name = "roles", uniqueConstraints = @UniqueConstraint(columnNames = {"company_id", "code"}))
 public class Role {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false, updatable = false)
-    private String code;//техническое название используемое в правах
+    private String code;
 
     @Column(nullable = false)
-    private String displayName;//Человеко читаемое название
-
-    @OneToMany(mappedBy = "role")
-    @ToString.Exclude
-    private List<User> users = new ArrayList<>();
+    private String displayName;
 
     @ManyToOne
     @JoinColumn(name = "company_id", nullable = false)
     @JsonBackReference
     private Company company;
 
-    @OneToMany(mappedBy = "role")
+    @OneToMany(mappedBy = "role", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    private List<User> users = new ArrayList<>();
+
+    @OneToMany(mappedBy = "role", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     private List<AssignmentRule> assignmentRules = new ArrayList<>();
 }

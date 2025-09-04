@@ -5,22 +5,23 @@ import lombok.Data;
 
 @Entity
 @Data
+@Table(name = "assignment_rules")
 public class AssignmentRule {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "assignment_id", nullable = false)
-    private Role role;// Роль, для которой действует правило
+    @JoinColumn(name = "role_id", nullable = false)
+    private Role role;
 
     @ManyToOne
     @JoinColumn(name = "source_department_id", nullable = false)
-    private Department sourceDepartment;//кто назначает
+    private Department sourceDepartment;
 
     @ManyToOne
     @JoinColumn(name = "target_department_id", nullable = false)
-    private Department targetDepartment;//кому назначает
+    private Department targetDepartment;
 
-    private boolean allowed = true;//может ли назначить
+    private boolean allowed = true;
 }

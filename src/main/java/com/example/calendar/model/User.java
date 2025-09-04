@@ -1,5 +1,7 @@
 package com.example.calendar.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.ToString;
@@ -7,38 +9,27 @@ import lombok.ToString;
 import java.util.ArrayList;
 import java.util.List;
 
-@Data
 @Entity
-@Table(name = "users") //(опционально) – Указывает имя таблицы, если оно отличается от имени класса.
+@Data
+@Table(name = "users")
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_id")
     private Long userId;
 
-    @Column(name = "userName", nullable = false, unique = true)
+    @Column(name = "user_name", nullable = false, unique = true)
     private String userName;
 
-    @Column(name = "password", nullable = false)
+    @Column(nullable = false)
     private String password;
 
     @Column(nullable = false, unique = true)
     private String email;
 
-    @OneToMany(mappedBy = "reporter", cascade = CascadeType.ALL)
-    @ToString.Exclude
-    private List<Task> reporter = new ArrayList<>();
-
-    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL)
-    @ToString.Exclude
-    private List<Task> projects = new ArrayList<>();
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)//mappedBy как называется строчка в классе с которым связываем
-    @ToString.Exclude
-    private List<PasswordResetToken> passwordResetTokens = new ArrayList<>();
-
     @ManyToOne
-    @JoinColumn(name = "company_id")//name как назовём столбец в БД
+    @JoinColumn(name = "company_id")
+    @JsonBackReference
     private Company company;
 
     @ManyToOne
@@ -49,12 +40,29 @@ public class User {
     @JoinColumn(name = "department_id")
     private Department department;
 
-    @OneToOne
+    @OneToMany(mappedBy = "reporter", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    @ToString.Exclude
+    private List<Task> reportedTasks = new ArrayList<>();
+
+    @OneToMany(mappedBy = "assignee", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    @ToString.Exclude
+    private List<Task> assignedTasks = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    private List<PasswordResetToken> passwordResetTokens = new ArrayList<>();
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private InvitationToken invitationToken;
 
-    @OneToMany(mappedBy = "autor_id")
+    @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    @ToString.Exclude
     private List<TaskComment> taskComments = new ArrayList<>();
 
-    @OneToMany(mappedBy = "changed_by_id")
+    @OneToMany(mappedBy = "changedBy", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
     private List<TaskHistory> taskHistories = new ArrayList<>();
 }

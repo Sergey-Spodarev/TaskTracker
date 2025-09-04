@@ -5,7 +5,6 @@ import com.example.calendar.model.InvitationToken;
 import com.example.calendar.model.User;
 import com.example.calendar.repository.InvitationTokenRepository;
 import com.example.calendar.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

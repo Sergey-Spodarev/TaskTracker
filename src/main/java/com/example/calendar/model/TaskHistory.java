@@ -7,16 +7,17 @@ import java.time.LocalDateTime;
 
 @Entity
 @Data
+@Table(name = "task_history")
 public class TaskHistory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "task_id", nullable = false)
     private Task task;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "changed_by_id", nullable = false)
     private User changedBy;
 

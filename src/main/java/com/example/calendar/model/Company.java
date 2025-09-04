@@ -9,6 +9,7 @@ import java.util.List;
 
 @Entity
 @Data
+@Table(name = "companies")
 public class Company {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -16,25 +17,25 @@ public class Company {
 
     @Column(nullable = false)
     private String name;
-    @Column(nullable = false, unique = true)
-    private Long INN;//идентификационный номер налогоплательщика
+
+    private Long INN;
 
     @Column(unique = true)
-    private String workEmail; // noreply@company.com
+    private String workEmail;
 
-    private String smtpHost;  // smtp.yandex.ru
-    private Integer smtpPort; // 587
-    private String emailPassword; // App Password
+    private String smtpHost;
+    private Integer smtpPort;
+    private String emailPassword;
 
-    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     private List<User> users = new ArrayList<>();
 
-    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     private List<Role> roles = new ArrayList<>();
 
-    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     private List<Department> departments = new ArrayList<>();
 
