@@ -49,7 +49,8 @@ public class SecurityConfig {
                         "/api/v1/task/{taskId}/endTime",
                         "/api/v1/task/{taskId}/title",
                         "/api/v1/task/{taskId}/priority",
-                        "/api/v1/task/{taskId}/delete").authenticated()
+                        "/api/v1/task/{taskId}/delete",
+                        "/api/users/me").authenticated()
 
                 .requestMatchers("/api/v1/task/{parentTaskId}/parentTask").authenticated()
 

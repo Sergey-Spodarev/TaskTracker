@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Завершите регистрацию</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #f4f6f9;
+      font-family: 'Segoe UI', sans-serif;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .register-card {
+      max-width: 450px;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      background: white;
+    }
+    .logo {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .logo h2 {
+      color: #0052cc;
+    }
+  </style>
+</head>
+<body>
+<div class="register-card">
+  <div class="logo">
+    <h2>TaskFlow</h2>
+    <p>Завершите регистрацию в компании</p>
+  </div>
+
+  <form id="registrationForm">
+    <input type="hidden" id="token" value="" />
+
+    <div class="mb-3">
+      <label for="userName" class="form-label">Имя пользователя</label>
+      <input type="text" class="form-control" id="userName" placeholder="Введите имя" required>
+    </div>
+
+    <div class="mb-3">
+      <label for="password" class="form-label">Пароль</label>
+      <input type="password" class="form-control" id="password" placeholder="••••••••" required>
+    </div>
+
+    <div class="mb-3">
+      <label for="confirmPassword" class="form-label">Подтвердите пароль</label>
+      <input type="password" class="form-control" id="confirmPassword" placeholder="••••••••" required>
+    </div>
+
+    <div id="errorAlert" class="alert alert-danger d-none" role="alert">
+      <!-- Ошибки будут сюда -->
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100">Завершить регистрацию</button>
+  </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+
+    if (!token) {
+      showError('Неверная ссылка: токен отсутствует');
+      return;
+    }
+
+    document.getElementById('token').value = token;
+
+    // Проверим, валиден ли токен
+    axios.get(`/InvitationToken/validate?token=${token}`)
+            .then(response => {
+              if (!response.data.valid) {
+                showError(response.data.message || 'Ссылка недействительна или просрочена');
+              }
+            })
+            .catch(() => {
+              showError('Не удалось проверить ссылку');
+            });
+  });
+
+  document.getElementById('registrationForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const token = document.getElementById('token').value;
+    const userName = document.getElementById('userName').value.trim();
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+
+    // Валидация
+    if (!userName) {
+      showError('Введите имя пользователя');
+      return;
+    }
+
+    if (password.length < 6) {
+      showError('Пароль должен быть не менее 6 символов');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      showError('Пароли не совпадают');
+      return;
+    }
+
+    try {
+      const response = await axios.post('/InvitationToken/completeRegistration', null, {
+        params: { token, userName, password }
+      });
+
+      alert('Регистрация завершена! Теперь вы можете войти.');
+      window.location.href = '/'; // редирект на вход
+    } catch (error) {
+      const msg = error.response?.data || 'Не удалось завершить регистрацию';
+      showError(msg);
+    }
+  });
+
+  function showError(message) {
+    const alert = document.getElementById('errorAlert');
+    alert.textContent = message;
+    alert.classList.remove('d-none');
+  }
+</script>
+</body>
+</html>

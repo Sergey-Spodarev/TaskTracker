@@ -86,7 +86,7 @@ public class DepartmentService {
                 .collect(Collectors.toList());
     }
 
-    private DepartmentDTO convertToDTO(Department department) {
+    public DepartmentDTO convertToDTO(Department department) {
         DepartmentDTO departmentDTO = new DepartmentDTO();
         departmentDTO.setId(department.getId());
         departmentDTO.setName(department.getName());

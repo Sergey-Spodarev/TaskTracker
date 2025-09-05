@@ -61,7 +61,7 @@ public class CompanyService {
         return convertToDTO(companyRepository.save(company));
     }
 
-    private CompanyDTO convertToDTO(Company company) {
+    public CompanyDTO convertToDTO(Company company) {
         CompanyDTO companyDTO = new CompanyDTO();
         companyDTO.setName(company.getName());
         companyDTO.setINN(company.getINN());

@@ -1,7 +1,9 @@
 package com.example.calendar.service;
 
 import com.example.calendar.DTO.CompanyRegistrationDTO;
+import com.example.calendar.DTO.RoleDTO;
 import com.example.calendar.DTO.UserDTO;
+import com.example.calendar.DTO.UserWithRoleDTO;
 import com.example.calendar.model.Company;
 import com.example.calendar.model.Department;
 import com.example.calendar.model.Role;
@@ -78,7 +80,6 @@ public class UserService {
         return roleRepository.save(role);
     }
 
-
     public User createPendingUser(String email){
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
@@ -91,6 +92,36 @@ public class UserService {
         user.setRole(role);
         user.setCompany(admin.getCompany());
         return userRepository.save(user);
+    }
+
+    public UserWithRoleDTO getUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        User user = userDetails.getUser();
+        return convertToDTO(user);
+    }
+
+    public UserWithRoleDTO convertToDTO(User user) {
+        UserWithRoleDTO dto = new UserWithRoleDTO();
+        dto.setId(user.getUserId());
+        dto.setUserName(user.getUserName());
+        dto.setEmail(user.getEmail());
+
+        if (user.getCompany() != null) {
+            dto.setCompanyId(user.getCompany().getId());
+        }
+
+        if (user.getDepartment() != null) {
+            dto.setDepartmentId(user.getDepartment().getId());
+        }
+
+        if (user.getRole() != null) {
+            dto.setRoleId(user.getRole().getId());
+            dto.setRoleName(user.getRole().getDisplayName());
+            dto.setRoleCode(user.getRole().getCode());
+        }
+
+        return dto;
     }
 
     private Role getDefaultUserRole(Company company) {

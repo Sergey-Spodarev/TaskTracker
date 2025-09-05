@@ -2,6 +2,7 @@ package com.example.calendar.controller;
 
 import ch.qos.logback.core.model.Model;
 import com.example.calendar.DTO.UserDTO;
+import com.example.calendar.DTO.UserWithRoleDTO;
 import com.example.calendar.model.User;
 import com.example.calendar.service.UserService;
 import org.springframework.http.HttpStatus;
@@ -32,5 +33,12 @@ public class UserController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(userService.updateUser(userDTO));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserWithRoleDTO> getCurrentUser() {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(userService.getUser());
     }
 }

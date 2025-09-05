@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @Controller
-@RequestMapping("/department")
+@RequestMapping("/api/v1/department")
 public class DepartmentController {
     private final DepartmentService departmentService;
     public DepartmentController(DepartmentService departmentService) {
