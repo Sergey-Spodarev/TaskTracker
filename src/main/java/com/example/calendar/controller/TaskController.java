@@ -98,7 +98,7 @@ public class TaskController {
                 .body(taskService.getSubTasksByTaskId(taskId));
     }
 
-    @GetMapping("/getAll")
+    @GetMapping("/all")
     public ResponseEntity<List<TaskDTO>> getTasks() {
         return ResponseEntity
                 .status(HttpStatus.OK)

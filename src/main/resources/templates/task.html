@@ -297,6 +297,19 @@
         return date.toLocaleDateString('ru-RU');
     }
 
+    // Открыть модальное окно создания задачи
+    function openCreateTaskModal() {
+        // Сбрасываем форму
+        document.getElementById('taskTitle').value = '';
+        document.getElementById('taskDescription').value = '';
+        document.getElementById('taskPriority').value = 'MEDIUM';
+        document.getElementById('taskDueDate').value = '';
+
+        // Показываем модальное окно
+        const modal = new bootstrap.Modal(document.getElementById('createTaskModal'));
+        modal.show();
+    }
+
     // Создать задачу
     function createTask() {
         console.log("createTask вызвана");
