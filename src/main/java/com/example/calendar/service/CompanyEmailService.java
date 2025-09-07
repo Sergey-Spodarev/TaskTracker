@@ -21,7 +21,7 @@ public class CompanyEmailService {
         message.setTo(toEmail);
         message.setFrom(company.getWorkEmail());
         message.setSubject("Приглашение в систему");
-        message.setText("Вы приглашены! Перейдите по ссылке: https://yourapp.com/register?token=" + token);
+        message.setText("Вы приглашены! Перейдите по ссылке: http://localhost:8080/lander?token=" + token);
 
         companiesMailSender.send(message);
     }
