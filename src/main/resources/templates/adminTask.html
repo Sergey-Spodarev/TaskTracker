@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Админ-панель — Задачи — TaskFlow</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #f4f5f7;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    .navbar {
+      background-color: #0052cc;
+    }
+    .navbar-brand, .nav-link {
+      color: white !important;
+    }
+    .main-layout {
+      display: flex;
+      min-height: 100vh;
+    }
+    .sidebar {
+      width: 250px;
+      background-color: #ebecf0;
+      padding: 20px 0;
+      border-right: 1px solid #ddd;
+    }
+    .sidebar-item {
+      padding: 12px 20px;
+      color: #42526e;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .sidebar-item:hover, .sidebar-item.active {
+      background-color: #dfe1e6;
+      font-weight: 500;
+    }
+    .main-content {
+      flex: 1;
+      padding: 30px;
+    }
+    .page-title {
+      font-size: 1.75rem;
+      color: #172b4d;
+      margin-bottom: 20px;
+    }
+    .btn-group .btn-check:checked + .btn {
+      background-color: #0052cc;
+      color: white;
+    }
+    #kanban-board {
+      display: flex;
+      gap: 16px;
+      overflow-x: auto;
+      padding: 8px 0;
+      min-height: calc(100vh - 200px);
+    }
+    .kanban-column {
+      min-width: 300px;
+      max-width: 300px;
+      background-color: #ebecf0;
+      border-radius: 8px;
+      padding: 12px;
+    }
+    .kanban-column-header {
+      font-weight: 600;
+      color: #172b4d;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #ddd;
+      text-align: center;
+    }
+    .kanban-task {
+      background: white;
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      cursor: pointer;
+      transition: box-shadow 0.2s;
+    }
+    .kanban-task:hover {
+      box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+    }
+    .kanban-task .task-key {
+      font-weight: 600;
+      color: #0052cc;
+    }
+    .kanban-task .task-title {
+      font-size: 0.95rem;
+      color: #172b4d;
+      margin: 4px 0;
+    }
+    .kanban-task .task-meta {
+      font-size: 0.8rem;
+      color: #6b778c;
+    }
+    .priority-critical { border-left: 4px solid #d93f3c; }
+    .priority-high { border-left: 4px solid #ffab00; }
+    .priority-medium { border-left: 4px solid #0052cc; }
+    .priority-low { border-left: 4px solid #00c853; }
+  </style>
+</head>
+<body>
+<!-- Навигация -->
+<nav class="navbar navbar-expand-lg navbar-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="/admin/tasks">TaskFlow (Админ)</a>
+    <div class="navbar-nav ms-auto">
+      <span class="nav-link">Привет, <b th:text="${#authentication.principal.userName}">Администратор</b></span>
+      <a th:href="@{/logout}" class="nav-link">Выход</a>
+    </div>
+  </div>
+</nav>
+
+<div class="main-layout">
+  <!-- Левое меню (только админские функции) -->
+  <div class="sidebar">
+    <div class="sidebar-item active" onclick="switchView('status')">📋 По статусу</div>
+    <div class="sidebar-item" onclick="switchView('priority')">🔥 По приоритету</div>
+    <div class="sidebar-item" onclick="openCreateTaskModal()">➕ Создать задачу</div>
+
+    <!-- Админ-функции (всегда видны) -->
+    <div class="sidebar-item" onclick="openAddDepartmentModal()">➕ Добавить департамент</div>
+    <div class="sidebar-item" onclick="openInviteUserModal()">📨 Пригласить пользователя</div>
+
+    <hr>
+    <div class="sidebar-item">Проекты</div>
+    <div class="sidebar-item">Календарь</div>
+  </div>
+
+  <!-- Основной контент -->
+  <div class="main-content">
+    <h1 class="page-title">Задачи (Админ-панель)</h1>
+
+    <!-- Переключатель вида -->
+    <div class="mb-3">
+      <div class="btn-group" role="group">
+        <input type="radio" class="btn-check" name="viewMode" id="view-status" autocomplete="off" checked>
+        <label class="btn btn-outline-primary btn-sm" for="view-status">По статусу</label>
+        <input type="radio" class="btn-check" name="viewMode" id="view-priority" autocomplete="off">
+        <label class="btn btn-outline-primary btn-sm" for="view-priority">По приоритету</label>
+      </div>
+    </div>
+
+    <!-- Kanban доска -->
+    <div id="kanban-board"></div>
+  </div>
+</div>
+
+<!-- Модальное окно: создать задачу -->
+<div class="modal fade" id="createTaskModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Создать задачу</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Заголовок</label>
+          <input type="text" id="taskTitle" class="form-control" required />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Описание</label>
+          <textarea id="taskDescription" class="form-control" rows="3"></textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Приоритет</label>
+          <select id="taskPriority" class="form-control">
+            <option value="LOW">Низкий</option>
+            <option value="MEDIUM" selected>Средний</option>
+            <option value="HIGH">Высокий</option>
+            <option value="CRITICAL">Критический</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Время начала</label>
+          <input type="datetime-local" id="taskStart" class="form-control" required />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Время окончания</label>
+          <input type="datetime-local" id="taskEnd" class="form-control" required />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Исполнитель</label>
+          <select id="taskAssignee" class="form-control" required>
+            <option value="">Выберите пользователя</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Департамент</label>
+          <select id="taskDepartment" class="form-control" required>
+            <option value="">Выберите департамент</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+        <button type="button" class="btn btn-primary" onclick="createTask()">Создать</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно: добавить департамент -->
+<div class="modal fade" id="addDepartmentModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Добавить департамент</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Название департамента</label>
+          <input type="text" id="departmentName" class="form-control" required />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+        <button type="button" class="btn btn-primary" onclick="addDepartment()">Добавить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно: пригласить пользователя -->
+<div class="modal fade" id="inviteUserModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Пригласить пользователя</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Email</label>
+          <input type="email" id="inviteEmail" class="form-control" required />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+        <button type="button" class="btn btn-primary" onclick="inviteUser()">Отправить приглашение</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+  let currentView = 'status';
+  let allTasks = [];
+  let allUsers = [];
+  let allDepartments = [];
+
+  // Загрузка пользователей
+  function loadUsers() {
+    axios.get('/api/users/all')
+            .then(response => {
+              allUsers = response.data;
+              const select = document.getElementById('taskAssignee');
+              select.innerHTML = '<option value="">Выберите пользователя</option>';
+              allUsers.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.id;
+                option.textContent = user.userName || user.email;
+                select.appendChild(option);
+              });
+            })
+            .catch(error => {
+              console.error('Ошибка загрузки пользователей:', error);
+            });
+  }
+
+  // Загрузка департаментов
+  function loadDepartments() {
+    axios.get('/api/v1/department/get')
+            .then(response => {
+              allDepartments = response.data;
+              const select = document.getElementById('taskDepartment');
+              select.innerHTML = '<option value="">Выберите департамент</option>';
+              allDepartments.forEach(dept => {
+                const option = document.createElement('option');
+                option.value = dept.id;
+                option.textContent = dept.name;
+                select.appendChild(option);
+              });
+            })
+            .catch(error => {
+              console.error('Ошибка загрузки департаментов:', error);
+            });
+  }
+
+  // Переключение вида
+  function switchView(view) {
+    currentView = view;
+    document.getElementById('view-' + view).checked = true;
+    renderKanban();
+  }
+
+  // Загрузка задач
+  function loadTasks() {
+    axios.get('/api/v1/task/getAll')
+            .then(response => {
+              allTasks = response.data;
+              renderKanban();
+            })
+            .catch(error => {
+              alert('Ошибка загрузки задач: ' + (error.response?.data || 'Неизвестная ошибка'));
+            });
+  }
+
+  // Рендер Kanban
+  function renderKanban() {
+    const container = document.getElementById('kanban-board');
+    container.innerHTML = '';
+
+    let groups = {};
+    let titles = {};
+
+    if (currentView === 'status') {
+      groups = { TODO: [], IN_PROGRESS: [], REVIEW: [], DONE: [] };
+      titles = {
+        TODO: 'Новая',
+        IN_PROGRESS: 'В работе',
+        REVIEW: 'Проверка',
+        DONE: 'Завершено'
+      };
+    } else {
+      groups = { CRITICAL: [], HIGH: [], MEDIUM: [], LOW: [] };
+      titles = {
+        CRITICAL: 'Критический',
+        HIGH: 'Высокий',
+        MEDIUM: 'Средний',
+        LOW: 'Низкий'
+      };
+    }
+
+    allTasks.forEach(task => {
+      const key = currentView === 'status' ? task.status : task.priority;
+      if (groups[key]) {
+        groups[key].push(task);
+      }
+    });
+
+    Object.keys(groups).forEach(key => {
+      const column = document.createElement('div');
+      column.className = 'kanban-column';
+
+      const header = document.createElement('div');
+      header.className = 'kanban-column-header';
+      header.textContent = titles[key];
+      column.appendChild(header);
+
+      const taskList = document.createElement('div');
+
+      groups[key].forEach(task => {
+        const item = document.createElement('div');
+        item.className = `kanban-task ${getPriorityClass(task.priority)}`;
+        item.innerHTML = `
+                    <div class="task-key">${task.projectKey || 'TASK'}-${task.id}</div>
+                    <div class="task-title">${task.title}</div>
+                    <div class="task-meta">
+                        Исполнитель: ${task.assigneeName || '—'}<br>
+                        Срок: ${formatDate(task.end)}
+                    </div>
+                `;
+        item.onclick = () => openViewTaskModal(task.id);
+        taskList.appendChild(item);
+      });
+
+      column.appendChild(taskList);
+      container.appendChild(column);
+    });
+  }
+
+  function getPriorityClass(priority) {
+    switch (priority) {
+      case 'CRITICAL': return 'priority-critical';
+      case 'HIGH': return 'priority-high';
+      case 'MEDIUM': return 'priority-medium';
+      case 'LOW': return 'priority-low';
+      default: return 'priority-medium';
+    }
+  }
+
+  function formatDate(dateStr) {
+    if (!dateStr) return '—';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('ru-RU');
+  }
+
+  // Открыть модалку создания задачи
+  function openCreateTaskModal() {
+    document.getElementById('taskTitle').value = '';
+    document.getElementById('taskDescription').value = '';
+    document.getElementById('taskPriority').value = 'MEDIUM';
+    document.getElementById('taskStart').value = '';
+    document.getElementById('taskEnd').value = '';
+    document.getElementById('taskAssignee').value = '';
+    document.getElementById('taskDepartment').value = '';
+    new bootstrap.Modal(document.getElementById('createTaskModal')).show();
+  }
+
+  // Создать задачу
+  function createTask() {
+    const title = document.getElementById('taskTitle').value;
+    const start = document.getElementById('taskStart').value;
+    const end = document.getElementById('taskEnd').value;
+    const assigneeId = document.getElementById('taskAssignee').value;
+    const departmentId = document.getElementById('taskDepartment').value;
+
+    if (!title || !start || !end || !assigneeId || !departmentId) {
+      alert('Заполните все поля');
+      return;
+    }
+    if (new Date(end) <= new Date(start)) {
+      alert('Время окончания должно быть позже начала');
+      return;
+    }
+
+    const dto = {
+      title: title,
+      description: document.getElementById('taskDescription').value,
+      priority: document.getElementById('taskPriority').value,
+      start: start,
+      end: end,
+      assigneeId: parseInt(assigneeId),
+      departmentId: parseInt(departmentId)
+    };
+
+    axios.post('/api/v1/task/create', dto)
+            .then(response => {
+              alert('Задача создана!');
+              bootstrap.Modal.getInstance(document.getElementById('createTaskModal')).hide();
+              loadTasks();
+            })
+            .catch(error => {
+              const msg = error.response?.data?.message || 'Не удалось создать задачу';
+              alert('Ошибка: ' + msg);
+            });
+  }
+
+  // Открыть модалку добавления департамента
+  function openAddDepartmentModal() {
+    document.getElementById('departmentName').value = '';
+    new bootstrap.Modal(document.getElementById('addDepartmentModal')).show();
+  }
+
+  // Добавить департамент
+  function addDepartment() {
+    const name = document.getElementById('departmentName').value.trim();
+    if (!name) {
+      alert('Введите название департамента');
+      return;
+    }
+
+    axios.post('/api/v1/department/addDepartment', { name: name })
+            .then(response => {
+              alert('Департамент добавлен!');
+              bootstrap.Modal.getInstance(document.getElementById('addDepartmentModal')).hide();
+              loadDepartments();
+            })
+            .catch(error => {
+              const msg = error.response?.data?.message || 'Не удалось добавить департамент';
+              alert('Ошибка: ' + msg);
+            });
+  }
+
+  // Открыть модалку приглашения
+  function openInviteUserModal() {
+    document.getElementById('inviteEmail').value = '';
+    new bootstrap.Modal(document.getElementById('inviteUserModal')).show();
+  }
+
+  // Отправить приглашение
+  function inviteUser() {
+    const email = document.getElementById('inviteEmail').value.trim();
+    if (!email) {
+      alert('Введите email');
+      return;
+    }
+
+    axios.post('/InvitationToken/addInvitationToken', null, {
+      params: { email: email }
+    })
+            .then(response => {
+              alert('Приглашение отправлено!');
+              bootstrap.Modal.getInstance(document.getElementById('inviteUserModal')).hide();
+            })
+            .catch(error => {
+              const msg = error.response?.data || 'Не удалось отправить приглашение';
+              alert('Ошибка: ' + msg);
+            });
+  }
+
+  // Просмотр задачи (заглушка)
+  function openViewTaskModal(taskId) {
+    alert(`Просмотр задачи #${taskId}`);
+  }
+
+  // Загрузка при старте
+  document.addEventListener('DOMContentLoaded', () => {
+    loadUsers();
+    loadDepartments();
+    loadTasks();
+  });
+</script>
+</body>
+</html>

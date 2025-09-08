@@ -37,9 +37,6 @@
             background-color: #dfe1e6;
             font-weight: 500;
         }
-        .admin-only {
-            display: none;
-        }
         .main-content {
             flex: 1;
             padding: 30px;
@@ -119,15 +116,11 @@
 </nav>
 
 <div class="main-layout">
-    <!-- Левое меню -->
+    <!-- Левое меню (только пользовательские функции) -->
     <div class="sidebar">
         <div class="sidebar-item active" onclick="switchView('status')">📋 По статусу</div>
         <div class="sidebar-item" onclick="switchView('priority')">🔥 По приоритету</div>
         <div class="sidebar-item" onclick="openCreateTaskModal()">➕ Создать задачу</div>
-
-        <!-- Админ-кнопки -->
-        <div class="admin-only" id="addDepartmentBtn" onclick="openAddDepartmentModal()">➕ Добавить департамент</div>
-        <div class="admin-only" id="inviteUserBtn" onclick="openInviteUserModal()">📨 Пригласить пользователя</div>
 
         <hr>
         <div class="sidebar-item">Проекты</div>
@@ -136,7 +129,7 @@
 
     <!-- Основной контент -->
     <div class="main-content">
-        <h1 class="page-title">Задачи</h1>
+        <h1 class="page-title">Мои задачи</h1>
 
         <!-- Переключатель вида -->
         <div class="mb-3">
@@ -188,12 +181,6 @@
                     <input type="datetime-local" id="taskEnd" class="form-control" required />
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Исполнитель</label>
-                    <select id="taskAssignee" class="form-control" required>
-                        <option value="">Выберите пользователя</option>
-                    </select>
-                </div>
-                <div class="mb-3">
                     <label class="form-label">Департамент</label>
                     <select id="taskDepartment" class="form-control" required>
                         <option value="">Выберите департамент</option>
@@ -208,97 +195,12 @@
     </div>
 </div>
 
-<!-- Модальное окно: добавить департамент -->
-<div class="modal fade" id="addDepartmentModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Добавить департамент</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label">Название департамента</label>
-                    <input type="text" id="departmentName" class="form-control" required />
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                <button type="button" class="btn btn-primary" onclick="addDepartment()">Добавить</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Модальное окно: пригласить пользователя -->
-<div class="modal fade" id="inviteUserModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Пригласить пользователя</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label">Email</label>
-                    <input type="email" id="inviteEmail" class="form-control" required />
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                <button type="button" class="btn btn-primary" onclick="inviteUser()">Отправить приглашение</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script>
     let currentView = 'status';
     let allTasks = [];
-    let allUsers = [];
     let allDepartments = [];
-    let currentUserRole = null;
-
-    // Определение роли пользователя
-    function checkUserRole() {
-        const userName = thUsername(); // получаем имя из Thymeleaf
-        axios.get('/api/users/me') // ← должен возвращать роль
-            .then(response => {
-                currentUserRole = response.data.roleCode;
-                if (currentUserRole === 'ADMIN') {
-                    document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'block');
-                }
-            })
-            .catch(() => {
-                console.log('Не удалось определить роль');
-            });
-    }
-
-    // Временная замена th: для userName
-    function thUsername() {
-        return document.querySelector('b').textContent;
-    }
-
-    // Загрузка пользователей
-    function loadUsers() {
-        axios.get('/api/users/all')
-            .then(response => {
-                allUsers = response.data;
-                const select = document.getElementById('taskAssignee');
-                select.innerHTML = '<option value="">Выберите пользователя</option>';
-                allUsers.forEach(user => {
-                    const option = document.createElement('option');
-                    option.value = user.id;
-                    option.textContent = user.userName || user.email;
-                    select.appendChild(option);
-                });
-            })
-            .catch(error => {
-                console.error('Ошибка загрузки пользователей:', error);
-            });
-    }
 
     // Загрузка департаментов
     function loadDepartments() {
@@ -425,26 +327,19 @@
         document.getElementById('taskPriority').value = 'MEDIUM';
         document.getElementById('taskStart').value = '';
         document.getElementById('taskEnd').value = '';
-        document.getElementById('taskAssignee').value = '';
         document.getElementById('taskDepartment').value = '';
         new bootstrap.Modal(document.getElementById('createTaskModal')).show();
     }
 
     // Создать задачу
     function createTask() {
-        if (typeof axios === 'undefined') {
-            alert('Ошибка: axios не загружен');
-            return;
-        }
-
         const title = document.getElementById('taskTitle').value;
         const start = document.getElementById('taskStart').value;
         const end = document.getElementById('taskEnd').value;
-        const assigneeId = document.getElementById('taskAssignee').value;
         const departmentId = document.getElementById('taskDepartment').value;
 
-        if (!title || !start || !end || !assigneeId || !departmentId) {
-            alert('Заполните все поля');
+        if (!title || !start || !end || !departmentId) {
+            alert('Заполните все обязательные поля');
             return;
         }
         if (new Date(end) <= new Date(start)) {
@@ -458,8 +353,8 @@
             priority: document.getElementById('taskPriority').value,
             start: start,
             end: end,
-            assigneeId: parseInt(assigneeId),
-            departmentId: parseInt(departmentId) // ← важно
+            departmentId: parseInt(departmentId)
+            // assigneeId не передаём — будет назначен сам пользователь
         };
 
         axios.post('/api/v1/task/create', dto)
@@ -474,68 +369,15 @@
             });
     }
 
-    // Открыть модалку добавления департамента
-    function openAddDepartmentModal() {
-        document.getElementById('departmentName').value = '';
-        new bootstrap.Modal(document.getElementById('addDepartmentModal')).show();
-    }
-
-    // Добавить департамент
-    function addDepartment() {
-        const name = document.getElementById('departmentName').value;
-        if (!name) {
-            alert('Введите название');
-            return;
-        }
-
-        axios.post('/api/v1/department/addDepartment', { name: name })
-            .then(response => {
-                alert('Департамент добавлен!');
-                bootstrap.Modal.getInstance(document.getElementById('addDepartmentModal')).hide();
-                loadDepartments();
-            })
-            .catch(error => {
-                alert('Ошибка: ' + (error.response?.data || 'Не удалось добавить'));
-            });
-    }
-
-    // Открыть модалку приглашения
-    function openInviteUserModal() {
-        document.getElementById('inviteEmail').value = '';
-        new bootstrap.Modal(document.getElementById('inviteUserModal')).show();
-    }
-
-    // Отправить приглашение
-    function inviteUser() {
-        const email = document.getElementById('inviteEmail').value;
-        if (!email) {
-            alert('Введите email');
-            return;
-        }
-
-        axios.post('/InvitationToken/addInvitationToken', null, {
-            params: { email: email }
-        })
-            .then(response => {
-                alert('Приглашение отправлено!');
-                bootstrap.Modal.getInstance(document.getElementById('inviteUserModal')).hide();
-            })
-            .catch(error => {
-                alert('Ошибка: ' + (error.response?.data || 'Не удалось отправить'));
-            });
-    }
-
-    // Просмотр задачи
+    // Просмотр задачи (заглушка)
     function openViewTaskModal(taskId) {
         alert(`Просмотр задачи #${taskId}`);
     }
 
     // Загрузка при старте
     document.addEventListener('DOMContentLoaded', () => {
-        loadUsers();
         loadDepartments();
         loadTasks();
-        checkUserRole();
     });
 </script>
 </body>
