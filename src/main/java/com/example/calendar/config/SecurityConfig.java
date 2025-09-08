@@ -12,7 +12,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
-import org.springframework.security.web.session.SessionManagementFilter;
 import org.springframework.security.config.http.SessionCreationPolicy;
 
 @Configuration
@@ -46,7 +45,8 @@ public class SecurityConfig {
                         "/reset-password",
                         "/api/companies/register",
                         "/lander",           // ← для приглашённых
-                        "/register"          // ← форма завершения регистрации
+                        "/register", // ← форма завершения регистрации
+                        "/InvitationToken/completeRegistration"
                 ).permitAll()
 
                 // === API ЗАДАЧ ===
@@ -88,7 +88,6 @@ public class SecurityConfig {
 
                 // === ПРИГЛАШЕНИЯ ===
                 .requestMatchers("/InvitationToken/addInvitationToken").hasRole("ADMIN")
-                .requestMatchers("/InvitationToken/completeRegistration").authenticated()
 
                 // === КОМПАНИЯ ===
                 .requestMatchers("/api/companies/register").permitAll()

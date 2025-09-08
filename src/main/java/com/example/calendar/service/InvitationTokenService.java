@@ -33,6 +33,8 @@ public class InvitationTokenService {
         InvitationToken invitationToken = new InvitationToken();
         //надо сделать отправку на почту сообщения
         invitationToken.setExpiresAt(LocalDateTime.now().plusHours(24));
+        System.out.println("Token created at: " + LocalDateTime.now());
+        System.out.println("Expires at: " + invitationToken.getExpiresAt());
         invitationToken.setUser(user);
         invitationToken.setToken(UUID.randomUUID().toString());
 

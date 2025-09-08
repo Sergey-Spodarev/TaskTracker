@@ -73,10 +73,8 @@
       return;
     }
 
-    document.getElementById('token').value = token;
-
-    // Проверим, валиден ли токен
-    axios.get(`/InvitationToken/validate?token=${token}`)
+    // Проверка токена
+    axios.get('/InvitationToken/validate', { params: { token } })
             .then(response => {
               if (!response.data.valid) {
                 showError(response.data.message || 'Ссылка недействительна или просрочена');
@@ -85,43 +83,42 @@
             .catch(() => {
               showError('Не удалось проверить ссылку');
             });
-  });
 
-  document.getElementById('registrationForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
+    // Обработка формы
+    document.getElementById('registrationForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
 
-    const token = document.getElementById('token').value;
-    const userName = document.getElementById('userName').value.trim();
-    const password = document.getElementById('password').value;
-    const confirmPassword = document.getElementById('confirmPassword').value;
+      const userName = document.getElementById('userName').value.trim();
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
 
-    // Валидация
-    if (!userName) {
-      showError('Введите имя пользователя');
-      return;
-    }
+      // Валидация
+      if (!userName) {
+        showError('Введите имя пользователя');
+        return;
+      }
+      if (password.length < 6) {
+        showError('Пароль должен быть не менее 6 символов');
+        return;
+      }
+      if (password !== confirmPassword) {
+        showError('Пароли не совпадают');
+        return;
+      }
 
-    if (password.length < 6) {
-      showError('Пароль должен быть не менее 6 символов');
-      return;
-    }
+      try {
+        // Отправляем как query-параметры (работает с @RequestParam)
+        await axios.post('/InvitationToken/completeRegistration', null, {
+          params: { token, userName, password }
+        });
 
-    if (password !== confirmPassword) {
-      showError('Пароли не совпадают');
-      return;
-    }
-
-    try {
-      const response = await axios.post('/InvitationToken/completeRegistration', null, {
-        params: { token, userName, password }
-      });
-
-      alert('Регистрация завершена! Теперь вы можете войти.');
-      window.location.href = '/'; // редирект на вход
-    } catch (error) {
-      const msg = error.response?.data || 'Не удалось завершить регистрацию';
-      showError(msg);
-    }
+        alert('Регистрация завершена! Теперь вы можете войти.');
+        window.location.href = '/'; // перейти на главную
+      } catch (error) {
+        const msg = error.response?.data || 'Не удалось завершить регистрацию';
+        showError(msg);
+      }
+    });
   });
 
   function showError(message) {
