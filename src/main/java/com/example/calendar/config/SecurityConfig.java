@@ -1,5 +1,7 @@
 package com.example.calendar.config;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -7,12 +9,16 @@ import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.config.http.SessionCreationPolicy;
+
+import java.io.IOException;
 
 @Configuration
 @EnableWebSecurity
@@ -35,7 +41,7 @@ public class SecurityConfig {
 
         // Настройка авторизации
         http.authorizeHttpRequests(auth -> auth
-                // Полностью открыты — без входа
+                // === ПОЛНОСТЬЮ ОТКРЫТЫЕ МАРШРУТЫ ===
                 .requestMatchers(
                         "/",
                         "/login",
@@ -44,10 +50,16 @@ public class SecurityConfig {
                         "/forgot-password",
                         "/reset-password",
                         "/api/companies/register",
-                        "/lander",           // ← для приглашённых
-                        "/register", // ← форма завершения регистрации
+                        "/lander",
+                        "/register",
                         "/InvitationToken/completeRegistration"
                 ).permitAll()
+
+                // === АДМИН-ПАНЕЛИ (HTML-страницы и API) ===
+                .requestMatchers("/admin/**").hasRole("ADMIN")  // ← Все пути, начинающиеся с /admin — только для ADMIN
+
+                // === ПРОСТОЙ ДОСТУП К ЗАДАЧАМ (HTML-страница) ===
+                .requestMatchers("/task").authenticated()  // ← Любой залогиненный пользователь может зайти на /task
 
                 // === API ЗАДАЧ ===
                 .requestMatchers(
@@ -74,23 +86,29 @@ public class SecurityConfig {
 
                 // === РОЛИ ===
                 .requestMatchers("/role/all", "/role/add", "/role/updateRole", "/role/{roleId}")
-                .hasRole("ADMIN")  // ← только админ
+                .hasRole("ADMIN")
 
                 // === ПРОЕКТЫ ===
-                .requestMatchers("/project/create", "/project/update", "/project/{id}", "/project/delete/{id}")
-                .hasRole("ADMIN")
+                .requestMatchers(
+                        "/project/create",
+                        "/project/update",
+                        "/project/{id}",
+                        "/project/delete/{id}"
+                ).hasRole("ADMIN")
                 .requestMatchers("/project/getAll", "/project/{id}").authenticated()
 
                 // === ОТДЕЛЫ ===
-                .requestMatchers("/department/addDepartment", "/department/updateName", "/department/{department_id}")
-                .hasRole("ADMIN")
+                .requestMatchers(
+                        "/department/addDepartment",
+                        "/department/updateName",
+                        "/department/{department_id}"
+                ).hasRole("ADMIN")
                 .requestMatchers("/department/get").authenticated()
 
                 // === ПРИГЛАШЕНИЯ ===
                 .requestMatchers("/InvitationToken/addInvitationToken").hasRole("ADMIN")
 
                 // === КОМПАНИЯ ===
-                .requestMatchers("/api/companies/register").permitAll()
                 .requestMatchers("/api/companies/update").hasRole("ADMIN")
 
                 // === ПРОФИЛЬ ===
@@ -102,10 +120,25 @@ public class SecurityConfig {
 
         // Настройка формы входа
         http.formLogin(login -> login
-                .loginPage("/")                    // GET / → показываем форму
-                .loginProcessingUrl("/login")      // POST /login → обработка
-                .defaultSuccessUrl("/task", true)  // после входа — /task
-                .failureUrl("/?error=true")        // ошибка — остаёмся на /
+                .loginPage("/")
+                .loginProcessingUrl("/login")
+                .successHandler(new AuthenticationSuccessHandler() {
+                    @Override
+                    public void onAuthenticationSuccess(HttpServletRequest request,
+                                                        HttpServletResponse response,
+                                                        Authentication authentication) throws IOException {
+                        // Проверяем, есть ли у пользователя роль ADMIN
+                        boolean isAdmin = authentication.getAuthorities().stream()
+                                .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("ROLE_ADMIN"));
+
+                        if (isAdmin) {
+                            response.sendRedirect("/admin/tasks");
+                        } else {
+                            response.sendRedirect("/task");
+                        }
+                    }
+                })
+                .failureUrl("/?error=true")
         );
 
         // Настройка выхода

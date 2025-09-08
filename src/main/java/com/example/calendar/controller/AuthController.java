@@ -19,4 +19,9 @@ public class AuthController {
     public String redirectToRegistration(@RequestParam String token) {
         return "redirect:/register?token=" + token;
     }
+
+    @GetMapping("/admin/tasks")
+    public String adminTasks() {
+        return "adminTask";
+    }
 }
