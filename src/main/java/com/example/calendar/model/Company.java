@@ -2,13 +2,16 @@ package com.example.calendar.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.ToString;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Data
+@Getter
+@Setter
 @Table(name = "companies")
 public class Company {
     @Id
@@ -42,4 +45,14 @@ public class Company {
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     private List<Project> projects = new ArrayList<>();
+
+    @Override
+    public String toString() {
+        return "Company{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", INN='" + INN + '\'' +
+                ", workEmail='" + workEmail + '\'' +
+                '}';
+    }
 }

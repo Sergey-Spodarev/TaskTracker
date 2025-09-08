@@ -3,13 +3,16 @@ package com.example.calendar.model;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.ToString;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Data
+@Getter
+@Setter
 @Table(name = "roles", uniqueConstraints = @UniqueConstraint(columnNames = {"company_id", "code"}))
 public class Role {
     @Id
@@ -34,4 +37,13 @@ public class Role {
     @OneToMany(mappedBy = "role", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     private List<AssignmentRule> assignmentRules = new ArrayList<>();
+
+    @Override
+    public String toString() {
+        return "Role{" +
+                "id=" + id +
+                ", code='" + code + '\'' +
+                ", displayName='" + displayName + '\'' +
+                '}';
+    }
 }

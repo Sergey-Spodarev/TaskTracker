@@ -1,12 +1,13 @@
 package com.example.calendar.model;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Data
+@Getter
+@Setter
 @Table(name = "invitation_tokens")
 public class InvitationToken {
     @Id
@@ -21,4 +22,14 @@ public class InvitationToken {
 
     private LocalDateTime expiresAt;
     private boolean used = false;
+
+    @Override
+    public String toString() {
+        return "InvitationToken{" +
+                "id=" + id +
+                ", token='" + token + '\'' +
+                ", expiresAt=" + expiresAt +
+                ", used=" + used +
+                '}';
+    }
 }

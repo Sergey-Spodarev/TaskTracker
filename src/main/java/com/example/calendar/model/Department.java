@@ -2,14 +2,16 @@ package com.example.calendar.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.ToString;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Data
+@Getter
+@Setter
 @Table(name = "departments")
 public class Department {
     @Id
@@ -35,4 +37,12 @@ public class Department {
     @OneToMany(mappedBy = "targetDepartment", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     private List<AssignmentRule> assignmentRulesAsTarget = new ArrayList<>();
+
+    @Override
+    public String toString() {
+        return "Department{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                '}';
+    }
 }

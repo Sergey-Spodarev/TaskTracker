@@ -3,10 +3,7 @@ package com.example.calendar.model;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -68,4 +65,13 @@ public class User {
     @OneToMany(mappedBy = "changedBy", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     private List<TaskHistory> taskHistories = new ArrayList<>();
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "userId=" + userId +
+                ", userName='" + userName + '\'' +
+                ", email='" + email + '\'' +
+                '}';
+    }
 }
