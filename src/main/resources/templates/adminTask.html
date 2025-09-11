@@ -122,9 +122,10 @@
     <div class="sidebar-item" onclick="switchView('priority')">🔥 По приоритету</div>
     <div class="sidebar-item" onclick="openCreateTaskModal()">➕ Создать задачу</div>
 
-    <!-- Админ-функции (всегда видны) -->
+    <!-- Админ-функции -->
     <div class="sidebar-item" onclick="openAddDepartmentModal()">➕ Добавить департамент</div>
     <div class="sidebar-item" onclick="openInviteUserModal()">📨 Пригласить пользователя</div>
+    <div class="sidebar-item" onclick="openAssignUserModal()">🔧 Назначить пользователю департамент</div>
 
     <hr>
     <div class="sidebar-item">Проекты</div>
@@ -244,6 +245,36 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
         <button type="button" class="btn btn-primary" onclick="inviteUser()">Отправить приглашение</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно: назначить пользователю департамент -->
+<div class="modal fade" id="assignUserModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Назначить пользователю департамент</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Пользователь (ожидает подтверждения)</label>
+          <select id="userSelect" class="form-control" required>
+            <option value="">Загрузка...</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Департамент</label>
+          <select id="departmentSelect" class="form-control" required>
+            <option value="">Загрузка...</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+        <button type="button" class="btn btn-primary" onclick="assignUserToDepartment()">Назначить</button>
       </div>
     </div>
   </div>
@@ -494,6 +525,80 @@
             })
             .catch(error => {
               const msg = error.response?.data || 'Не удалось отправить приглашение';
+              alert('Ошибка: ' + msg);
+            });
+  }
+
+  // --- НОВОЕ: Назначение пользователя в департамент ---
+  function openAssignUserModal() {
+    const userSelect = document.getElementById('userSelect');
+    const deptSelect = document.getElementById('departmentSelect');
+
+    userSelect.innerHTML = '<option value="">Загрузка пользователей...</option>';
+    deptSelect.innerHTML = '<option value="">Загрузка департаментов...</option>';
+
+    // Получаем текущего пользователя (чтобы взять companyId)
+    axios.get('/api/users/me')
+            .then(meResponse => {
+              const companyId = meResponse.data.companyId;
+
+              // Загружаем ожидающих пользователей
+              return axios.get(`/api/users/${companyId}/awaiting`)
+                      .then(usersResponse => {
+                        const awaitingUsers = usersResponse.data;
+                        userSelect.innerHTML = '<option value="">Выберите пользователя</option>';
+                        awaitingUsers.forEach(user => {
+                          const option = document.createElement('option');
+                          option.value = user.id;
+                          option.textContent = `${user.userName || user.email} (${user.roleCode})`;
+                          userSelect.appendChild(option);
+                        });
+                      });
+            })
+            .catch(err => {
+              console.error('Ошибка загрузки пользователей:', err);
+              userSelect.innerHTML = '<option value="">Ошибка загрузки</option>';
+              alert('Не удалось загрузить пользователей');
+            });
+
+    // Загружаем департаменты
+    axios.get('/api/v1/department/get')
+            .then(response => {
+              allDepartments = response.data;
+              deptSelect.innerHTML = '<option value="">Выберите департамент</option>';
+              allDepartments.forEach(dept => {
+                const option = document.createElement('option');
+                option.value = dept.id;
+                option.textContent = dept.name;
+                deptSelect.appendChild(option);
+              });
+            })
+            .catch(err => {
+              console.error('Ошибка загрузки департаментов:', err);
+              deptSelect.innerHTML = '<option value="">Ошибка загрузки</option>';
+              alert('Не удалось загрузить департаменты');
+            });
+
+    // Показываем модалку
+    new bootstrap.Modal(document.getElementById('assignUserModal')).show();
+  }
+
+  function assignUserToDepartment() {
+    const userId = document.getElementById('userSelect').value;
+    const departmentId = document.getElementById('departmentSelect').value;
+
+    if (!userId || !departmentId) {
+      alert('Выберите пользователя и департамент');
+      return;
+    }
+
+    axios.patch(`/api/v1/department/${userId}/assign-to/${departmentId}`)
+            .then(() => {
+              alert('Пользователь успешно назначен в департамент!');
+              bootstrap.Modal.getInstance(document.getElementById('assignUserModal')).hide();
+            })
+            .catch(error => {
+              const msg = error.response?.data?.message || error.response?.data || 'Не удалось назначить';
               alert('Ошибка: ' + msg);
             });
   }

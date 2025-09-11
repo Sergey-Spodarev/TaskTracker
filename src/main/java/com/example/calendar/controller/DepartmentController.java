@@ -31,6 +31,13 @@ public class DepartmentController {
                 .body(departmentService.updateName(departmentDTO));
     }
 
+    @PatchMapping("/{userId}/assign-to/{departmentId}")
+    public ResponseEntity<String> appointDepartment(@PathVariable Long userId, @PathVariable Long departmentId) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(departmentService.assignUserToDepartment(userId, departmentId));
+    }
+
     @DeleteMapping("/{department_id}")
     public ResponseEntity<Void> deleteDepartment(@PathVariable Long department_id) {
         departmentService.deleteDepartment(department_id);

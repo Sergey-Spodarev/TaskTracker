@@ -1,9 +1,12 @@
 package com.example.calendar.repository;
 
+import com.example.calendar.model.Company;
+import com.example.calendar.model.Role;
 import com.example.calendar.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 //Интерфейсы для работы с БД (наследуются от JpaRepository):запросы к таблице пользователей.
@@ -11,5 +14,6 @@ import java.util.Optional;
 public interface UserRepository extends JpaRepository<User, Long> {//JpaRepository - автоматически создаст реализацию.
     Optional<User> findByEmail(String email);
     Optional<User>  findByUserName(String username);
+    List<User> findByRoleAndCompany(Role role, Company company);
     boolean existsByEmail(String email);
 }

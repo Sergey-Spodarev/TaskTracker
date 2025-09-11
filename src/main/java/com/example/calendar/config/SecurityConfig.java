@@ -108,6 +108,12 @@ public class SecurityConfig {
                 // === ПРИГЛАШЕНИЯ ===
                 .requestMatchers("/InvitationToken/addInvitationToken").hasRole("ADMIN")
 
+                //  доступ к ожидающим пользователям
+                .requestMatchers("/api/users/{companyId}/awaiting").hasRole("ADMIN")
+
+                // назначение пользователя в департамент
+                .requestMatchers("/api/v1/department/{userId}/assign-to/{departmentId}").hasRole("ADMIN")
+
                 // === КОМПАНИЯ ===
                 .requestMatchers("/api/companies/update").hasRole("ADMIN")
 

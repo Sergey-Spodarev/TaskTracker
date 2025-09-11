@@ -9,7 +9,7 @@ import java.util.Optional;
 
 public interface DepartmentRepository extends JpaRepository<Department, Long> {
     boolean existsByCompanyAndName(Company company, String name);
-    Optional<List<Department>> findByCompany(Company company);
+    List<Department> findByCompany(Company company);
 
     Optional<Department> findByName(String name);
     Optional<Department> findByNameAndCompany(String name, Company company);

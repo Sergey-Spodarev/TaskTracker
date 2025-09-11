@@ -19,8 +19,11 @@ import java.util.stream.Collectors;
 @Transactional
 public class DepartmentService {
     private final DepartmentRepository departmentRepository;
-    public DepartmentService(DepartmentRepository departmentRepository) {
+    private final UserService userService;
+
+    public DepartmentService(DepartmentRepository departmentRepository, UserService userService) {
         this.departmentRepository = departmentRepository;
+        this.userService = userService;
     }
 
     public DepartmentDTO createDepartment(DepartmentDTO departmentDTO) {
@@ -79,11 +82,30 @@ public class DepartmentService {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         User admin = userDetails.getUser();
 
-        List<Department> departments = departmentRepository.findByCompany(admin.getCompany())
-                .orElseThrow(() -> new UsernameNotFoundException("This department does not exist."));
+        List<Department> departments = departmentRepository.findByCompany(admin.getCompany());
         return departments.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
+    }
+
+    public String assignUserToDepartment(Long userId, Long departmentId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        User admin = userDetails.getUser();
+
+        if (!"ADMIN".equals(admin.getRole().getCode())) {
+            throw new UsernameNotFoundException("Только администратор может назначить департамент");
+        }
+        User user = userService.getUserById(userId);
+        if (!admin.getCompany().getId().equals(user.getCompany().getId())) {
+            throw new AccessDeniedException("Вы не можете назначить роль человеку из другой компании");
+        }
+        Department department = departmentRepository.findById(departmentId)
+                .orElseThrow(() -> new UsernameNotFoundException("Данный департамент не был найден"));
+
+        user.setDepartment(department);
+        userService.saveUser(user);
+        return user.getUserName() + "назначен в департамент";
     }
 
     public DepartmentDTO convertToDTO(Department department) {

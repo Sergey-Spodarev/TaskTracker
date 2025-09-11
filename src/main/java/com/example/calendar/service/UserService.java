@@ -13,12 +13,15 @@ import com.example.calendar.repository.DepartmentRepository;
 import com.example.calendar.repository.RoleRepository;
 import com.example.calendar.repository.UserRepository;
 import com.example.calendar.security.CustomUserDetails;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 //Бизнес-логика (например, UserService для регистрации).
 @Service // Помечает класс как сервисный компонент (логика приложения)
@@ -152,5 +155,38 @@ public class UserService {
         user.setEmail(userDTO.getEmail());
         user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
         return convertUserToDTO(userRepository.save(user));
+    }
+
+    public List<UserWithRoleDTO> getAwaitingRole(Long companyId){
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        User admin = userDetails.getUser();
+
+        if (!admin.getRole().getCode().equals("ADMIN")) {
+            throw new AccessDeniedException("Только администратор может получить пользователей");
+        }
+        if (!admin.getCompany().getId().equals(companyId)) {
+            throw new AccessDeniedException("Вы не можете смотреть пользователей из другой компании");
+        }
+
+        Company company = admin.getCompany();
+        Role awaitingRole = roleRepository.findByCodeAndCompany("AWAITING", company)
+                .orElseThrow(() -> new RuntimeException("В вашей компании нет людей с ролью Awaiting"));
+
+        if (awaitingRole == null) {
+            return List.of();
+        }
+        List<User> users = userRepository.findByRoleAndCompany(awaitingRole, company);
+        return users.stream()
+                .map(this::convertToDTO)
+                .toList();
+    }
+
+    public User getUserById(Long id){
+        return userRepository.findById(id).orElse(null);
+    }
+
+    public void saveUser(User user){
+        userRepository.save(user);
     }
 }
