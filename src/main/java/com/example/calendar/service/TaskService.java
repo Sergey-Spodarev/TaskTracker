@@ -57,8 +57,9 @@ public class TaskService {
         task.setStatus(TaskStatus.TODO);
         task.setPriority(taskDTO.getPriority());
 
+        Task saveTask = taskRepository.save(task);
         taskHistoryService.logTaskChange(task, user, "Task", "Task created", "Status: TODO");
-        return convertTaskToDTO(taskRepository.save(task));
+        return convertTaskToDTO(saveTask);
     }
 
     public TaskDTO createSubtask(Long taskId, TaskDTO parentTaskDTO) {
@@ -95,6 +96,7 @@ public class TaskService {
         subtask.setStatus(TaskStatus.TODO);
         subtask.setParentTask(parentTask);
 
+        Task saveSubtask = taskRepository.save(subtask);
         long count = parentTask.getSubtasks().size();
         if (count == 0) {
             taskHistoryService.logTaskChange(parentTask, user, "Subtask", "None", "Created");
@@ -103,7 +105,7 @@ public class TaskService {
             taskHistoryService.logTaskChange(parentTask, user, "Subtask", count + " subtask", (count + 1) + " subtask");
         }
 
-        return convertTaskToDTO(taskRepository.save(subtask));
+        return convertTaskToDTO(saveSubtask);
     }
 
     public TaskDTO changeAssignee(Long taskId, Long assigneeId) {

@@ -100,6 +100,10 @@ public class AssignmentRuleService {
     }
 
     public boolean canUserAssignToUser(User fromUser, User toUser){
+        if ("ADMIN".equals(fromUser.getRole().getCode())) {
+            return true;
+        }
+
         return assignmentRuleRepository.existsByRoleAndSourceDepartmentAndTargetDepartmentAndAllowedTrue(
                 fromUser.getRole(), fromUser.getDepartment(), toUser.getDepartment()
         );
