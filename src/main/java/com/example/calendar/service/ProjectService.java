@@ -31,7 +31,7 @@ public class ProjectService {
 
         Project project = new Project();
         project.setName(projectDTO.getName());
-        project.setProjectKey(project.getProjectKey());
+        project.setProjectKey(projectDTO.getProjectKey());
         project.setCompany(company);
         return convertToDTO(projectRepository.save(project));
     }
@@ -49,10 +49,19 @@ public class ProjectService {
 
     public List<ProjectDTO> findAll() {
         User user = getCurrentUser();
+        System.out.println("🔍 Поиск проектов для компании: " + user.getCompany().getId());
 
-        return projectRepository.findAllByCompany(user.getCompany()).stream()
-                .map(this::convertToDTO)
+        List<Project> projects = projectRepository.findByCompanyId(user.getCompany().getId());
+        System.out.println("✅ Найдено проектов: " + projects.size());
+
+        List<ProjectDTO> dtos = projects.stream()
+                .map(p -> {
+                    System.out.println("📄 Конвертируем проект: id=" + p.getId() + ", key=" + p.getProjectKey());
+                    return convertToDTO(p);
+                })
                 .toList();
+
+        return dtos;
     }
 
     public ProjectDTO findById(Long id) {

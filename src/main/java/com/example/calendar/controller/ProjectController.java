@@ -2,14 +2,14 @@ package com.example.calendar.controller;
 
 import com.example.calendar.DTO.ProjectDTO;
 import com.example.calendar.service.ProjectService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Controller
+@RestController
 @RequestMapping("/project")
 public class ProjectController {
     private final ProjectService projectService;
@@ -18,14 +18,14 @@ public class ProjectController {
     }
 
     @PostMapping("/create")
-    public ResponseEntity<ProjectDTO> createProject(@RequestBody ProjectDTO projectDTO) {
+    public ResponseEntity<ProjectDTO> createProject(@RequestBody @Valid ProjectDTO projectDTO) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(projectService.create(projectDTO));
     }
 
     @PutMapping("/update")
-    public ResponseEntity<ProjectDTO> updateProject(@RequestBody ProjectDTO projectDTO) {
+    public ResponseEntity<ProjectDTO> updateProject(@RequestBody @Valid ProjectDTO projectDTO) {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(projectService.update(projectDTO));

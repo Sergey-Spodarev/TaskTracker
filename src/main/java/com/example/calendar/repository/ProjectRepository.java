@@ -12,5 +12,5 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
 
     boolean existsByProjectKeyAndCompany(String projectKey, Company company);
 
-    List<Project> findAllByCompany(Company company);
+    List<Project> findByCompanyId(Long companyId);
 }

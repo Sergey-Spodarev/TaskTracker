@@ -23,6 +23,7 @@ public class TaskController {
 
     @PostMapping("/create")
     public ResponseEntity<TaskDTO> createTask(@RequestBody @Valid TaskDTO taskDTO) {
+        System.out.println("🎯 [DEBUG] Создаёт задачу: " + taskDTO);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(taskService.createTask(taskDTO));
