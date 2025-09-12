@@ -40,9 +40,7 @@ public class UserService {
     }
 
     public UserDTO assignUser(Long userId, String codeRole, String nameDepartment){//это когда админ будет назначать пользователю как отдел так и роль
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        User admin = userDetails.getUser();
+        User admin = getCurrentUser();
         if (!"ADMIN".equals(admin.getRole().getCode())) {
             throw new RuntimeException("Только администратор может назначать роль пользователю");
         }
@@ -84,9 +82,7 @@ public class UserService {
     }
 
     public User createPendingUser(String email){
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        User admin = userDetails.getUser();
+        User admin = getCurrentUser();
 
         Role role = getDefaultUserRole(admin.getCompany());
 
@@ -98,10 +94,83 @@ public class UserService {
     }
 
     public UserWithRoleDTO getUser() {
+        User user = getCurrentUser();
+        return convertToDTO(user);
+    }
+
+    private Role getDefaultUserRole(Company company) {
+        return roleRepository.findByCodeAndCompany("AWAITING", company)
+                .orElseGet(() -> createAndSaveAwaitingRole(company));
+    }
+
+    private Role createAndSaveAwaitingRole(Company company) {
+        Role role = new Role();
+        role.setCode("AWAITING");
+        role.setDisplayName("Ожидает регистрации");
+        role.setCompany(company);
+        return roleRepository.save(role);
+    }
+
+    public UserDTO updateUser(UserDTO userDTO){
+        User user = userRepository.findByEmail(userDTO.getEmail())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email:" + userDTO.getEmail()));
+        user.setUserName(userDTO.getUserName());
+        user.setEmail(userDTO.getEmail());
+        user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+        return convertUserToDTO(userRepository.save(user));
+    }
+
+    public List<UserWithRoleDTO> getAwaitingRole(Long companyId){
+        User admin = getCurrentUser();
+
+        if (!admin.getRole().getCode().equals("ADMIN")) {
+            throw new AccessDeniedException("Только администратор может получить пользователей");
+        }
+        if (!admin.getCompany().getId().equals(companyId)) {
+            throw new AccessDeniedException("Вы не можете смотреть пользователей из другой компании");
+        }
+
+        Company company = admin.getCompany();
+        Role awaitingRole = roleRepository.findByCodeAndCompany("AWAITING", company)
+                .orElseThrow(() -> new RuntimeException("В вашей компании нет людей с ролью Awaiting"));
+
+        if (awaitingRole == null) {
+            return List.of();
+        }
+        List<User> users = userRepository.findByRoleAndCompany(awaitingRole, company);
+        return users.stream()
+                .map(this::convertToDTO)
+                .toList();
+    }
+
+    public List<UserDTO> getAllUsers(){
+        User user = getCurrentUser();
+        List<User> users = userRepository.findByCompany(user.getCompany());
+        return users.stream()
+                .map(this::convertUserToDTO)
+                .toList();
+    }
+
+    public User getUserById(Long id){
+        return userRepository.findById(id).orElse(null);
+    }
+
+    public void saveUser(User user){
+        userRepository.save(user);
+    }
+
+    private User getCurrentUser(){
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        User user = userDetails.getUser();
-        return convertToDTO(user);
+        return userDetails.getUser();
+    }
+
+    public UserDTO convertUserToDTO(User user){
+        UserDTO userDTO = new UserDTO();
+        userDTO.setUserName(user.getUserName());
+        userDTO.setEmail(user.getEmail());
+        userDTO.setPassword(user.getPassword());
+        return userDTO;
     }
 
     public UserWithRoleDTO convertToDTO(User user) {
@@ -125,68 +194,5 @@ public class UserService {
         }
 
         return dto;
-    }
-
-    private Role getDefaultUserRole(Company company) {
-        return roleRepository.findByCodeAndCompany("AWAITING", company)
-                .orElseGet(() -> createAndSaveAwaitingRole(company));
-    }
-
-    private Role createAndSaveAwaitingRole(Company company) {
-        Role role = new Role();
-        role.setCode("AWAITING");
-        role.setDisplayName("Ожидает регистрации");
-        role.setCompany(company);
-        return roleRepository.save(role);
-    }
-
-    public UserDTO convertUserToDTO(User user){
-        UserDTO userDTO = new UserDTO();
-        userDTO.setUserName(user.getUserName());
-        userDTO.setEmail(user.getEmail());
-        userDTO.setPassword(user.getPassword());
-        return userDTO;
-    }
-
-    public UserDTO updateUser(UserDTO userDTO){
-        User user = userRepository.findByEmail(userDTO.getEmail())
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with email:" + userDTO.getEmail()));
-        user.setUserName(userDTO.getUserName());
-        user.setEmail(userDTO.getEmail());
-        user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
-        return convertUserToDTO(userRepository.save(user));
-    }
-
-    public List<UserWithRoleDTO> getAwaitingRole(Long companyId){
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        User admin = userDetails.getUser();
-
-        if (!admin.getRole().getCode().equals("ADMIN")) {
-            throw new AccessDeniedException("Только администратор может получить пользователей");
-        }
-        if (!admin.getCompany().getId().equals(companyId)) {
-            throw new AccessDeniedException("Вы не можете смотреть пользователей из другой компании");
-        }
-
-        Company company = admin.getCompany();
-        Role awaitingRole = roleRepository.findByCodeAndCompany("AWAITING", company)
-                .orElseThrow(() -> new RuntimeException("В вашей компании нет людей с ролью Awaiting"));
-
-        if (awaitingRole == null) {
-            return List.of();
-        }
-        List<User> users = userRepository.findByRoleAndCompany(awaitingRole, company);
-        return users.stream()
-                .map(this::convertToDTO)
-                .toList();
-    }
-
-    public User getUserById(Long id){
-        return userRepository.findById(id).orElse(null);
-    }
-
-    public void saveUser(User user){
-        userRepository.save(user);
     }
 }

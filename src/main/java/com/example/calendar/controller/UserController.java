@@ -39,6 +39,13 @@ public class UserController {
                 .body(userService.getUser());
     }
 
+    @GetMapping("/all")
+    public ResponseEntity<List<UserDTO>> getAllUsers() {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(userService.getAllUsers());
+    }
+
     @GetMapping("/{companyId}/awaiting")
     public ResponseEntity<List<UserWithRoleDTO>> getAwaitingRole(@PathVariable Long companyId) {
         return ResponseEntity

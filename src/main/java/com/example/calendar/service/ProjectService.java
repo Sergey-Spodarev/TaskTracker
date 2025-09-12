@@ -33,7 +33,6 @@ public class ProjectService {
         project.setName(projectDTO.getName());
         project.setProjectKey(project.getProjectKey());
         project.setCompany(company);
-        //тут мы так же должны вызвать функию для Task
         return convertToDTO(projectRepository.save(project));
     }
 
