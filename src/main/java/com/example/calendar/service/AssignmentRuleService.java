@@ -35,13 +35,13 @@ public class AssignmentRuleService {
             throw new AccessDeniedException("Only the admin can create the rules.");
         }
 
-        Role role = roleRepository.findByCode(assignmentRuleDTO.getRoleCode())
+        Role role = roleRepository.findByCodeAndCompany(assignmentRuleDTO.getRoleCode(), admin.getCompany())
                 .orElseThrow(() -> new IllegalArgumentException("No role exists."));
 
-        Department sourceDepartment = departmentRepository.findByName(assignmentRuleDTO.getSourceDepartment())
+        Department sourceDepartment = departmentRepository.findByNameAndCompany(assignmentRuleDTO.getSourceDepartment(), admin.getCompany())
                 .orElseThrow(() -> new IllegalArgumentException("No department exists."));
 
-        Department targetDepartment = departmentRepository.findByName(assignmentRuleDTO.getTargetDepartment())
+        Department targetDepartment = departmentRepository.findByNameAndCompany(assignmentRuleDTO.getTargetDepartment(), admin.getCompany())//но тут может подправить
                 .orElseThrow(() -> new IllegalArgumentException("No department exists."));
 
         AssignmentRule assignmentRule = new AssignmentRule();

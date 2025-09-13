@@ -250,13 +250,22 @@
           <h6>Добавить правило</h6>
           <div class="row g-2">
             <div class="col-4">
-              <input type="text" id="ruleRoleCode" class="form-control" placeholder="Код роли (например: USER)">
+              <label class="form-label">Роль</label>
+              <select id="ruleRoleSelect" class="form-control" required>
+                <option value="">Загрузка ролей...</option>
+              </select>
             </div>
             <div class="col-4">
-              <input type="text" id="ruleSourceDept" class="form-control" placeholder="Отдел отправителя">
+              <label class="form-label">Отдел (от)</label>
+              <select id="ruleSourceDeptSelect" class="form-control" required>
+                <option value="">Загрузка отделов...</option>
+              </select>
             </div>
             <div class="col-4">
-              <input type="text" id="ruleTargetDept" class="form-control" placeholder="Целевой отдел">
+              <label class="form-label">Отдел (на)</label>
+              <select id="ruleTargetDeptSelect" class="form-control" required>
+                <option value="">Загрузка отделов...</option>
+              </select>
             </div>
           </div>
           <div class="mt-2">
@@ -265,7 +274,7 @@
               <span class="form-check-label">Разрешено</span>
             </label>
           </div>
-          <button class="btn btn-sm btn-primary mt-2" onclick="addAssignmentRule()">Добавить</button>
+          <button class="btn btn-sm btn-primary mt-2" onclick="addAssignmentRule()">Добавить правило</button>
         </div>
 
         <!-- Таблица правил -->
@@ -553,8 +562,57 @@
 
   // --- ПРАВИЛА НАЗНАЧЕНИЯ ---
   function openAssignmentRulesModal() {
+    loadRolesForRules();
+    loadDepartmentsForRules();
     loadAssignmentRules();
     new bootstrap.Modal(document.getElementById('assignmentRulesModal')).show();
+  }
+
+  function loadRolesForRules() {
+    axios.get('/role/all')
+            .then(response => {
+              const select = document.getElementById('ruleRoleSelect');
+              select.innerHTML = '<option value="">Выберите роль</option>';
+
+              response.data.forEach(role => {
+                const option = document.createElement('option');
+                option.value = role.code;           // ← отправляем code
+                option.textContent = role.displayName; // ← видим displayName
+                select.appendChild(option);
+              });
+            })
+            .catch(error => {
+              console.error('❌ Ошибка загрузки ролей:', error);
+              alert('Не удалось загрузить роли');
+            });
+  }
+
+  function loadDepartmentsForRules() {
+    axios.get('/api/v1/department/get')
+            .then(response => {
+              const sourceSelect = document.getElementById('ruleSourceDeptSelect');
+              const targetSelect = document.getElementById('ruleTargetDeptSelect');
+
+              sourceSelect.innerHTML = '<option value="">Выберите отдел</option>';
+              targetSelect.innerHTML = '<option value="">Выберите отдел</option>';
+
+              response.data.forEach(dept => {
+                const sourceOption = document.createElement('option');
+                sourceOption.value = dept.name;
+                sourceOption.textContent = dept.name;
+
+                const targetOption = document.createElement('option');
+                targetOption.value = dept.name;
+                targetOption.textContent = dept.name;
+
+                sourceSelect.appendChild(sourceOption);
+                targetSelect.appendChild(targetOption);
+              });
+            })
+            .catch(error => {
+              console.error('❌ Ошибка загрузки департаментов:', error);
+              alert('Не удалось загрузить отделы');
+            });
   }
 
   function loadAssignmentRules() {
@@ -597,13 +655,13 @@
   }
 
   function addAssignmentRule() {
-    const roleCode = document.getElementById('ruleRoleCode').value.trim();
-    const sourceDept = document.getElementById('ruleSourceDept').value.trim();
-    const targetDept = document.getElementById('ruleTargetDept').value.trim();
+    const roleCode = document.getElementById('ruleRoleSelect').value;
+    const sourceDept = document.getElementById('ruleSourceDeptSelect').value;
+    const targetDept = document.getElementById('ruleTargetDeptSelect').value;
     const allowed = document.getElementById('ruleAllowed').checked;
 
     if (!roleCode || !sourceDept || !targetDept) {
-      alert('Заполните все поля');
+      alert('Выберите все поля');
       return;
     }
 
@@ -612,10 +670,7 @@
     axios.post('/assignmentRuleService/add', dto)
             .then(() => {
               alert('✅ Правило добавлено!');
-              document.getElementById('ruleRoleCode').value = '';
-              document.getElementById('ruleSourceDept').value = '';
-              document.getElementById('ruleTargetDept').value = '';
-              loadAssignmentRules();
+              loadAssignmentRules(); // Обновляем таблицу
             })
             .catch(error => {
               const msg = error.response?.data?.message || 'Ошибка при добавлении';
@@ -708,7 +763,6 @@
       return;
     }
 
-    // ✅ Отправляем и роль, и название департамента
     axios.patch(`/api/v1/department/${userId}/assign-role-and-department`, {
       departmentName: departmentName,
       roleCode: roleCode
@@ -745,8 +799,8 @@
             .then(() => {
               alert('✅ Роль успешно создана!');
               bootstrap.Modal.getInstance(document.getElementById('createRoleModal')).hide();
-              // Обновим списки ролей
               loadRolesForAssignment();
+              loadRolesForRules(); // Обновим и в правилах
             })
             .catch(error => {
               const msg = error.response?.data?.message ||

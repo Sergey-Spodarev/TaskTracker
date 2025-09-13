@@ -29,8 +29,7 @@ public class RoleService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         User user = userDetails.getUser();
-        List<Role> allRoleCompany = roleRepository.findByCompany(user.getCompany())
-                .orElseThrow(() -> new UsernameNotFoundException("Company not found"));
+        List<Role> allRoleCompany = roleRepository.findByCompany(user.getCompany());
         return allRoleCompany.stream()
                 .map(Role::getDisplayName)
                 .toList();

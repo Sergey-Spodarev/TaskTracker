@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface RoleRepository extends JpaRepository<Role, Long> {
-    Optional<List<Role>> findByCompany(Company company);
+    List<Role> findByCompany(Company company);
     Optional<Role> findByCode(String code);
     Optional<Role> findById(Long id);
     Boolean existsByCodeAndCompany(String code, Company company);
