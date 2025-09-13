@@ -114,6 +114,8 @@ public class SecurityConfig {
                 // назначение пользователя в департамент
                 .requestMatchers("/api/v1/department/{userId}/assign-role-and-department").hasRole("ADMIN")
 
+                .requestMatchers("/api/v1/department/{userId}/assign-department").hasRole("ADMIN")
+
                 .requestMatchers("/api/users/all").hasRole("ADMIN")
 
                 // === КОМПАНИЯ ===

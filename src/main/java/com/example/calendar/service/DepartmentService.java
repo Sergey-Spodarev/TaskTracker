@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -89,23 +90,44 @@ public class DepartmentService {
                 .collect(Collectors.toList());
     }
 
-    public String assignUserToDepartment(Long userId, AssignDeptRequestDTO request) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        User admin = userDetails.getUser();
-
+    public String assignUserToDepartmentAndRole(Long userId, AssignDeptRequestDTO request) {
+        User admin = getCurrentUser();
         if (!"ADMIN".equals(admin.getRole().getCode())) {
-            throw new UsernameNotFoundException("Только администратор может назначить департамент");
+            throw new UsernameNotFoundException("Только администратор может может вносить изменения");
         }
+
         User user = userService.getUserById(userId);
         if (!admin.getCompany().getId().equals(user.getCompany().getId())) {
             throw new AccessDeniedException("Вы не можете назначить роль человеку из другой компании");
         }
+
         Department department = departmentRepository.findByNameAndCompany(request.getDepartmentName(), user.getCompany())
                 .orElseThrow(() -> new UsernameNotFoundException("Данный департамент не был найден в вашей компании"));
 
         user.setDepartment(department);
         user.setRole(user.getRole());
+        userService.saveUser(user);
+        return user.getUserName() + "назначен в департамент";//может переделать чтобы ещё и возвращал роль
+    }
+
+    public String assignUserToDepartment(Long userId, String departmentName) {
+        User admin = getCurrentUser();
+        if (!"ADMIN".equals(admin.getRole().getCode())) {
+            throw new UsernameNotFoundException("Только администратор может может вносить изменения");
+        }
+
+        User user = userService.getUserById(userId);
+        if (!admin.getCompany().getId().equals(user.getCompany().getId())) {
+            throw new AccessDeniedException("Вы не можете менять данные у человека из другой компании");
+        }
+
+        if (Objects.equals(departmentName, "")){
+            throw new AccessDeniedException("Должно быть выбрано название департамента");
+        }
+        Department department = departmentRepository.findByNameAndCompany(departmentName, user.getCompany())
+                .orElseThrow(() -> new UsernameNotFoundException("Данный департамент не был найден в вашей компании"));
+
+        user.setDepartment(department);
         userService.saveUser(user);
         return user.getUserName() + "назначен в департамент";
     }
@@ -115,5 +137,11 @@ public class DepartmentService {
         departmentDTO.setId(department.getId());
         departmentDTO.setName(department.getName());
         return departmentDTO;
+    }
+
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        return userDetails.getUser();
     }
 }

@@ -36,7 +36,14 @@ public class DepartmentController {
     public ResponseEntity<String> appointDepartment(@PathVariable Long userId, @RequestBody AssignDeptRequestDTO request) {
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body(departmentService.assignUserToDepartment(userId, request));
+                .body(departmentService.assignUserToDepartmentAndRole(userId, request));
+    }
+
+    @PatchMapping("/{userId}/assign-department")//может переделать под отдельный DTO чтобы на этапе Controller проверять на правильность
+    public ResponseEntity<String> assignDepartment(@PathVariable Long userId,  String departmentName) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(departmentService.assignUserToDepartment(userId, departmentName));
     }
 
     @DeleteMapping("/{department_id}")
