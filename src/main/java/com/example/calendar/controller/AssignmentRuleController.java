@@ -4,12 +4,11 @@ import com.example.calendar.DTO.AssignmentRuleDTO;
 import com.example.calendar.service.AssignmentRuleService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Controller
+@RestController
 @RequestMapping("/assignmentRuleService")
 public class AssignmentRuleController {
     private final AssignmentRuleService assignmentRuleService;

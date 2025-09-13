@@ -1,5 +1,6 @@
 package com.example.calendar.service;
 
+import com.example.calendar.DTO.AssignDeptRequestDTO;
 import com.example.calendar.DTO.DepartmentDTO;
 import com.example.calendar.model.Department;
 import com.example.calendar.model.User;
@@ -88,7 +89,7 @@ public class DepartmentService {
                 .collect(Collectors.toList());
     }
 
-    public String assignUserToDepartment(Long userId, Long departmentId) {
+    public String assignUserToDepartment(Long userId, AssignDeptRequestDTO request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         User admin = userDetails.getUser();
@@ -100,10 +101,11 @@ public class DepartmentService {
         if (!admin.getCompany().getId().equals(user.getCompany().getId())) {
             throw new AccessDeniedException("Вы не можете назначить роль человеку из другой компании");
         }
-        Department department = departmentRepository.findById(departmentId)
-                .orElseThrow(() -> new UsernameNotFoundException("Данный департамент не был найден"));
+        Department department = departmentRepository.findByNameAndCompany(request.getDepartmentName(), user.getCompany())
+                .orElseThrow(() -> new UsernameNotFoundException("Данный департамент не был найден в вашей компании"));
 
         user.setDepartment(department);
+        user.setRole(user.getRole());
         userService.saveUser(user);
         return user.getUserName() + "назначен в департамент";
     }

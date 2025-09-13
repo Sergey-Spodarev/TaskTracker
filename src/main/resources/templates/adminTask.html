@@ -126,9 +126,12 @@
     <div class="sidebar-item" onclick="openAddDepartmentModal()">➕ Добавить департамент</div>
     <div class="sidebar-item" onclick="openInviteUserModal()">📨 Пригласить пользователя</div>
     <div class="sidebar-item" onclick="openAssignUserModal()">🔧 Назначить пользователю департамент</div>
+    <div class="sidebar-item" onclick="openAssignRoleModal()">🔧 Назначить роль и департамент</div>
 
     <hr>
     <div class="sidebar-item" onclick="openCreateProjectModal()">➕ Создать проект</div>
+    <div class="sidebar-item" onclick="openCreateRoleModal()">➕ Создать роль</div>
+    <div class="sidebar-item" onclick="openAssignmentRulesModal()">🔧 Правила назначения</div>
     <div class="sidebar-item">Календарь</div>
   </div>
 
@@ -233,6 +236,123 @@
   </div>
 </div>
 
+<!-- Модальное окно: Правила назначения -->
+<div class="modal fade" id="assignmentRulesModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Правила назначения задач</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Форма добавления -->
+        <div class="mb-3 border-bottom pb-3">
+          <h6>Добавить правило</h6>
+          <div class="row g-2">
+            <div class="col-4">
+              <input type="text" id="ruleRoleCode" class="form-control" placeholder="Код роли (например: USER)">
+            </div>
+            <div class="col-4">
+              <input type="text" id="ruleSourceDept" class="form-control" placeholder="Отдел отправителя">
+            </div>
+            <div class="col-4">
+              <input type="text" id="ruleTargetDept" class="form-control" placeholder="Целевой отдел">
+            </div>
+          </div>
+          <div class="mt-2">
+            <label class="form-check form-switch">
+              <input type="checkbox" id="ruleAllowed" class="form-check-input" checked>
+              <span class="form-check-label">Разрешено</span>
+            </label>
+          </div>
+          <button class="btn btn-sm btn-primary mt-2" onclick="addAssignmentRule()">Добавить</button>
+        </div>
+
+        <!-- Таблица правил -->
+        <table class="table table-sm table-striped">
+          <thead>
+          <tr>
+            <th>Роль</th>
+            <th>Отдел (от)</th>
+            <th>Отдел (на)</th>
+            <th>Разрешено</th>
+            <th>Действия</th>
+          </tr>
+          </thead>
+          <tbody id="rulesTableBody">
+          <!-- заполняется динамически -->
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно: Назначить роль и департамент -->
+<div class="modal fade" id="assignRoleModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Назначить роль и департамент</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Пользователь</label>
+          <select id="assignUserSelect" class="form-control" required>
+            <option value="">Загрузка пользователей...</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Роль</label>
+          <select id="assignRoleSelect" class="form-control" required>
+            <option value="">Загрузка ролей...</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Департамент</label>
+          <select id="assignDeptSelect" class="form-control" required>
+            <option value="">Загрузка департаментов...</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+        <button type="button" class="btn btn-primary" onclick="saveUserRole()">Сохранить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно: Создать роль -->
+<div class="modal fade" id="createRoleModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Создать новую роль</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Код роли</label>
+          <input type="text" id="roleCode" class="form-control" placeholder="например: TEAM_LEAD" required />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Отображаемое имя</label>
+          <input type="text" id="roleDisplayName" class="form-control" placeholder="например: Руководитель команды" required />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+        <button type="button" class="btn btn-success" onclick="createRole()">Создать роль</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Остальные модалки (без изменений) -->
 <div class="modal fade" id="addDepartmentModal" tabindex="-1"> ... </div>
 <div class="modal fade" id="inviteUserModal" tabindex="-1"> ... </div>
@@ -248,6 +368,7 @@
   let allTasks = [];
   let allUsers = [];
   let allDepartments = [];
+  let allAssignmentRules = [];
 
   // --- ЗАГРУЗКА ПОЛЬЗОВАТЕЛЕЙ ---
   function loadUsers() {
@@ -271,14 +392,13 @@
               }
 
               allUsers.forEach(user => {
-                // Проверяем, что id есть
                 if (!user.id) {
                   console.warn('⚠️ У пользователя нет id:', user);
                   return;
                 }
 
                 const option = document.createElement('option');
-                option.value = user.id; // ← правильно: после convertUserToDTO
+                option.value = user.id;
                 option.textContent = user.userName || user.email;
                 select.appendChild(option);
               });
@@ -352,7 +472,6 @@
     const assigneeIdStr = document.getElementById('taskAssignee').value;
     const projectIdStr = document.getElementById('taskProject').value;
 
-    // 🔍 Дебаг
     console.log("Debug - title:", title);
     console.log("Debug - start:", start);
     console.log("Debug - end:", end);
@@ -394,7 +513,6 @@
 
     console.log("📤 Отправляю DTO:", dto);
 
-    // 🔥 POST с учётом сессии
     axios.post('/api/v1/task/create', dto)
             .then(() => {
               alert('✅ Задача успешно создана!');
@@ -411,7 +529,7 @@
             });
   }
 
-  // --- ОСТАЛЬНЫЕ ФУНКЦИИ (без изменений) ---
+  // --- СОЗДАНИЕ ПРОЕКТА ---
   function createProject() {
     const name = document.getElementById('projectName').value.trim();
     const key = document.getElementById('projectKey').value.trim().toUpperCase();
@@ -433,6 +551,212 @@
             });
   }
 
+  // --- ПРАВИЛА НАЗНАЧЕНИЯ ---
+  function openAssignmentRulesModal() {
+    loadAssignmentRules();
+    new bootstrap.Modal(document.getElementById('assignmentRulesModal')).show();
+  }
+
+  function loadAssignmentRules() {
+    axios.get('/assignmentRuleService/getAllRoleCompany')
+            .then(response => {
+              allAssignmentRules = response.data;
+              renderAssignmentRules();
+            })
+            .catch(error => {
+              console.error('❌ Ошибка загрузки правил:', error);
+              alert('Не удалось загрузить правила');
+            });
+  }
+
+  function renderAssignmentRules() {
+    const tbody = document.getElementById('rulesTableBody');
+    tbody.innerHTML = '';
+
+    if (allAssignmentRules.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center">Нет правил</td></tr>';
+      return;
+    }
+
+    allAssignmentRules.forEach(rule => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${rule.roleName} (${rule.roleCode})</td>
+        <td>${rule.sourceDepartment}</td>
+        <td>${rule.targetDepartment}</td>
+        <td>${rule.allowed ? '✅ Да' : '❌ Нет'}</td>
+        <td>
+          <button class="btn btn-sm btn-danger"
+                  onclick="deleteAssignmentRule(${rule.id})">
+            Удалить
+          </button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function addAssignmentRule() {
+    const roleCode = document.getElementById('ruleRoleCode').value.trim();
+    const sourceDept = document.getElementById('ruleSourceDept').value.trim();
+    const targetDept = document.getElementById('ruleTargetDept').value.trim();
+    const allowed = document.getElementById('ruleAllowed').checked;
+
+    if (!roleCode || !sourceDept || !targetDept) {
+      alert('Заполните все поля');
+      return;
+    }
+
+    const dto = { roleCode, sourceDepartment: sourceDept, targetDepartment: targetDept, allowed };
+
+    axios.post('/assignmentRuleService/add', dto)
+            .then(() => {
+              alert('✅ Правило добавлено!');
+              document.getElementById('ruleRoleCode').value = '';
+              document.getElementById('ruleSourceDept').value = '';
+              document.getElementById('ruleTargetDept').value = '';
+              loadAssignmentRules();
+            })
+            .catch(error => {
+              const msg = error.response?.data?.message || 'Ошибка при добавлении';
+              alert('❌ Ошибка: ' + msg);
+            });
+  }
+
+  function deleteAssignmentRule(id) {
+    if (!confirm('Удалить это правило?')) return;
+
+    axios.delete(`/assignmentRuleService/${id}`)
+            .then(() => {
+              alert('✅ Правило удалено');
+              loadAssignmentRules();
+            })
+            .catch(error => {
+              alert('❌ Не удалось удалить: ' + (error.response?.data?.message || 'Ошибка'));
+            });
+  }
+
+  // --- НАЗНАЧЕНИЕ РОЛИ И ДЕПАРТАМЕНТА ---
+  function openAssignRoleModal() {
+    loadUsersForAssignment();
+    loadRolesForAssignment();
+    loadDepartmentsForAssignment();
+    new bootstrap.Modal(document.getElementById('assignRoleModal')).show();
+  }
+
+  function loadUsersForAssignment() {
+    axios.get('/api/users/all')
+            .then(response => {
+              const select = document.getElementById('assignUserSelect');
+              select.innerHTML = '<option value="">Выберите пользователя</option>';
+              response.data.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.id;
+                option.textContent = user.userName || user.email;
+                select.appendChild(option);
+              });
+            })
+            .catch(error => {
+              console.error('❌ Ошибка загрузки пользователей:', error);
+              alert('Не удалось загрузить пользователей');
+            });
+  }
+
+  function loadRolesForAssignment() {
+    axios.get('/role/all')
+            .then(response => {
+              const select = document.getElementById('assignRoleSelect');
+              select.innerHTML = '<option value="">Выберите роль</option>';
+              response.data.forEach(code => {
+                const option = document.createElement('option');
+                option.value = code;
+                option.textContent = code;
+                select.appendChild(option);
+              });
+            })
+            .catch(error => {
+              console.error('❌ Ошибка загрузки ролей:', error);
+              alert('Не удалось загрузить роли');
+            });
+  }
+
+  function loadDepartmentsForAssignment() {
+    axios.get('/api/v1/department/get')
+            .then(response => {
+              const select = document.getElementById('assignDeptSelect');
+              select.innerHTML = '<option value="">Выберите департамент</option>';
+              response.data.forEach(dept => {
+                const option = document.createElement('option');
+                option.value = dept.name;
+                option.textContent = dept.name;
+                select.appendChild(option);
+              });
+            })
+            .catch(error => {
+              console.error('❌ Ошибка загрузки департаментов:', error);
+              alert('Не удалось загрузить департаменты');
+            });
+  }
+
+  function saveUserRole() {
+    const userId = document.getElementById('assignUserSelect').value;
+    const roleCode = document.getElementById('assignRoleSelect').value;
+    const departmentName = document.getElementById('assignDeptSelect').value;
+
+    if (!userId || !roleCode || !departmentName) {
+      alert('Заполните все поля');
+      return;
+    }
+
+    // ✅ Отправляем и роль, и название департамента
+    axios.patch(`/api/v1/department/${userId}/assign-role-and-department`, {
+      departmentName: departmentName,
+      roleCode: roleCode
+    })
+            .then(() => {
+              alert('✅ Роль и департамент успешно назначены!');
+              bootstrap.Modal.getInstance(document.getElementById('assignRoleModal')).hide();
+            })
+            .catch(error => {
+              const msg = error.response?.data || 'Не удалось назначить';
+              alert('❌ Ошибка: ' + msg);
+            });
+  }
+
+  // --- СОЗДАНИЕ РОЛИ ---
+  function openCreateRoleModal() {
+    document.getElementById('roleCode').value = '';
+    document.getElementById('roleDisplayName').value = '';
+    new bootstrap.Modal(document.getElementById('createRoleModal')).show();
+  }
+
+  function createRole() {
+    const code = document.getElementById('roleCode').value.trim();
+    const displayName = document.getElementById('roleDisplayName').value.trim();
+
+    if (!code || !displayName) {
+      alert('Заполните оба поля');
+      return;
+    }
+
+    const dto = { code, displayName };
+
+    axios.post('/role/add', dto)
+            .then(() => {
+              alert('✅ Роль успешно создана!');
+              bootstrap.Modal.getInstance(document.getElementById('createRoleModal')).hide();
+              // Обновим списки ролей
+              loadRolesForAssignment();
+            })
+            .catch(error => {
+              const msg = error.response?.data?.message ||
+                      error.response?.data?.error ||
+                      'Не удалось создать роль';
+              alert('❌ Ошибка: ' + msg);
+            });
+  }
+
+  // --- РЕНДЕР ДОСКИ ---
   function switchView(view) {
     currentView = view;
     document.getElementById('view-' + view).checked = true;

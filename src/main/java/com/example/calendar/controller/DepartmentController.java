@@ -1,5 +1,6 @@
 package com.example.calendar.controller;
 
+import com.example.calendar.DTO.AssignDeptRequestDTO;
 import com.example.calendar.DTO.DepartmentDTO;
 import com.example.calendar.service.DepartmentService;
 import org.springframework.http.HttpStatus;
@@ -31,11 +32,11 @@ public class DepartmentController {
                 .body(departmentService.updateName(departmentDTO));
     }
 
-    @PatchMapping("/{userId}/assign-to/{departmentId}")
-    public ResponseEntity<String> appointDepartment(@PathVariable Long userId, @PathVariable Long departmentId) {
+    @PatchMapping("/{userId}/assign-role-and-department")
+    public ResponseEntity<String> appointDepartment(@PathVariable Long userId, @RequestBody AssignDeptRequestDTO request) {
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body(departmentService.assignUserToDepartment(userId, departmentId));
+                .body(departmentService.assignUserToDepartment(userId, request));
     }
 
     @DeleteMapping("/{department_id}")

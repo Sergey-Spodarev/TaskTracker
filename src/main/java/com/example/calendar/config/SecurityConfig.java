@@ -112,7 +112,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/users/{companyId}/awaiting").hasRole("ADMIN")
 
                 // назначение пользователя в департамент
-                .requestMatchers("/api/v1/department/{userId}/assign-to/{departmentId}").hasRole("ADMIN")
+                .requestMatchers("/api/v1/department/{userId}/assign-role-and-department").hasRole("ADMIN")
 
                 .requestMatchers("/api/users/all").hasRole("ADMIN")
 

@@ -1,16 +1,14 @@
 package com.example.calendar.controller;
 
 import com.example.calendar.DTO.RoleDTO;
-import com.example.calendar.repository.RoleRepository;
 import com.example.calendar.service.RoleService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Controller
+@RestController
 @RequestMapping("/role")
 public class RoleController {
     private final RoleService roleService;
