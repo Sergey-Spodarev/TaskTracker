@@ -302,6 +302,11 @@ public class TaskService {
         taskDTO.setEnd(task.getEndTime());
         taskDTO.setStatus(task.getStatus());
         taskDTO.setPriority(task.getPriority());
+        User assignee = task.getAssignee();
+        if (assignee != null) {
+            taskDTO.setAssigneeId(assignee.getUserId());
+            taskDTO.setAssigneeName(assignee.getUserName());
+        }
         return taskDTO;
     }
 }
