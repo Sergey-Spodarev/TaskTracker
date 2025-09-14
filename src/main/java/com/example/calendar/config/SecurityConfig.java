@@ -66,7 +66,7 @@ public class SecurityConfig {
                         "/api/v1/task/create",
                         "/api/v1/task/my",
                         "/api/v1/task/created-by-me",
-                        "/api/v1/task/getAll",
+                        "/api/v1/task/all",
                         "/api/v1/task/project/{projectId}",
                         "/api/v1/task/{taskId}/subtasks",
                         "/api/v1/task/{taskId}/assignee",

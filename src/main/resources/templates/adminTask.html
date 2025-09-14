@@ -463,7 +463,7 @@
   }
 
   function loadTasks() {
-    axios.get('/api/v1/task/getAll')
+    axios.get('/api/v1/task/all')
             .then(response => {
               allTasks = response.data;
               renderKanban();
@@ -576,8 +576,8 @@
 
               response.data.forEach(role => {
                 const option = document.createElement('option');
-                option.value = role.code;           // ← отправляем code
-                option.textContent = role.displayName; // ← видим displayName
+                option.value = role.code;           // ← code для логики
+                option.textContent = role.displayName; // ← displayName для UI
                 select.appendChild(option);
               });
             })
@@ -722,10 +722,11 @@
             .then(response => {
               const select = document.getElementById('assignRoleSelect');
               select.innerHTML = '<option value="">Выберите роль</option>';
-              response.data.forEach(code => {
+
+              response.data.forEach(role => {
                 const option = document.createElement('option');
-                option.value = code;
-                option.textContent = code;
+                option.value = role.code;           // ← code для логики
+                option.textContent = role.displayName; // ← displayName для UI
                 select.appendChild(option);
               });
             })
@@ -733,7 +734,7 @@
               console.error('❌ Ошибка загрузки ролей:', error);
               alert('Не удалось загрузить роли');
             });
-  }
+  }loadTasks
 
   function loadDepartmentsForAssignment() {
     axios.get('/api/v1/department/get')

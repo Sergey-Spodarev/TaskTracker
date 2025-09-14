@@ -25,13 +25,13 @@ public class RoleService {
         this.userRepository = userRepository;
     }
 
-    public List<String> findAllRoles(){
+    public List<RoleDTO> findAllRoles(){
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         User user = userDetails.getUser();
         List<Role> allRoleCompany = roleRepository.findByCompany(user.getCompany());
         return allRoleCompany.stream()
-                .map(Role::getDisplayName)
+                .map(this::convertRole)
                 .toList();
     }
 

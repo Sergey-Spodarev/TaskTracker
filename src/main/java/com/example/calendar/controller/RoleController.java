@@ -18,7 +18,7 @@ public class RoleController {
     }
 
     @GetMapping("/all")//это у админа только
-    public ResponseEntity<List<String>> getAll() {
+    public ResponseEntity<List<RoleDTO>> getAll() {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(roleService.findAllRoles());
