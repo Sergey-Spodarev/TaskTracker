@@ -3,6 +3,7 @@ package com.example.calendar.service;
 import com.example.calendar.DTO.AssignDeptRequestDTO;
 import com.example.calendar.DTO.DepartmentDTO;
 import com.example.calendar.model.Department;
+import com.example.calendar.model.Role;
 import com.example.calendar.model.User;
 import com.example.calendar.repository.DepartmentRepository;
 import com.example.calendar.security.CustomUserDetails;
@@ -22,10 +23,12 @@ import java.util.stream.Collectors;
 public class DepartmentService {
     private final DepartmentRepository departmentRepository;
     private final UserService userService;
+    private final RoleService roleService;
 
-    public DepartmentService(DepartmentRepository departmentRepository, UserService userService) {
+    public DepartmentService(DepartmentRepository departmentRepository, UserService userService, RoleService roleService) {
         this.departmentRepository = departmentRepository;
         this.userService = userService;
+        this.roleService = roleService;
     }
 
     public DepartmentDTO createDepartment(DepartmentDTO departmentDTO) {
@@ -103,11 +106,12 @@ public class DepartmentService {
 
         Department department = departmentRepository.findByNameAndCompany(request.getDepartmentName(), user.getCompany())
                 .orElseThrow(() -> new UsernameNotFoundException("Данный департамент не был найден в вашей компании"));
+        Role newRole = roleService.getRoleByCodeAndCompany(request.getRoleCode(), admin.getCompany());
 
         user.setDepartment(department);
-        user.setRole(user.getRole());
+        user.setRole(newRole);
         userService.saveUser(user);
-        return user.getUserName() + "назначен в департамент";//может переделать чтобы ещё и возвращал роль
+        return user.getUserName() + "назначен в департамент" + department.getName() + " и назначен на роль " + newRole.getDisplayName();//может переделать чтобы ещё и возвращал роль
     }
 
     public String assignUserToDepartment(Long userId, String departmentName) {
