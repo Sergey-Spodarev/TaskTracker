@@ -91,6 +91,11 @@ public class RoleService {
         roleRepository.deleteById(roleId);
     }
 
+    public Role getRoleByCodeAndCompany(String code, Company company) {
+        return roleRepository.findByCodeAndCompany(code, company)
+                .orElseThrow(() -> new UsernameNotFoundException("Роль не найдена"));
+    }
+
     private RoleDTO convertRole(Role role){
         RoleDTO roleDTO = new RoleDTO();
         roleDTO.setId(role.getId());
