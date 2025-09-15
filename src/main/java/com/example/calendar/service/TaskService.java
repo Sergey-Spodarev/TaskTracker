@@ -235,6 +235,16 @@ public class TaskService {
         return convertTaskToDTO(task);
     }
 
+    public Task GetTaskById(Long taskId) {
+        User user = getCurrentUser();
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new EntityNotFoundException("Задача не найдена"));
+        if (!user.getCompany().getId().equals(task.getProject().getCompany().getId())) {
+            throw new AccessDeniedException("Вы не можете смотреть задачи другой компании");
+        }
+        return task;
+    }
+
     public List<TaskDTO> getTasksByAssignee(){
         User user = getCurrentUser();
         return taskRepository.findByAssignee(user).stream()
@@ -296,6 +306,10 @@ public class TaskService {
 
         taskHistoryService.logTaskChange(task, user, "Delete Task", task.getTitle(), task.getTitle());
         taskRepository.delete(task);
+    }
+
+    public boolean existsByAssigneeAndId(User user, Long taskId){
+        return taskRepository.existsByAssigneeAndId(user, taskId);
     }
 
     private User getCurrentUser() {

@@ -7,6 +7,8 @@ import com.example.calendar.model.User;
 import com.example.calendar.repository.TaskHistoryRepository;
 import com.example.calendar.repository.TaskRepository;
 import com.example.calendar.security.CustomUserDetails;
+import jakarta.persistence.EntityNotFoundException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -44,18 +46,28 @@ public class TaskHistoryService {
     }
 
     public List<TaskHistoryDTO> getAllTaskHistory(Long taskId) {
-        User admin = getCurrentUser();
-        if (!admin.getRole().getCode().equals("ADMIN")) {
-            throw new RuntimeException("Только администратор может посмотреть историю изменения");
-        }//надо подумать кто должен видеть историю изменений
+        User currentUser = getCurrentUser();
         Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new RuntimeException("Данной задачи не существует"));
+                .orElseThrow(() -> new EntityNotFoundException("Задача не найдена"));
 
-        if (!task.getProject().getCompany().equals(admin.getCompany())) {
-            throw new RuntimeException("Доступ запрещён");
+        if (currentUser.getCompany() == null || task.getProject().getCompany() == null ||
+                !currentUser.getCompany().getId().equals(task.getProject().getCompany().getId())) {
+            throw new AccessDeniedException("Доступ запрещён");
         }
-        List<TaskHistory> taskHistories = taskHistoryRepository.findByTask(task);
-        return taskHistories.stream()
+
+        boolean isAssignee = task.getAssignee() != null && task.getAssignee().getUserId().equals(currentUser.getUserId());
+        boolean isReporter = task.getReporter() != null && task.getReporter().getUserId().equals(currentUser.getUserId());
+        boolean isAdmin = "ADMIN".equals(currentUser.getRole().getCode());
+        boolean isManager = "MANAGER".equals(currentUser.getRole().getCode());
+
+        boolean canView = isAssignee || isReporter || isAdmin || isManager;
+
+        if (!canView) {
+            throw new AccessDeniedException("Нет прав на просмотр истории задачи");
+        }
+
+        List<TaskHistory> histories = taskHistoryRepository.findByTask(task);
+        return histories.stream()
                 .map(this::convertToDTO)
                 .toList();
     }
@@ -71,6 +83,9 @@ public class TaskHistoryService {
         taskHistoryDTO.setFieldName(taskHistory.getFieldName());
         taskHistoryDTO.setOldValue(taskHistory.getOldValue());
         taskHistoryDTO.setNewValue(taskHistory.getNewValue());
+        taskHistoryDTO.setChangedByName(taskHistory.getChangedBy().getUserName());
+        taskHistoryDTO.setChangedById(taskHistory.getChangedBy().getUserId()); // ← ДОБАВЬ ЭТО!
+        taskHistoryDTO.setChangedAt(taskHistory.getChangedAt());
         return taskHistoryDTO;
     }
 }

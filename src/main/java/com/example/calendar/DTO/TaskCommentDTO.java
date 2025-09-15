@@ -9,4 +9,7 @@ public class TaskCommentDTO {
     private Long id;
     private String comment;
     private LocalDateTime createdAt;
+
+    private Long authorId;
+    private String authorName;
 }

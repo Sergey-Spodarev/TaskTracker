@@ -5,7 +5,6 @@ import com.example.calendar.model.Task;
 import com.example.calendar.model.TaskComment;
 import com.example.calendar.model.User;
 import com.example.calendar.repository.TaskCommentRepository;
-import com.example.calendar.repository.TaskRepository;
 import com.example.calendar.security.CustomUserDetails;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.security.access.AccessDeniedException;
@@ -20,22 +19,21 @@ import java.util.List;
 @Transactional
 public class TaskCommentService {
     private final TaskCommentRepository taskCommentRepository;
-    private final TaskRepository taskRepository;
-    public TaskCommentService(TaskCommentRepository taskCommentRepository, TaskRepository taskRepository) {
+    private final TaskService taskService;
+    public TaskCommentService(TaskCommentRepository taskCommentRepository, TaskService taskService) {
         this.taskCommentRepository = taskCommentRepository;
-        this.taskRepository = taskRepository;
+        this.taskService = taskService;
     }
 
     public TaskCommentDTO createTaskComment(TaskCommentDTO taskCommentDTO, Long taskId) {
         User user = getCurrentUser();
 
-        Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new RuntimeException("Задачи которой вы хотите сделать комментарий не существует"));
+        Task task = taskService.GetTaskById(taskId);
 
-        if (!task.getProject().getCompany().equals(user.getCompany())) {
+        if (!task.getProject().getCompany().getId().equals(user.getCompany().getId())) {
             throw new AccessDeniedException("Доступ к задаче запрещён");
         }
-        if (!task.getAssignee().equals(user) && !task.getReporter().equals(user)) {
+        if (!task.getAssignee().getUserId().equals(user.getUserId()) && !task.getReporter().getUserId().equals(user.getUserId())) {
             throw new AccessDeniedException("Только исполнитель или создатель может оставить комментарий");
         }//надо потом добавить чтобы автоматом добавлялось в историю изменений и может добавить поле на проверку изменения и чтобы было то в визуале писало редактированно
 
@@ -49,7 +47,7 @@ public class TaskCommentService {
     public TaskCommentDTO updateTaskComment(TaskCommentDTO taskCommentDTO, Long taskId, Long commentId) {//переделать надо чтобы ещё id передовала задачи
         User user = getCurrentUser();
 
-        if (!taskRepository.existsByAssigneeAndId(user, taskId)){
+        if (!taskService.existsByAssigneeAndId(user, taskId)) {
             throw new RuntimeException("Вы не можете сделать комментарий к данной задаче");
         }
         TaskComment taskComment = taskCommentRepository.findById(commentId)
@@ -88,12 +86,22 @@ public class TaskCommentService {
 
     public List<TaskCommentDTO> getTaskComment(Long taskId) {
         User user = getCurrentUser();
+        Task task = taskService.GetTaskById(taskId);
 
-        Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new EntityNotFoundException("Данной задачи не существует"));
-
-        if (!task.getProject().getCompany().equals(user.getCompany())) {
+        if (user.getCompany() == null || task.getProject().getCompany() == null ||
+                !user.getCompany().getId().equals(task.getProject().getCompany().getId())) {
             throw new AccessDeniedException("Доступ запрещён");
+        }
+
+        boolean isAssignee = task.getAssignee() != null && task.getAssignee().getUserId().equals(user.getUserId());
+        boolean isReporter = task.getReporter() != null && task.getReporter().getUserId().equals(user.getUserId());
+        boolean isAdmin = "ADMIN".equals(user.getRole().getCode());
+        boolean isManager = "MANAGER".equals(user.getRole().getCode());
+
+        boolean canView = isAssignee || isReporter || isAdmin || isManager;
+
+        if (!canView) {
+            throw new AccessDeniedException("Нет прав на просмотр комментариев задачи");
         }
 
         List<TaskComment> taskComments = taskCommentRepository.findByTask(task);
@@ -112,6 +120,9 @@ public class TaskCommentService {
         TaskCommentDTO taskCommentDTO = new TaskCommentDTO();
         taskCommentDTO.setId(taskComment.getId());
         taskCommentDTO.setComment(taskComment.getComment());
+        taskCommentDTO.setAuthorId(taskComment.getAuthor().getUserId());
+        taskCommentDTO.setAuthorName(taskComment.getAuthor().getUserName());
+        taskCommentDTO.setCreatedAt(taskComment.getCreatedAt()); // ← ДОБАВЬ ЭТО!
         return taskCommentDTO;
     }
 }
