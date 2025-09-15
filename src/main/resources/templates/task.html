@@ -101,6 +101,38 @@
         .priority-high { border-left: 4px solid #ffab00; }
         .priority-medium { border-left: 4px solid #0052cc; }
         .priority-low { border-left: 4px solid #00c853; }
+
+        /* Стили для модалки */
+        .comment-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9rem;
+        }
+        .comment-author {
+            font-weight: 600;
+            color: #172b4d;
+        }
+        .comment-time {
+            font-size: 0.8rem;
+            color: #6b778c;
+        }
+        .history-item {
+            padding: 8px 0;
+            font-size: 0.85rem;
+            color: #42526e;
+        }
+        .history-field {
+            font-weight: 600;
+            color: #172b4d;
+        }
+        .task-detail-section {
+            border-left: 1px solid #ddd;
+            padding-left: 16px;
+        }
+        .badge-status {
+            font-size: 0.75em;
+            padding: 0.3em 0.6em;
+        }
     </style>
 </head>
 <body>
@@ -123,7 +155,6 @@
         <div class="sidebar-item" onclick="openCreateTaskModal()">➕ Создать задачу</div>
 
         <hr>
-        <!-- ❌ УДАЛЁНО: Проекты -->
         <div class="sidebar-item">Календарь</div>
     </div>
 
@@ -202,6 +233,82 @@
     </div>
 </div>
 
+<!-- Модальное окно: просмотр задачи -->
+<div class="modal fade" id="viewTaskModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><strong id="modalTaskKey"></strong>: <span id="modalTaskTitle"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <!-- Левая часть: детали задачи -->
+                    <div class="col-md-6">
+                        <h6>Описание</h6>
+                        <p id="modalTaskDescription" class="text-muted">—</p>
+
+                        <div class="row mt-3">
+                            <div class="col-6">
+                                <strong>Статус:</strong>
+                                <span id="modalTaskStatus" class="badge bg-primary rounded-pill badge-status"></span>
+                            </div>
+                            <div class="col-6">
+                                <strong>Приоритет:</strong>
+                                <span id="modalTaskPriority" class="badge rounded-pill badge-status"></span>
+                            </div>
+                        </div>
+
+                        <div class="row mt-2">
+                            <div class="col-6">
+                                <strong>Исполнитель:</strong>
+                                <div id="modalAssignee"></div>
+                            </div>
+                            <div class="col-6">
+                                <strong>Автор:</strong>
+                                <div id="modalReporter"></div>
+                            </div>
+                        </div>
+
+                        <div class="row mt-2">
+                            <div class="col-6">
+                                <strong>Начало:</strong>
+                                <div id="modalStart"></div>
+                            </div>
+                            <div class="col-6">
+                                <strong>Окончание:</strong>
+                                <div id="modalEnd"></div>
+                            </div>
+                        </div>
+
+                        <h6 class="mt-4">История изменений</h6>
+                        <div id="historyList" style="max-height: 200px; overflow-y: auto;">
+                            <!-- История будет здесь -->
+                        </div>
+                    </div>
+
+                    <!-- Правая часть: комментарии -->
+                    <div class="col-md-6 task-detail-section">
+                        <h6>Комментарии</h6>
+                        <div id="commentsList" style="max-height: 300px; overflow-y: auto;">
+                            <!-- Комментарии будут здесь -->
+                        </div>
+
+                        <hr>
+                        <div class="input-group mt-3">
+                            <textarea id="newCommentText" class="form-control" rows="2" placeholder="Напишите комментарий..."></textarea>
+                            <button class="btn btn-primary" type="button" onclick="addComment()">Добавить</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script>
@@ -212,7 +319,8 @@
     let currentView = 'status';        // 'status' или 'priority'
     let allTasks = [];
     let allProjects = [];
-    let allUsers = [];
+    let allUsers = {};
+    let currentTaskId = null;
 
     // --- Смена секции ---
     function switchSection(section) {
@@ -311,21 +419,9 @@
         return dateStr ? new Date(dateStr).toLocaleDateString('ru-RU') : '—';
     }
 
-    // --- Открыть модалку создания задачи ---
-    function openCreateTaskModal() {
-        document.getElementById('taskTitle').value = '';
-        document.getElementById('taskDescription').value = '';
-        document.getElementById('taskPriority').value = 'MEDIUM';
-        document.getElementById('taskStart').value = '';
-        document.getElementById('taskEnd').value = '';
-        document.getElementById('taskAssignee').value = '';
-        document.getElementById('taskProject').value = '';
-
-        // Загружаем пользователей и проекты только сейчас
-        loadUsers();
-        loadProjects();
-
-        new bootstrap.Modal(document.getElementById('createTaskModal')).show();
+    // --- Формат времени для истории и комментов ---
+    function formatDateTime(dateStr) {
+        return dateStr ? new Date(dateStr).toLocaleString('ru-RU') : '—';
     }
 
     // --- Загрузка пользователей ---
@@ -336,14 +432,18 @@
 
         axios.get('/api/users/all')
             .then(response => {
-                allUsers = response.data;
-                if (allUsers.length === 0) {
+                allUsers = {};
+                response.data.forEach(user => {
+                    allUsers[user.id] = user.userName || user.email;
+                });
+
+                if (Object.keys(allUsers).length === 0) {
                     select.innerHTML = '<option disabled>Нет пользователей</option>';
                 } else {
-                    allUsers.forEach(user => {
+                    Object.keys(allUsers).forEach(id => {
                         const option = document.createElement('option');
-                        option.value = user.id;
-                        option.textContent = user.userName || user.email;
+                        option.value = id;
+                        option.textContent = allUsers[id];
                         select.appendChild(option);
                     });
                 }
@@ -431,13 +531,153 @@
 
     // --- Просмотр задачи ---
     function openViewTaskModal(taskId) {
-        alert(`Просмотр задачи #${taskId}`);
+        currentTaskId = taskId;
+        const modal = new bootstrap.Modal(document.getElementById('viewTaskModal'));
+
+        // Очистка предыдущих данных
+        document.getElementById('modalTaskKey').textContent = 'Загрузка...';
+        document.getElementById('modalTaskTitle').textContent = '';
+        document.getElementById('modalTaskDescription').textContent = '—';
+        document.getElementById('modalTaskStatus').textContent = '';
+        document.getElementById('modalTaskPriority').textContent = '';
+        document.getElementById('modalAssignee').textContent = '—';
+        document.getElementById('modalReporter').textContent = '—';
+        document.getElementById('modalStart').textContent = '—';
+        document.getElementById('modalEnd').textContent = '—';
+        document.getElementById('historyList').innerHTML = '<div class="text-muted">Загрузка...</div>';
+        document.getElementById('commentsList').innerHTML = '<div class="text-muted">Загрузка...</div>';
+        document.getElementById('newCommentText').value = '';
+
+        modal.show();
+
+        // Загрузка данных задачи
+        axios.get(`/api/v1/task/${taskId}`)
+            .then(taskResponse => {
+                const task = taskResponse.data;
+
+                document.getElementById('modalTaskKey').textContent = `${task.projectKey}-${task.id}`;
+                document.getElementById('modalTaskTitle').textContent = task.title;
+                document.getElementById('modalTaskDescription').textContent = task.description || '—';
+                document.getElementById('modalTaskStatus').textContent = getStatusLabel(task.status);
+                document.getElementById('modalTaskStatus').className = `badge badge-status ${getStatusBadgeClass(task.status)}`;
+                document.getElementById('modalTaskPriority').textContent = getPriorityLabel(task.priority);
+                document.getElementById('modalTaskPriority').className = `badge badge-status ${getPriorityBadgeClass(task.priority)}`;
+                document.getElementById('modalAssignee').textContent = task.assigneeName || '—';
+                document.getElementById('modalReporter').textContent = task.reporterName || '—';
+                document.getElementById('modalStart').textContent = formatDate(task.start) || '—';
+                document.getElementById('modalEnd').textContent = formatDate(task.end) || '—';
+
+                // Загрузка истории изменений
+                axios.get(`/api/v1/task/${taskId}/history`)
+                    .then(historyRes => {
+                        const historyList = document.getElementById('historyList');
+                        historyList.innerHTML = '';
+                        if (historyRes.data.length === 0) {
+                            historyList.innerHTML = '<div class="text-muted">История изменений отсутствует</div>';
+                        } else {
+                            historyRes.data.forEach(h => {
+                                const div = document.createElement('div');
+                                div.className = 'history-item';
+                                div.innerHTML = `
+                                    <strong class="history-field">${h.fieldName}</strong> изменено с "${h.oldValue}" на "${h.newValue}"
+                                    <br>
+                                    <small class="text-muted">${allUsers[h.changedById] || 'Пользователь'} в ${formatDateTime(h.changedAt)}</small>
+                                `;
+                                historyList.appendChild(div);
+                            });
+                        }
+                    })
+                    .catch(() => {
+                        document.getElementById('historyList').innerHTML = '<div class="text-danger">Ошибка загрузки истории</div>';
+                    });
+
+                // Загрузка комментариев
+                axios.get(`/api/v1/task/${taskId}/comments`)
+                    .then(commentRes => {
+                        const commentsList = document.getElementById('commentsList');
+                        commentsList.innerHTML = '';
+                        if (commentRes.data.length === 0) {
+                            commentsList.innerHTML = '<div class="text-muted">Комментариев пока нет</div>';
+                        } else {
+                            commentRes.data.forEach(c => {
+                                const div = document.createElement('div');
+                                div.className = 'comment-item';
+                                div.innerHTML = `
+                                    <div><span class="comment-author">${allUsers[c.authorId] || 'Автор'}</span> <small class="comment-time">${formatDateTime(c.createdAt)}</small></div>
+                                    <div>${c.comment}</div>
+                                `;
+                                commentsList.appendChild(div);
+                            });
+                        }
+                    })
+                    .catch(() => {
+                        document.getElementById('commentsList').innerHTML = '<div class="text-danger">Ошибка загрузки комментариев</div>';
+                    });
+            })
+            .catch(error => {
+                alert('Ошибка загрузки задачи: ' + (error.response?.data?.message || 'Неизвестная ошибка'));
+                modal.hide();
+            });
+    }
+
+    // --- Добавить комментарий ---
+    function addComment() {
+        const text = document.getElementById('newCommentText').value.trim();
+        if (!text) {
+            alert('Введите текст комментария');
+            return;
+        }
+
+        axios.post(`/api/v1/task/${currentTaskId}/comments`, { comment: text })
+            .then(() => {
+                document.getElementById('newCommentText').value = '';
+                // Перезагрузим комментарии
+                return axios.get(`/api/v1/task/${currentTaskId}/comments`);
+            })
+            .then(res => {
+                const commentsList = document.getElementById('commentsList');
+                commentsList.innerHTML = '';
+                res.data.forEach(c => {
+                    const div = document.createElement('div');
+                    div.className = 'comment-item';
+                    div.innerHTML = `
+                        <div><span class="comment-author">${allUsers[c.authorId] || 'Автор'}</span> <small class="comment-time">${formatDateTime(c.createdAt)}</small></div>
+                        <div>${c.comment}</div>
+                    `;
+                    commentsList.appendChild(div);
+                });
+            })
+            .catch(error => {
+                alert('Ошибка добавления комментария: ' + (error.response?.data?.message || 'Неизвестная ошибка'));
+            });
+    }
+
+    // --- Вспомогательные функции ---
+    function getStatusLabel(status) {
+        const labels = { TODO: 'Новая', IN_PROGRESS: 'В работе', REVIEW: 'Проверка', DONE: 'Завершено' };
+        return labels[status] || status;
+    }
+
+    function getStatusBadgeClass(status) {
+        const classes = { TODO: 'bg-secondary', IN_PROGRESS: 'bg-info', REVIEW: 'bg-warning', DONE: 'bg-success' };
+        return classes[status] || 'bg-light';
+    }
+
+    function getPriorityLabel(priority) {
+        const labels = { CRITICAL: 'Критический', HIGH: 'Высокий', MEDIUM: 'Средний', LOW: 'Низкий' };
+        return labels[priority] || priority;
+    }
+
+    function getPriorityBadgeClass(priority) {
+        const classes = { CRITICAL: 'bg-danger', HIGH: 'bg-warning text-dark', MEDIUM: 'bg-primary', LOW: 'bg-success' };
+        return classes[priority] || 'bg-light';
     }
 
     // --- Загрузка при старте ---
     document.addEventListener('DOMContentLoaded', () => {
         console.log('✅ DOM загружен');
         loadTasks(); // Только задачи
+        loadUsers(); // Предзагрузка пользователей
     });
 </script>
 </body>

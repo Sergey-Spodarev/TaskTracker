@@ -225,6 +225,16 @@ public class TaskService {
         return convertTaskToDTO(taskRepository.save(task));
     }
 
+    public TaskDTO getTaskById(Long taskId) {
+        User user = getCurrentUser();
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new EntityNotFoundException("Задача не найдена"));
+        if (!user.getCompany().getId().equals(task.getProject().getCompany().getId())) {
+            throw new AccessDeniedException("Вы не можете смотреть задачи другой компании");
+        }
+        return convertTaskToDTO(task);
+    }
+
     public List<TaskDTO> getTasksByAssignee(){
         User user = getCurrentUser();
         return taskRepository.findByAssignee(user).stream()

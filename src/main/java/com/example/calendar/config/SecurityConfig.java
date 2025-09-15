@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.Authentication;
@@ -22,6 +23,7 @@ import java.io.IOException;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity(jsr250Enabled = true)
 public class SecurityConfig {
 
     @Bean
@@ -74,7 +76,8 @@ public class SecurityConfig {
                         "/api/v1/task/{taskId}/endTime",
                         "/api/v1/task/{taskId}/title",
                         "/api/v1/task/{taskId}/priority",
-                        "/api/v1/task/{taskId}/delete"
+                        "/api/v1/task/{taskId}/delete",
+                        "/api/users/all"
                 ).authenticated()
 
                 .requestMatchers("/api/v1/task/{parentTaskId}/parentTask").authenticated()
@@ -92,10 +95,11 @@ public class SecurityConfig {
                 .requestMatchers(
                         "/project/create",
                         "/project/update",
-                        "/project/{id}",
-                        "/project/delete/{id}"
+                        "/project/delete/**"  // используем ** вместо {id}
                 ).hasRole("ADMIN")
-                .requestMatchers("/project/getAll", "/project/{id}").authenticated()
+
+                .requestMatchers("/project/getAll").authenticated()  // явно разрешаем
+                .requestMatchers("/project/{id}").authenticated()    // для просмотра конкретного проекта
 
                 // === ОТДЕЛЫ ===
                 .requestMatchers(
@@ -115,8 +119,6 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/department/{userId}/assign-role-and-department").hasRole("ADMIN")
 
                 .requestMatchers("/api/v1/department/{userId}/assign-department").hasRole("ADMIN")
-
-                .requestMatchers("/api/users/all").hasRole("ADMIN")
 
                 // === КОМПАНИЯ ===
                 .requestMatchers("/api/companies/update").hasRole("ADMIN")

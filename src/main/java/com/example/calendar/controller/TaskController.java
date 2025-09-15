@@ -71,6 +71,13 @@ public class TaskController {
                 .body(taskService.changePriority(taskId, priority));
     }
 
+    @GetMapping("/{taskId}")
+    public ResponseEntity<TaskDTO> getTaskById(@PathVariable Long taskId){
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(taskService.getTaskById(taskId));
+    }
+
     @GetMapping("/my")
     public ResponseEntity<List<TaskDTO>> getTasksByAssignee() {
         return ResponseEntity
