@@ -28,9 +28,7 @@ public class AssignmentRuleService {
     }
 
     public AssignmentRuleDTO createAssignmentRule(AssignmentRuleDTO assignmentRuleDTO) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        User admin = userDetails.getUser();
+        User admin = getCurrentUser();
         if (!"ADMIN".equals(admin.getRole().getCode())) {
             throw new AccessDeniedException("Only the admin can create the rules.");
         }
@@ -53,9 +51,7 @@ public class AssignmentRuleService {
     }
 
     public void deleteAssignmentRule(Long delAssignmentRule_id) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        User admin = userDetails.getUser();
+        User admin = getCurrentUser();
         if (!"ADMIN".equals(admin.getRole().getCode())) {
             throw new AccessDeniedException("Only the admin can remove the rules.");
         }
@@ -64,9 +60,7 @@ public class AssignmentRuleService {
     }
 
     public List<AssignmentRuleDTO> getRulesByRole(String roleCode) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        User admin = userDetails.getUser();
+        User admin = getCurrentUser();
         if (!"ADMIN".equals(admin.getRole().getCode())) {
             throw new AccessDeniedException("Only the admin can get the rules.");
         }
@@ -83,9 +77,7 @@ public class AssignmentRuleService {
     }
 
     public List<AssignmentRuleDTO> getAllAssignmentRules() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        User admin = userDetails.getUser();
+        User admin = getCurrentUser();
 
         if (!"ADMIN".equals(admin.getRole().getCode())) {
             throw new AccessDeniedException("Only the admin can get the rules.");
@@ -107,6 +99,12 @@ public class AssignmentRuleService {
         return assignmentRuleRepository.existsByRoleAndSourceDepartmentAndTargetDepartmentAndAllowedTrue(
                 fromUser.getRole(), fromUser.getDepartment(), toUser.getDepartment()
         );
+    }
+
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        return userDetails.getUser();
     }
 
     private AssignmentRuleDTO convertToDTO(AssignmentRule rule) {
