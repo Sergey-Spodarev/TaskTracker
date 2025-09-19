@@ -64,6 +64,13 @@ public class TaskController {
                 .body(taskService.changeTitle(taskId, title));
     }
 
+    @PatchMapping("/{taskId}/description")
+    public ResponseEntity<TaskDTO> changeDescription(@PathVariable Long taskId, @RequestBody String description){
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(taskService.changeDescription(taskId, description));
+    }
+
     @PatchMapping("/{taskId}/priority")
     public ResponseEntity<TaskDTO> changePriority(@PathVariable Long taskId, @RequestParam TaskPriority priority){
         return ResponseEntity
