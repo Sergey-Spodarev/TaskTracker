@@ -49,6 +49,7 @@ public class TaskService {
 
         Task task = new Task();
         task.setTitle(taskDTO.getTitle());
+        task.setDescription(taskDTO.getDescription());
         task.setStartTime(taskDTO.getStart());
         task.setEndTime(taskDTO.getEnd());
         task.setReporter(user);
@@ -88,6 +89,7 @@ public class TaskService {
 
         Task subtask = new Task();
         subtask.setTitle(parentTaskDTO.getTitle());
+        subtask.setDescription(parentTaskDTO.getDescription());
         subtask.setStartTime(parentTaskDTO.getStart());
         subtask.setEndTime(parentTaskDTO.getEnd());
         subtask.setProject(parentTask.getProject());
@@ -225,6 +227,26 @@ public class TaskService {
         return convertTaskToDTO(taskRepository.save(task));
     }
 
+    public TaskDTO changeDescription(Long taskId, String description) {
+        User user = getCurrentUser();
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new EntityNotFoundException("Данной задачи не существует"));
+
+        if (!user.getCompany().getId().equals(task.getProject().getCompany().getId())) {
+            throw new AccessDeniedException("Вы можете менять данные задачи только в своей компании");
+        }
+        if (!task.getAssignee().getUserId().equals(user.getUserId())  && !user.getRole().getCode().equals("ADMIN")){
+            throw new AccessDeniedException("Только исполнитель задачи может менять её приоритет");
+        }
+        if (task.getDescription().equals(description)) {
+            throw new IllegalArgumentException("Описание не изменилось");
+        }
+
+        taskHistoryService.logTaskChange(task, user, "Description", task.getDescription(), description);
+        task.setDescription(description);
+        return convertTaskToDTO(taskRepository.save(task));
+    }
+
     public TaskDTO getTaskById(Long taskId) {
         User user = getCurrentUser();
         Task task = taskRepository.findById(taskId)
@@ -322,6 +344,7 @@ public class TaskService {
         TaskDTO taskDTO = new TaskDTO();
         taskDTO.setId(task.getId());
         taskDTO.setTitle(task.getTitle());
+        taskDTO.setDescription(task.getDescription());
         taskDTO.setStart(task.getStartTime());
         taskDTO.setEnd(task.getEndTime());
         taskDTO.setStatus(task.getStatus());
