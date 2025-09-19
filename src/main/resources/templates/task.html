@@ -133,6 +133,12 @@
             font-size: 0.75em;
             padding: 0.3em 0.6em;
         }
+
+        /* Эффект при наведении колонки */
+        .kanban-column.drag-over {
+            background-color: #dfe1e6;
+            border: 1px dashed #999;
+        }
     </style>
 </head>
 <body>
@@ -251,7 +257,12 @@
                         <div class="row mt-3">
                             <div class="col-6">
                                 <strong>Статус:</strong>
-                                <span id="modalTaskStatus" class="badge bg-primary rounded-pill badge-status"></span>
+                                <select id="modalTaskStatusEdit" class="form-select form-select-sm" onchange="updateTaskStatus(this.value)">
+                                    <option value="TODO">Новая</option>
+                                    <option value="IN_PROGRESS">В работе</option>
+                                    <option value="REVIEW">Проверка</option>
+                                    <option value="DONE">Завершено</option>
+                                </select>
                             </div>
                             <div class="col-6">
                                 <strong>Приоритет:</strong>
@@ -384,6 +395,7 @@
         Object.keys(groups).forEach(key => {
             const column = document.createElement('div');
             column.className = 'kanban-column';
+            column.setAttribute('data-status', key);
 
             const header = document.createElement('div');
             header.className = 'kanban-column-header';
@@ -391,9 +403,54 @@
             column.appendChild(header);
 
             const taskList = document.createElement('div');
+            taskList.classList.add('task-list');
+
+            // Разрешаем drop только в режиме "по статусу"
+            if (currentView === 'status') {
+                taskList.addEventListener('dragover', e => {
+                    e.preventDefault();
+                    column.classList.add('drag-over');
+                });
+                taskList.addEventListener('dragleave', () => {
+                    column.classList.remove('drag-over');
+                });
+                taskList.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    column.classList.remove('drag-over');
+
+                    const taskId = e.dataTransfer.getData('text/plain');
+                    const targetStatus = column.getAttribute('data-status');
+
+                    axios.patch(`/api/v1/task/${taskId}/status`, null, {
+                        params: { status: targetStatus }
+                    })
+                        .then(response => {
+                            const updatedTask = response.data;
+                            const index = allTasks.findIndex(t => t.id == taskId);
+                            if (index !== -1) {
+                                allTasks[index] = updatedTask;
+                            }
+                            renderKanban();
+                        })
+                        .catch(error => {
+                            alert('Не удалось изменить статус: ' + (error.response?.data?.message || 'Ошибка'));
+                        });
+                });
+            }
+
+            column.appendChild(taskList);
+
             groups[key].forEach(task => {
                 const item = document.createElement('div');
                 item.className = `kanban-task priority-${task.priority.toLowerCase()}`;
+                item.draggable = currentView === 'status';
+
+                if (currentView === 'status') {
+                    item.addEventListener('dragstart', e => {
+                        e.dataTransfer.setData('text/plain', task.id);
+                    });
+                }
+
                 item.innerHTML = `
                     <div class="task-key">${task.projectKey || 'TASK'}-${task.id}</div>
                     <div class="task-title">${task.title}</div>
@@ -406,10 +463,10 @@
                     </div>
                 `;
                 item.onclick = () => openViewTaskModal(task.id);
+
                 taskList.appendChild(item);
             });
 
-            column.appendChild(taskList);
             container.appendChild(column);
         });
     }
@@ -538,7 +595,7 @@
         document.getElementById('modalTaskKey').textContent = 'Загрузка...';
         document.getElementById('modalTaskTitle').textContent = '';
         document.getElementById('modalTaskDescription').textContent = '—';
-        document.getElementById('modalTaskStatus').textContent = '';
+        document.getElementById('modalTaskStatusEdit').value = 'TODO';
         document.getElementById('modalTaskPriority').textContent = '';
         document.getElementById('modalAssignee').textContent = '—';
         document.getElementById('modalReporter').textContent = '—';
@@ -558,14 +615,19 @@
                 document.getElementById('modalTaskKey').textContent = `${task.projectKey}-${task.id}`;
                 document.getElementById('modalTaskTitle').textContent = task.title;
                 document.getElementById('modalTaskDescription').textContent = task.description || '—';
-                document.getElementById('modalTaskStatus').textContent = getStatusLabel(task.status);
-                document.getElementById('modalTaskStatus').className = `badge badge-status ${getStatusBadgeClass(task.status)}`;
                 document.getElementById('modalTaskPriority').textContent = getPriorityLabel(task.priority);
                 document.getElementById('modalTaskPriority').className = `badge badge-status ${getPriorityBadgeClass(task.priority)}`;
                 document.getElementById('modalAssignee').textContent = task.assigneeName || '—';
                 document.getElementById('modalReporter').textContent = task.reporterName || '—';
                 document.getElementById('modalStart').textContent = formatDate(task.start) || '—';
                 document.getElementById('modalEnd').textContent = formatDate(task.end) || '—';
+
+                // Устанавливаем значение в селект статуса
+                const select = document.getElementById('modalTaskStatusEdit');
+                select.value = task.status;
+
+                // Также обновляем бейдж (на случай, если кто-то смотрит на него)
+                const badge = document.getElementById('modalTaskStatus'); // но мы его убрали, так что можно не обновлять
 
                 // Загрузка истории изменений
                 axios.get(`/api/v1/task/${taskId}/history`)
@@ -631,7 +693,6 @@
         axios.post(`/api/v1/task/${currentTaskId}/comments`, { comment: text })
             .then(() => {
                 document.getElementById('newCommentText').value = '';
-                // Перезагрузим комментарии
                 return axios.get(`/api/v1/task/${currentTaskId}/comments`);
             })
             .then(res => {
@@ -649,6 +710,34 @@
             })
             .catch(error => {
                 alert('Ошибка добавления комментария: ' + (error.response?.data?.message || 'Неизвестная ошибка'));
+            });
+    }
+
+    // --- Изменение статуса ---
+    function updateTaskStatus(newStatus) {
+        if (!currentTaskId) return;
+
+        axios.patch(`/api/v1/task/${currentTaskId}/status`, null, {
+            params: { status: newStatus }
+        })
+            .then(response => {
+                const task = response.data;
+                const select = document.getElementById('modalTaskStatusEdit');
+                select.value = task.status;
+
+                // Обновляем в списке
+                const index = allTasks.findIndex(t => t.id == currentTaskId);
+                if (index !== -1) {
+                    allTasks[index] = task;
+                }
+
+                // Перерисовываем доску
+                renderKanban();
+
+                alert('✅ Статус обновлён!');
+            })
+            .catch(error => {
+                alert('❌ Ошибка: ' + (error.response?.data?.message || 'Не удалось изменить статус'));
             });
     }
 
@@ -676,8 +765,8 @@
     // --- Загрузка при старте ---
     document.addEventListener('DOMContentLoaded', () => {
         console.log('✅ DOM загружен');
-        loadTasks(); // Только задачи
-        loadUsers(); // Предзагрузка пользователей
+        loadTasks();
+        loadUsers();
     });
 </script>
 </body>
