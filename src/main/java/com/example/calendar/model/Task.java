@@ -18,6 +18,7 @@ public class Task {
     private Long id;
 
     private String title;
+    private String description;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
 

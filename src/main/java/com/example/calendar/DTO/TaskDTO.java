@@ -14,6 +14,9 @@ public class TaskDTO {
     @NotBlank(message = "Название задачи обязательно")
     private String title;
 
+    @NotNull
+    private String description;
+
     @NotNull(message = "Время начало для задачи обязательно")
     private LocalDateTime start;
 
