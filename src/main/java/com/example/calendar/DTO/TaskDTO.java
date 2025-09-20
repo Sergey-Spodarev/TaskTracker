@@ -29,4 +29,5 @@ public class TaskDTO {
     private Long assigneeId;
     private Long projectId;
     private String assigneeName;
+    private String reporterName;
 }

@@ -349,6 +349,7 @@ public class TaskService {
         taskDTO.setEnd(task.getEndTime());
         taskDTO.setStatus(task.getStatus());
         taskDTO.setPriority(task.getPriority());
+        taskDTO.setReporterName(task.getReporter().getUserName());
         User assignee = task.getAssignee();
         if (assignee != null) {
             taskDTO.setAssigneeId(assignee.getUserId());
