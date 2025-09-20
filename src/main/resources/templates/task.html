@@ -713,6 +713,25 @@
             });
     }
 
+    function openCreateTaskModal() {
+        // Очистка формы
+        document.getElementById('taskTitle').value = '';
+        document.getElementById('taskDescription').value = '';
+        document.getElementById('taskPriority').value = 'MEDIUM';
+        document.getElementById('taskStart').value = '';
+        document.getElementById('taskEnd').value = '';
+        document.getElementById('taskAssignee').value = '';
+        document.getElementById('taskProject').value = '';
+
+        // Загружаем пользователей и проекты, если ещё не загружены
+        loadUsers();
+        loadProjects();
+
+        // Открываем модалку
+        const modal = new bootstrap.Modal(document.getElementById('createTaskModal'));
+        modal.show();
+    }
+
     // --- Изменение статуса ---
     function updateTaskStatus(newStatus) {
         if (!currentTaskId) return;
