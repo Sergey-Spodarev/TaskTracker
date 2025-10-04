@@ -79,7 +79,7 @@
             margin-bottom: 8px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             cursor: pointer;
-            transition: box-shadow 0.2s;
+            transition: all 0.2s ease;
         }
         .kanban-task:hover {
             box-shadow: 0 2px 5px rgba(0,0,0,0.15);
@@ -101,7 +101,6 @@
         .priority-high { border-left: 4px solid #ffab00; }
         .priority-medium { border-left: 4px solid #0052cc; }
         .priority-low { border-left: 4px solid #00c853; }
-
         /* Стили для модалки */
         .comment-item {
             padding: 10px;
@@ -133,7 +132,6 @@
             font-size: 0.75em;
             padding: 0.3em 0.6em;
         }
-
         /* Эффект при наведении колонки */
         .kanban-column.drag-over {
             background-color: #dfe1e6;
@@ -152,38 +150,31 @@
         </div>
     </div>
 </nav>
-
 <div class="main-layout">
     <!-- Левое меню -->
     <div class="sidebar">
         <div class="sidebar-item active" onclick="switchSection('my')">📋 Мои задачи</div>
         <div class="sidebar-item" onclick="switchSection('created')">📝 Созданные мной</div>
         <div class="sidebar-item" onclick="openCreateTaskModal()">➕ Создать задачу</div>
-
         <hr>
         <div class="sidebar-item">Календарь</div>
     </div>
-
     <!-- Основной контент -->
     <div class="main-content">
         <h1 class="page-title" id="sectionTitle">Мои задачи</h1>
-
         <!-- Переключатель вида -->
         <div class="mb-3">
             <div class="btn-group" role="group">
                 <input type="radio" class="btn-check" name="viewMode" id="view-status" autocomplete="off" checked>
                 <label class="btn btn-outline-primary btn-sm" for="view-status" onclick="switchView('status')">По статусу</label>
-
                 <input type="radio" class="btn-check" name="viewMode" id="view-priority" autocomplete="off">
                 <label class="btn btn-outline-primary btn-sm" for="view-priority" onclick="switchView('priority')">По приоритету</label>
             </div>
         </div>
-
         <!-- Kanban доска -->
         <div id="kanban-board"></div>
     </div>
 </div>
-
 <!-- Модальное окно: создать задачу -->
 <div class="modal fade" id="createTaskModal" tabindex="-1">
     <div class="modal-dialog">
@@ -238,7 +229,6 @@
         </div>
     </div>
 </div>
-
 <!-- Модальное окно: просмотр задачи -->
 <div class="modal fade" id="viewTaskModal" tabindex="-1">
     <div class="modal-dialog modal-xl">
@@ -253,7 +243,6 @@
                     <div class="col-md-6">
                         <h6>Описание</h6>
                         <p id="modalTaskDescription" class="text-muted">—</p>
-
                         <div class="row mt-3">
                             <div class="col-6">
                                 <strong>Статус:</strong>
@@ -269,7 +258,6 @@
                                 <span id="modalTaskPriority" class="badge rounded-pill badge-status"></span>
                             </div>
                         </div>
-
                         <div class="row mt-2">
                             <div class="col-6">
                                 <strong>Исполнитель:</strong>
@@ -280,7 +268,6 @@
                                 <div id="modalReporter"></div>
                             </div>
                         </div>
-
                         <div class="row mt-2">
                             <div class="col-6">
                                 <strong>Начало:</strong>
@@ -291,20 +278,17 @@
                                 <div id="modalEnd"></div>
                             </div>
                         </div>
-
                         <h6 class="mt-4">История изменений</h6>
                         <div id="historyList" style="max-height: 200px; overflow-y: auto;">
                             <!-- История будет здесь -->
                         </div>
                     </div>
-
                     <!-- Правая часть: комментарии -->
                     <div class="col-md-6 task-detail-section">
                         <h6>Комментарии</h6>
                         <div id="commentsList" style="max-height: 300px; overflow-y: auto;">
                             <!-- Комментарии будут здесь -->
                         </div>
-
                         <hr>
                         <div class="input-group mt-3">
                             <textarea id="newCommentText" class="form-control" rows="2" placeholder="Напишите комментарий..."></textarea>
@@ -319,13 +303,11 @@
         </div>
     </div>
 </div>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script>
     // Отправляем куки сессии (JSESSIONID)
     axios.defaults.withCredentials = true;
-
     let currentSection = 'my';         // 'my' или 'created'
     let currentView = 'status';        // 'status' или 'priority'
     let allTasks = [];
@@ -333,17 +315,66 @@
     let allUsers = {};
     let currentTaskId = null;
 
+    // --- Вспомогательные функции ---
+    function formatDate(dateStr) {
+        return dateStr ? new Date(dateStr).toLocaleDateString('ru-RU') : '—';
+    }
+
+    function formatDateTime(dateStr) {
+        return dateStr ? new Date(dateStr).toLocaleString('ru-RU') : '—';
+    }
+
+    function getPriorityLabel(priority) {
+        const labels = { CRITICAL: 'Критический', HIGH: 'Высокий', MEDIUM: 'Средний', LOW: 'Низкий' };
+        return labels[priority] || priority;
+    }
+
+    function getPriorityBadgeClass(priority) {
+        const classes = { CRITICAL: 'bg-danger', HIGH: 'bg-warning text-dark', MEDIUM: 'bg-primary', LOW: 'bg-success' };
+        return classes[priority] || 'bg-light';
+    }
+
+    // --- Проверка срока задачи ---
+    function getDaysUntil(endDate) {
+        const now = new Date();
+        const end = new Date(endDate);
+        const diffTime = end - now;
+        return diffTime / (1000 * 60 * 60 * 24); // в днях
+    }
+
+    function getUrgencyIcon(task) {
+        if (task.status === 'DONE') return '';
+        const daysLeft = getDaysUntil(task.end);
+        if (daysLeft <= 0) {
+            return '<i class="fas fa-fire text-danger" title="Дедлайн просрочен!" style="margin-right: 4px;"></i>';
+        }
+        if (daysLeft <= 3) {
+            return '<i class="fas fa-fire text-warning" title="Осталось ≤ 3 дней!" style="margin-right: 4px;"></i>';
+        }
+        return '';
+    }
+
+    function applyUrgencyStyle(item, task) {
+        if (task.status === 'DONE') return;
+        const daysLeft = getDaysUntil(task.end);
+        if (daysLeft <= 0) {
+            item.style.backgroundColor = '#ffebee';
+            item.style.borderColor = '#f44336';
+        } else if (daysLeft <= 3) {
+            item.style.backgroundColor = '#fff8e1';
+            item.style.borderColor = '#ffab00';
+        }
+    }
+
     // --- Смена секции ---
     function switchSection(section) {
         currentSection = section;
         document.getElementById('sectionTitle').textContent =
             section === 'my' ? 'Мои задачи' : 'Созданные мной';
-
         document.querySelectorAll('.sidebar-item').forEach(el => {
             el.classList.remove('active');
         });
         event.target.classList.add('active');
-
         document.getElementById('view-status').checked = true;
         currentView = 'status';
         loadTasks();
@@ -360,7 +391,6 @@
         let url = currentSection === 'my'
             ? '/api/v1/task/my'
             : '/api/v1/task/created-by-me';
-
         axios.get(url)
             .then(response => {
                 allTasks = response.data;
@@ -375,10 +405,8 @@
     function renderKanban() {
         const container = document.getElementById('kanban-board');
         container.innerHTML = '';
-
         let groups = {};
         let titles = {};
-
         if (currentView === 'status') {
             groups = { TODO: [], IN_PROGRESS: [], REVIEW: [], DONE: [] };
             titles = { TODO: 'Новая', IN_PROGRESS: 'В работе', REVIEW: 'Проверка', DONE: 'Завершено' };
@@ -386,7 +414,6 @@
             groups = { CRITICAL: [], HIGH: [], MEDIUM: [], LOW: [] };
             titles = { CRITICAL: 'Критический', HIGH: 'Высокий', MEDIUM: 'Средний', LOW: 'Низкий' };
         }
-
         allTasks.forEach(task => {
             const key = currentView === 'status' ? task.status : task.priority;
             if (groups[key]) groups[key].push(task);
@@ -396,7 +423,6 @@
             const column = document.createElement('div');
             column.className = 'kanban-column';
             column.setAttribute('data-status', key);
-
             const header = document.createElement('div');
             header.className = 'kanban-column-header';
             header.textContent = titles[key];
@@ -405,7 +431,6 @@
             const taskList = document.createElement('div');
             taskList.classList.add('task-list');
 
-            // Разрешаем drop только в режиме "по статусу"
             if (currentView === 'status') {
                 taskList.addEventListener('dragover', e => {
                     e.preventDefault();
@@ -417,10 +442,8 @@
                 taskList.addEventListener('drop', function(e) {
                     e.preventDefault();
                     column.classList.remove('drag-over');
-
                     const taskId = e.dataTransfer.getData('text/plain');
                     const targetStatus = column.getAttribute('data-status');
-
                     axios.patch(`/api/v1/task/${taskId}/status`, null, {
                         params: { status: targetStatus }
                     })
@@ -439,7 +462,6 @@
             }
 
             column.appendChild(taskList);
-
             groups[key].forEach(task => {
                 const item = document.createElement('div');
                 item.className = `kanban-task priority-${task.priority.toLowerCase()}`;
@@ -451,8 +473,13 @@
                     });
                 }
 
+                const urgencyIcon = getUrgencyIcon(task);
+
                 item.innerHTML = `
-                    <div class="task-key">${task.projectKey || 'TASK'}-${task.id}</div>
+                    <div class="d-flex align-items-center">
+                        ${urgencyIcon}
+                        <div class="task-key">${task.projectKey || 'TASK'}-${task.id}</div>
+                    </div>
                     <div class="task-title">${task.title}</div>
                     <div class="task-meta">
                         ${currentSection === 'my'
@@ -462,23 +489,14 @@
                         Срок: ${formatDate(task.end)}
                     </div>
                 `;
-                item.onclick = () => openViewTaskModal(task.id);
 
+                applyUrgencyStyle(item, task);
+
+                item.onclick = () => openViewTaskModal(task.id);
                 taskList.appendChild(item);
             });
-
             container.appendChild(column);
         });
-    }
-
-    // --- Форматирование даты ---
-    function formatDate(dateStr) {
-        return dateStr ? new Date(dateStr).toLocaleDateString('ru-RU') : '—';
-    }
-
-    // --- Формат времени для истории и комментов ---
-    function formatDateTime(dateStr) {
-        return dateStr ? new Date(dateStr).toLocaleString('ru-RU') : '—';
     }
 
     // --- Загрузка пользователей ---
@@ -486,14 +504,12 @@
         const select = document.getElementById('taskAssignee');
         select.innerHTML = '<option value="">Выберите пользователя</option>';
         select.disabled = true;
-
         axios.get('/api/users/all')
             .then(response => {
                 allUsers = {};
                 response.data.forEach(user => {
                     allUsers[user.id] = user.userName || user.email;
                 });
-
                 if (Object.keys(allUsers).length === 0) {
                     select.innerHTML = '<option disabled>Нет пользователей</option>';
                 } else {
@@ -519,7 +535,6 @@
         const select = document.getElementById('taskProject');
         select.innerHTML = '<option value="">Загрузка проектов...</option>';
         select.disabled = true;
-
         axios.get('/project/getAll')
             .then(response => {
                 const projects = Array.isArray(response.data) ? response.data : [];
@@ -551,17 +566,14 @@
         const end = document.getElementById('taskEnd').value;
         const assigneeIdStr = document.getElementById('taskAssignee').value;
         const projectIdStr = document.getElementById('taskProject').value;
-
         if (!title || !start || !end || !assigneeIdStr || !projectIdStr) {
             alert('Заполните все обязательные поля');
             return;
         }
-
         if (new Date(end) <= new Date(start)) {
             alert('Время окончания должно быть позже начала');
             return;
         }
-
         const dto = {
             title,
             description: document.getElementById('taskDescription').value,
@@ -571,7 +583,6 @@
             assigneeId: parseInt(assigneeIdStr),
             projectId: parseInt(projectIdStr)
         };
-
         axios.post('/api/v1/task/create', dto)
             .then(() => {
                 alert('✅ Задача успешно создана!');
@@ -590,8 +601,6 @@
     function openViewTaskModal(taskId) {
         currentTaskId = taskId;
         const modal = new bootstrap.Modal(document.getElementById('viewTaskModal'));
-
-        // Очистка предыдущих данных
         document.getElementById('modalTaskKey').textContent = 'Загрузка...';
         document.getElementById('modalTaskTitle').textContent = '';
         document.getElementById('modalTaskDescription').textContent = '—';
@@ -604,14 +613,11 @@
         document.getElementById('historyList').innerHTML = '<div class="text-muted">Загрузка...</div>';
         document.getElementById('commentsList').innerHTML = '<div class="text-muted">Загрузка...</div>';
         document.getElementById('newCommentText').value = '';
-
         modal.show();
 
-        // Загрузка данных задачи
         axios.get(`/api/v1/task/${taskId}`)
             .then(taskResponse => {
                 const task = taskResponse.data;
-
                 document.getElementById('modalTaskKey').textContent = `${task.projectKey}-${task.id}`;
                 document.getElementById('modalTaskTitle').textContent = task.title;
                 document.getElementById('modalTaskDescription').textContent = task.description || '—';
@@ -621,15 +627,8 @@
                 document.getElementById('modalReporter').textContent = task.reporterName || '—';
                 document.getElementById('modalStart').textContent = formatDate(task.start) || '—';
                 document.getElementById('modalEnd').textContent = formatDate(task.end) || '—';
+                document.getElementById('modalTaskStatusEdit').value = task.status;
 
-                // Устанавливаем значение в селект статуса
-                const select = document.getElementById('modalTaskStatusEdit');
-                select.value = task.status;
-
-                // Также обновляем бейдж (на случай, если кто-то смотрит на него)
-                const badge = document.getElementById('modalTaskStatus'); // но мы его убрали, так что можно не обновлять
-
-                // Загрузка истории изменений
                 axios.get(`/api/v1/task/${taskId}/history`)
                     .then(historyRes => {
                         const historyList = document.getElementById('historyList');
@@ -653,7 +652,6 @@
                         document.getElementById('historyList').innerHTML = '<div class="text-danger">Ошибка загрузки истории</div>';
                     });
 
-                // Загрузка комментариев
                 axios.get(`/api/v1/task/${taskId}/comments`)
                     .then(commentRes => {
                         const commentsList = document.getElementById('commentsList');
@@ -689,7 +687,6 @@
             alert('Введите текст комментария');
             return;
         }
-
         axios.post(`/api/v1/task/${currentTaskId}/comments`, { comment: text })
             .then(() => {
                 document.getElementById('newCommentText').value = '';
@@ -714,7 +711,6 @@
     }
 
     function openCreateTaskModal() {
-        // Очистка формы
         document.getElementById('taskTitle').value = '';
         document.getElementById('taskDescription').value = '';
         document.getElementById('taskPriority').value = 'MEDIUM';
@@ -722,12 +718,8 @@
         document.getElementById('taskEnd').value = '';
         document.getElementById('taskAssignee').value = '';
         document.getElementById('taskProject').value = '';
-
-        // Загружаем пользователей и проекты, если ещё не загружены
         loadUsers();
         loadProjects();
-
-        // Открываем модалку
         const modal = new bootstrap.Modal(document.getElementById('createTaskModal'));
         modal.show();
     }
@@ -735,7 +727,6 @@
     // --- Изменение статуса ---
     function updateTaskStatus(newStatus) {
         if (!currentTaskId) return;
-
         axios.patch(`/api/v1/task/${currentTaskId}/status`, null, {
             params: { status: newStatus }
         })
@@ -743,42 +734,16 @@
                 const task = response.data;
                 const select = document.getElementById('modalTaskStatusEdit');
                 select.value = task.status;
-
-                // Обновляем в списке
                 const index = allTasks.findIndex(t => t.id == currentTaskId);
                 if (index !== -1) {
                     allTasks[index] = task;
                 }
-
-                // Перерисовываем доску
                 renderKanban();
-
                 alert('✅ Статус обновлён!');
             })
             .catch(error => {
                 alert('❌ Ошибка: ' + (error.response?.data?.message || 'Не удалось изменить статус'));
             });
-    }
-
-    // --- Вспомогательные функции ---
-    function getStatusLabel(status) {
-        const labels = { TODO: 'Новая', IN_PROGRESS: 'В работе', REVIEW: 'Проверка', DONE: 'Завершено' };
-        return labels[status] || status;
-    }
-
-    function getStatusBadgeClass(status) {
-        const classes = { TODO: 'bg-secondary', IN_PROGRESS: 'bg-info', REVIEW: 'bg-warning', DONE: 'bg-success' };
-        return classes[status] || 'bg-light';
-    }
-
-    function getPriorityLabel(priority) {
-        const labels = { CRITICAL: 'Критический', HIGH: 'Высокий', MEDIUM: 'Средний', LOW: 'Низкий' };
-        return labels[priority] || priority;
-    }
-
-    function getPriorityBadgeClass(priority) {
-        const classes = { CRITICAL: 'bg-danger', HIGH: 'bg-warning text-dark', MEDIUM: 'bg-primary', LOW: 'bg-success' };
-        return classes[priority] || 'bg-light';
     }
 
     // --- Загрузка при старте ---
