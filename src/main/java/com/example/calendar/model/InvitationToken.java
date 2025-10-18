@@ -11,12 +11,13 @@ import java.time.LocalDateTime;
 @Table(name = "invitation_tokens")
 public class InvitationToken {
     @Id
+    @Column(name = "invitation_token_id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String token;
 
     @OneToOne
-    @MapsId
     @JoinColumn(name = "user_id")
     private User user;
 

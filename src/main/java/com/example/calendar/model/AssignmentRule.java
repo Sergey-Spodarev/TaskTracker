@@ -8,6 +8,7 @@ import lombok.Data;
 @Table(name = "assignment_rules")
 public class AssignmentRule {
     @Id
+    @Column(name = "assignment_rule_id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 

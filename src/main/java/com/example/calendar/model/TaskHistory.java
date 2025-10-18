@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 @Table(name = "task_history")
 public class TaskHistory {
     @Id
+    @Column(name = "task_history_id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 

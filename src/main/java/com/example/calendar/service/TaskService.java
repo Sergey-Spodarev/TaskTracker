@@ -145,7 +145,7 @@ public class TaskService {
         if (!user.getCompany().getId().equals(task.getProject().getCompany().getId())) {
             throw new AccessDeniedException("Вы можете менять задачи только в своей компании");
         }
-        if (!task.getAssignee().getUserId().equals(user.getUserId())){
+        if (!task.getAssignee().getId().equals(user.getId())){
             throw new AccessDeniedException("Только исполнитель может менять статус задачи");
         }
 
@@ -175,7 +175,7 @@ public class TaskService {
         if (!user.getCompany().getId().equals(task.getProject().getCompany().getId())) {
             throw new AccessDeniedException("Вы можете менять задачи только в своей компании");
         }
-        if (!task.getReporter().getUserId().equals(user.getUserId())){
+        if (!task.getReporter().getId().equals(user.getId())){
             throw new AccessDeniedException("Только тот кто поставил задачу может менять срок выполнения задачи");
         }
         if (!endTime.isAfter(task.getStartTime())) {
@@ -195,7 +195,7 @@ public class TaskService {
         if (!user.getCompany().getId().equals(task.getProject().getCompany().getId())) {
             throw new AccessDeniedException("Вы можете менять данные задачи только в своей компании");
         }
-        if (!task.getReporter().getUserId().equals(user.getUserId())){
+        if (!task.getReporter().getId().equals(user.getId())){
             throw new AccessDeniedException("Только тот кто поставил задачу может менять название задачи");
         }
         if (task.getTitle().equals(title)) {
@@ -215,7 +215,7 @@ public class TaskService {
         if (!user.getCompany().getId().equals(task.getProject().getCompany().getId())) {
             throw new AccessDeniedException("Вы можете менять данные задачи только в своей компании");
         }
-        if (!task.getReporter().getUserId().equals(user.getUserId())){
+        if (!task.getReporter().getId().equals(user.getId())){
             throw new AccessDeniedException("Только тот кто поставил задачу может менять её приоритет");
         }
         if (task.getPriority().equals(priority)) {
@@ -235,7 +235,7 @@ public class TaskService {
         if (!user.getCompany().getId().equals(task.getProject().getCompany().getId())) {
             throw new AccessDeniedException("Вы можете менять данные задачи только в своей компании");
         }
-        if (!task.getAssignee().getUserId().equals(user.getUserId())  && !user.getRole().getCode().equals("ADMIN")){
+        if (!task.getAssignee().getId().equals(user.getId())  && !user.getRole().getCode().equals("ADMIN")){
             throw new AccessDeniedException("Только исполнитель задачи может менять её приоритет");
         }
         if (task.getDescription().equals(description)) {
@@ -322,7 +322,7 @@ public class TaskService {
         if (!user.getCompany().getId().equals(task.getProject().getCompany().getId())) {
             throw new AccessDeniedException("Вы не можете получить задачи другой компании");
         }
-        if (!task.getReporter().getUserId().equals(user.getUserId())){
+        if (!task.getReporter().getId().equals(user.getId())){
             throw new AccessDeniedException("Только создатель может удалить задачу");
         }
 
@@ -352,7 +352,7 @@ public class TaskService {
         taskDTO.setReporterName(task.getReporter().getUserName());
         User assignee = task.getAssignee();
         if (assignee != null) {
-            taskDTO.setAssigneeId(assignee.getUserId());
+            taskDTO.setAssigneeId(assignee.getId());
             taskDTO.setAssigneeName(assignee.getUserName());
         }
         return taskDTO;

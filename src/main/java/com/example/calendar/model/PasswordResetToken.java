@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 @Table(name = "password_reset_tokens")
 public class PasswordResetToken {
     @Id
+    @Column(name = "password_reset_token_id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 

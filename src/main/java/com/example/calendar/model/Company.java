@@ -16,12 +16,13 @@ import java.util.List;
 public class Company {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "company_id")
     private Long id;
 
     @Column(nullable = false)
     private String name;
 
-    private Long INN;
+    private String INN;
 
     @Column(unique = true)
     private String workEmail;

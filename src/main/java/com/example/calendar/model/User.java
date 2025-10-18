@@ -16,7 +16,7 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_id")
-    private Long userId;
+    private Long id;
 
     @Column(name = "user_name", unique = true)
     private String userName;
@@ -69,7 +69,7 @@ public class User {
     @Override
     public String toString() {
         return "User{" +
-                "userId=" + userId +
+                "userId=" + id +
                 ", userName='" + userName + '\'' +
                 ", email='" + email + '\'' +
                 '}';

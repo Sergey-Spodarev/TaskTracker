@@ -16,6 +16,7 @@ import java.util.List;
 @Table(name = "roles", uniqueConstraints = @UniqueConstraint(columnNames = {"company_id", "code"}))
 public class Role {
     @Id
+    @Column(name = "role_id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
