@@ -1,0 +1,479 @@
+# src/main/resources/db/changelog/001-create-users-table.yaml
+databaseChangeLog:
+  # 1. Сначала компании (самая независимая таблица)
+  - changeSet:
+      id: 001-create-company-table
+      author: sergejspodarev (generated)
+      changes:
+        - createTable:
+            tableName: companies
+            columns:
+              - column:
+                  name: company_id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: inn
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: work_email
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: smtp_host
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: smtp_port
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: email_password
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+
+  # 2. Потом роли (зависит от companies)
+  - changeSet:
+      id: 001-create-role-table
+      author: sergejspodarev (generated)
+      changes:
+        - createTable:
+            tableName: roles
+            columns:
+              - column:
+                  name: role_id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: code
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: display_name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: company_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_role_company
+                    references: companies(company_id)
+
+  # 3. Департаменты (зависит от companies)
+  - changeSet:
+      id: 001-create-department-table
+      author: sergejspodarev (generated)
+      changes:
+        - createTable:
+            tableName: departments
+            columns:
+              - column:
+                  name: department_id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: company_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_department_company
+                    references: companies(company_id)
+
+  # 4. Пользователи (зависит от companies, roles, departments)
+  - changeSet:
+      id: 001-create-users-table
+      author: sergejspodarev (generated)
+      changes:
+        - createTable:
+            tableName: users
+            columns:
+              - column:
+                  name: user_id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_name
+                  type: VARCHAR(255)
+                  constraints:
+                    unique: true
+              - column:
+                  name: password
+                  type: VARCHAR(255)
+              - column:
+                  name: email
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: company_id
+                  type: BIGINT
+                  constraints:
+                    nullable: true
+                    foreignKeyName: fk_users_company
+                    references: companies(company_id)
+              - column:
+                  name: role_id
+                  type: BIGINT
+                  constraints:
+                    nullable: true
+                    foreignKeyName: fk_users_role
+                    references: roles(role_id)
+              - column:
+                  name: department_id
+                  type: BIGINT
+                  constraints:
+                    nullable: true
+                    foreignKeyName: fk_users_department
+                    references: departments(department_id)
+
+  # 5. Проекты (зависит от companies)
+  - changeSet:
+      id: 001-create-project-table
+      author: sergejspodarev (generated)
+      changes:
+        - createTable:
+            tableName: projects
+            columns:
+              - column:
+                  name: project_id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: project_key
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: company_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_project_companies
+                    references: companies(company_id)
+
+  # 6. Задачи (зависит от users, tasks, projects)
+  - changeSet:
+      id: 001-create-task-table
+      author: sergejspodarev (generated)
+      changes:
+        - createTable:
+            tableName: tasks
+            columns:
+              - column:
+                  name: task_id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: title
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: start_time
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: end_time
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: priority
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: parent_task_id
+                  type: bigint
+                  constraints:
+                    nullable: true
+                    foreignKeyName: fk_tasks_parent
+                    references: tasks(task_id)
+              - column:
+                  name: assignee_id
+                  type: bigint
+                  constraints:
+                    nullable: true
+                    foreignKeyName: fk_tasks_assignee
+                    references: users(user_id)
+              - column:
+                  name: reporter_id
+                  type: bigint
+                  constraints:
+                    nullable: true
+                    foreignKeyName: fk_tasks_reporter
+                    references: users(user_id)
+              - column:
+                  name: project_id
+                  type: bigint
+                  constraints:
+                    nullable: true
+                    foreignKeyName: fk_tasks_project
+                    references: projects(project_id)
+
+  # 7. Assignment Rules (зависит от roles, departments)
+  - changeSet:
+      id: 001-create-assignment-rule-table
+      author: sergejspodarev (generated)
+      changes:
+        - createTable:
+            tableName: assignment_rules
+            columns:
+              - column:
+                  name: assignment_rule_id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: role_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_assignment_rule_role
+                    references: roles(role_id)
+              - column:
+                  name: source_department_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_assignment_rule_source_dept
+                    references: departments(department_id)
+              - column:
+                  name: target_department_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_assignment_rule_target_dept
+                    references: departments(department_id)
+              - column:
+                  name: allowed
+                  type: boolean
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+
+  # 8. Токены (зависит от users)
+  - changeSet:
+      id: 001-create-password-reset-token-tables
+      author: sergejspodarev (generated)
+      changes:
+        - createTable:
+            tableName: password_reset_tokens
+            columns:
+              - column:
+                  name: password_reset_token_id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: token
+                  type: varchar(255)
+                  constraints:
+                    unique: true
+                    nullable: false
+              - column:
+                  name: expires_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: used
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_password_reset_user
+                    references: users(user_id)
+
+  # 9. Invitation Tokens (зависит от users)
+  - changeSet:
+      id: 001-create-invitation-token-table
+      author: sergejspodarev (generated)
+      changes:
+        - createTable:
+            tableName: invitation_tokens
+            columns:
+              - column:
+                  name: invitation_token_id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: token
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    unique: true
+                    foreignKeyName: fk_invitation_token_user
+                    references: users(user_id)
+              - column:
+                  name: expires_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: used
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+
+  # 10. Комментарии задач (зависит от tasks, users)
+  - changeSet:
+      id: 001-create-task-comment-table
+      author: sergejspodarev (generated)
+      changes:
+        - createTable:
+            tableName: task_comments
+            columns:
+              - column:
+                  name: task_comment_id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: comment
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: task_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_comment_task
+                    references: tasks(task_id)
+              - column:
+                  name: author_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_comment_author
+                    references: users(user_id)
+
+  # 11. История задач (зависит от tasks, users)
+  - changeSet:
+      id: 001-create-task-history-table
+      author: sergejspodarev (generated)
+      changes:
+        - createTable:
+            tableName: task_history
+            columns:
+              - column:
+                  name: task_history_id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: field_name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: old_value
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: new_value
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: changed_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: task_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_task_history
+                    references: tasks(task_id)
+              - column:
+                  name: changed_by_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_change_user
+                    references: users(user_id)
