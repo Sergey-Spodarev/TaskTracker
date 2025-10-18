@@ -6,7 +6,7 @@ import lombok.Data;
 public class CompanyRegistrationDTO {
     private Long id;
     private String name;
-    private Long INN;
+    private String INN;
 
     private String workEmail;
     private String smtpHost;

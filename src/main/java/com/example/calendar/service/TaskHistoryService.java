@@ -55,8 +55,8 @@ public class TaskHistoryService {
             throw new AccessDeniedException("Доступ запрещён");
         }
 
-        boolean isAssignee = task.getAssignee() != null && task.getAssignee().getUserId().equals(currentUser.getUserId());
-        boolean isReporter = task.getReporter() != null && task.getReporter().getUserId().equals(currentUser.getUserId());
+        boolean isAssignee = task.getAssignee() != null && task.getAssignee().getId().equals(currentUser.getId());
+        boolean isReporter = task.getReporter() != null && task.getReporter().getId().equals(currentUser.getId());
         boolean isAdmin = "ADMIN".equals(currentUser.getRole().getCode());
         boolean isManager = "MANAGER".equals(currentUser.getRole().getCode());
 
@@ -84,7 +84,7 @@ public class TaskHistoryService {
         taskHistoryDTO.setOldValue(taskHistory.getOldValue());
         taskHistoryDTO.setNewValue(taskHistory.getNewValue());
         taskHistoryDTO.setChangedByName(taskHistory.getChangedBy().getUserName());
-        taskHistoryDTO.setChangedById(taskHistory.getChangedBy().getUserId()); // ← ДОБАВЬ ЭТО!
+        taskHistoryDTO.setChangedById(taskHistory.getChangedBy().getId());
         taskHistoryDTO.setChangedAt(taskHistory.getChangedAt());
         return taskHistoryDTO;
     }

@@ -7,6 +7,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface CompanyRepository extends JpaRepository<Company, Long> {
-    Optional<Company> findByINN(Long inn);
-    Boolean existsByINN(Long inn);
+    Optional<Company> findByINN(String inn);
+    Boolean existsByINN(String inn);
 }

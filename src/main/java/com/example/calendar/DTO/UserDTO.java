@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
-@Data //lombok
+@Data
 public class UserDTO {
     private Long id;
 

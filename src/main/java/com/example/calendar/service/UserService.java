@@ -167,7 +167,7 @@ public class UserService {
 
     public UserDTO convertUserToDTO(User user){
         UserDTO userDTO = new UserDTO();
-        userDTO.setId(user.getUserId());
+        userDTO.setId(user.getId());
         userDTO.setUserName(user.getUserName());
         userDTO.setEmail(user.getEmail());
         userDTO.setPassword(user.getPassword());
@@ -176,7 +176,7 @@ public class UserService {
 
     public UserWithRoleDTO convertToDTO(User user) {
         UserWithRoleDTO dto = new UserWithRoleDTO();
-        dto.setId(user.getUserId());
+        dto.setId(user.getId());
         dto.setUserName(user.getUserName());
         dto.setEmail(user.getEmail());
 

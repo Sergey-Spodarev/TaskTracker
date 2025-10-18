@@ -33,7 +33,7 @@ public class TaskCommentService {
         if (!task.getProject().getCompany().getId().equals(user.getCompany().getId())) {
             throw new AccessDeniedException("Доступ к задаче запрещён");
         }
-        if (!task.getAssignee().getUserId().equals(user.getUserId()) && !task.getReporter().getUserId().equals(user.getUserId())) {
+        if (!task.getAssignee().getId().equals(user.getId()) && !task.getReporter().getId().equals(user.getId())) {
             throw new AccessDeniedException("Только исполнитель или создатель может оставить комментарий");
         }//надо потом добавить чтобы автоматом добавлялось в историю изменений и может добавить поле на проверку изменения и чтобы было то в визуале писало редактированно
 
@@ -93,8 +93,8 @@ public class TaskCommentService {
             throw new AccessDeniedException("Доступ запрещён");
         }
 
-        boolean isAssignee = task.getAssignee() != null && task.getAssignee().getUserId().equals(user.getUserId());
-        boolean isReporter = task.getReporter() != null && task.getReporter().getUserId().equals(user.getUserId());
+        boolean isAssignee = task.getAssignee() != null && task.getAssignee().getId().equals(user.getId());
+        boolean isReporter = task.getReporter() != null && task.getReporter().getId().equals(user.getId());
         boolean isAdmin = "ADMIN".equals(user.getRole().getCode());
         boolean isManager = "MANAGER".equals(user.getRole().getCode());
 
@@ -120,9 +120,9 @@ public class TaskCommentService {
         TaskCommentDTO taskCommentDTO = new TaskCommentDTO();
         taskCommentDTO.setId(taskComment.getId());
         taskCommentDTO.setComment(taskComment.getComment());
-        taskCommentDTO.setAuthorId(taskComment.getAuthor().getUserId());
+        taskCommentDTO.setAuthorId(taskComment.getAuthor().getId());
         taskCommentDTO.setAuthorName(taskComment.getAuthor().getUserName());
-        taskCommentDTO.setCreatedAt(taskComment.getCreatedAt()); // ← ДОБАВЬ ЭТО!
+        taskCommentDTO.setCreatedAt(taskComment.getCreatedAt());
         return taskCommentDTO;
     }
 }
