@@ -13,33 +13,41 @@ import java.util.List;
 @RequestMapping("/api/v1/task")
 public class TaskCommentController {
     private final TaskCommentService taskCommentService;
+
     public TaskCommentController(TaskCommentService taskCommentService) {
         this.taskCommentService = taskCommentService;
     }
 
     @PostMapping("/{taskId}/comments")
-    public ResponseEntity<TaskCommentDTO> createTaskComment(@RequestBody @Valid TaskCommentDTO taskCommentDTO, @PathVariable Long taskId) {
+    public ResponseEntity<TaskCommentDTO> createTaskComment(
+            @RequestBody @Valid TaskCommentDTO taskCommentDTO,
+            @PathVariable Long taskId) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(taskCommentService.createTaskComment(taskCommentDTO, taskId));
     }
 
     @PutMapping("/{taskId}/comments/{commentId}")
-    public ResponseEntity<TaskCommentDTO> updateTaskComment(@PathVariable Long taskId, @RequestBody @Valid TaskCommentDTO taskCommentDTO, @PathVariable Long commentId) {
+    public ResponseEntity<TaskCommentDTO> updateTaskComment(
+            @PathVariable Long taskId,
+            @PathVariable Long commentId,
+            @RequestBody @Valid TaskCommentDTO taskCommentDTO) { // ← Порядок параметров важен!
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body(taskCommentService.updateTaskComment(taskCommentDTO, taskId, commentId));
+                .body(taskCommentService.updateTaskComment(taskId, commentId, taskCommentDTO));
     }
 
     @GetMapping("/{taskId}/comments")
     public ResponseEntity<List<TaskCommentDTO>> getTaskComments(@PathVariable Long taskId) {
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body(taskCommentService.getTaskComment(taskId));
+                .body(taskCommentService.getTaskComments(taskId)); // ← Исправлен метод (getTaskComments)
     }
 
     @DeleteMapping("/{taskId}/comments/{commentId}")
-    public ResponseEntity<Void> deleteTaskComment(@PathVariable Long taskId, @PathVariable Long commentId) {
+    public ResponseEntity<Void> deleteTaskComment(
+            @PathVariable Long taskId,
+            @PathVariable Long commentId) {
         taskCommentService.deleteTaskComment(taskId, commentId);
         return ResponseEntity.noContent().build();
     }

@@ -51,12 +51,4 @@ public class Task {
     @JoinColumn(name = "project_id")
     @JsonBackReference
     private Project project;
-
-    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
-    @ToString.Exclude
-    private List<TaskComment> comments = new ArrayList<>();
-
-    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
-    @ToString.Exclude
-    private List<TaskHistory> history = new ArrayList<>();
 }

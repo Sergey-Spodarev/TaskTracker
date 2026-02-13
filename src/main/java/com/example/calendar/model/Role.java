@@ -27,17 +27,9 @@ public class Role {
     private String displayName;
 
     @ManyToOne
-    @JoinColumn(name = "company_id", nullable = false)
+    @JoinColumn(name = "department_id", nullable = false)
     @JsonBackReference
-    private Company company;
-
-    @OneToMany(mappedBy = "role", cascade = CascadeType.ALL, orphanRemoval = true)
-    @ToString.Exclude
-    private List<User> users = new ArrayList<>();
-
-    @OneToMany(mappedBy = "role", cascade = CascadeType.ALL, orphanRemoval = true)
-    @ToString.Exclude
-    private List<AssignmentRule> assignmentRules = new ArrayList<>();
+    private Department department;
 
     @Override
     public String toString() {

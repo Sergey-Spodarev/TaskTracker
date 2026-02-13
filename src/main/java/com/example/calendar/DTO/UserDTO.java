@@ -1,9 +1,7 @@
 package com.example.calendar.DTO;
 
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
+import com.example.calendar.model.SystemRole;
+import jakarta.validation.constraints.*;
 import lombok.Data;
 
 @Data
@@ -15,6 +13,10 @@ public class UserDTO {
     private String userName;
 
     private String password;
+    private SystemRole systemRole;
+    private Long departmentId;
+    private Long roleLevelId;
+    private Integer roleLevel;
 
     @Email(message = "Почта является обязательной")
     @NotBlank

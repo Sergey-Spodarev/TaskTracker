@@ -1,8 +1,9 @@
 package com.example.calendar.service;
 
-import com.example.calendar.DTO.AssignmentRuleDTO;
+import com.example.calendar.DTO.AssignmentDepartmentDTO;
 import com.example.calendar.model.*;
-import com.example.calendar.repository.AssignmentRuleRepository;
+import com.example.calendar.repository.AssignmentDepartmentRepository;
+import com.example.calendar.repository.DepartmentLevelRepository;
 import com.example.calendar.repository.DepartmentRepository;
 import com.example.calendar.repository.RoleRepository;
 import com.example.calendar.security.CustomUserDetails;
@@ -18,36 +19,37 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 public class AssignmentRuleService {
-    private final AssignmentRuleRepository assignmentRuleRepository;
+    private final AssignmentDepartmentRepository assignmentDepartmentRepository;
     private final RoleRepository roleRepository;
     private final DepartmentRepository departmentRepository;
-    public AssignmentRuleService(AssignmentRuleRepository assignmentRuleRepository, RoleRepository roleRepository, DepartmentRepository departmentRepository) {
-        this.assignmentRuleRepository = assignmentRuleRepository;
+    private final DepartmentLevelRepository departmentLevelRepository;
+    public AssignmentRuleService(AssignmentDepartmentRepository assignmentDepartmentRepository, RoleRepository roleRepository, DepartmentRepository departmentRepository, DepartmentLevelRepository departmentLevelRepository) {
+        this.assignmentDepartmentRepository = assignmentDepartmentRepository;
         this.roleRepository = roleRepository;
         this.departmentRepository = departmentRepository;
+        this.departmentLevelRepository = departmentLevelRepository;
     }
 
-    public AssignmentRuleDTO createAssignmentRule(AssignmentRuleDTO assignmentRuleDTO) {
+    public AssignmentDepartmentDTO createAssignmentRule(AssignmentDepartmentDTO assignmentDepartmentDTO) {
         User admin = getCurrentUser();
         if (!"ADMIN".equals(admin.getRole().getCode())) {
             throw new AccessDeniedException("Only the admin can create the rules.");
         }
 
-        Role role = roleRepository.findByCodeAndCompany(assignmentRuleDTO.getRoleCode(), admin.getCompany())
-                .orElseThrow(() -> new IllegalArgumentException("No role exists."));
-
-        Department sourceDepartment = departmentRepository.findByNameAndCompany(assignmentRuleDTO.getSourceDepartment(), admin.getCompany())
+        Department sourceDepartment = departmentRepository.findByNameAndCompany(assignmentDepartmentDTO.getSourceDepartment(), admin.getCompany())
                 .orElseThrow(() -> new IllegalArgumentException("No department exists."));
 
-        Department targetDepartment = departmentRepository.findByNameAndCompany(assignmentRuleDTO.getTargetDepartment(), admin.getCompany())//но тут может подправить
+        Department targetDepartment = departmentRepository.findByNameAndCompany(assignmentDepartmentDTO.getTargetDepartment(), admin.getCompany())//но тут может подправить
                 .orElseThrow(() -> new IllegalArgumentException("No department exists."));
 
-        AssignmentRule assignmentRule = new AssignmentRule();
-        assignmentRule.setRole(role);
-        assignmentRule.setSourceDepartment(sourceDepartment);
-        assignmentRule.setTargetDepartment(targetDepartment);
-        assignmentRule.setAllowed(assignmentRuleDTO.isAllowed());
-        return convertToDTO(assignmentRuleRepository.save(assignmentRule));
+        RoleLevel roleLevel = departmentLevelRepository.findByDepartmentAndLevel(targetDepartment, assignmentDepartmentDTO.getLevel())
+                .orElseThrow(() -> new RuntimeException("Нельзя назначить"));
+
+        AssignmentDepartment assignmentDepartment = new AssignmentDepartment();
+        assignmentDepartment.setSourceDepartment(sourceDepartment);
+        assignmentDepartment.setTargetDepartment(targetDepartment);
+        assignmentDepartment.setAllowed(assignmentDepartmentDTO.isAllowed());
+        return convertToDTO(assignmentDepartmentRepository.save(assignmentDepartment));
     }
 
     public void deleteAssignmentRule(Long delAssignmentRule_id) {
@@ -56,10 +58,10 @@ public class AssignmentRuleService {
             throw new AccessDeniedException("Only the admin can remove the rules.");
         }
         //возможно добавить проверку, что из той же компании
-        assignmentRuleRepository.deleteById(delAssignmentRule_id);
+        assignmentDepartmentRepository.deleteById(delAssignmentRule_id);
     }
 
-    public List<AssignmentRuleDTO> getRulesByRole(String roleCode) {
+    public List<AssignmentDepartmentDTO> getRulesByRole(String roleCode) {
         User admin = getCurrentUser();
         if (!"ADMIN".equals(admin.getRole().getCode())) {
             throw new AccessDeniedException("Only the admin can get the rules.");
@@ -69,14 +71,14 @@ public class AssignmentRuleService {
         Role role = roleRepository.findByCodeAndCompany(roleCode, company)
                 .orElseThrow(() -> new IllegalArgumentException("role not found"));
 
-        List<AssignmentRule> rules = assignmentRuleRepository.findByRole(role);
+        List<AssignmentDepartment> rules = assignmentDepartmentRepository.findByRole(role);
 
         return rules.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
-    public List<AssignmentRuleDTO> getAllAssignmentRules() {
+    public List<AssignmentDepartmentDTO> getAllAssignmentRules() {
         User admin = getCurrentUser();
 
         if (!"ADMIN".equals(admin.getRole().getCode())) {
@@ -84,7 +86,7 @@ public class AssignmentRuleService {
         }
 
         Company company = admin.getCompany();
-        List<AssignmentRule> rules = assignmentRuleRepository.findByRole_Company(company);
+        List<AssignmentDepartment> rules = assignmentDepartmentRepository.findByRole_Company(company);
 
         return rules.stream()
                 .map(this::convertToDTO)
@@ -96,7 +98,7 @@ public class AssignmentRuleService {
             return true;
         }
 
-        return assignmentRuleRepository.existsByRoleAndSourceDepartmentAndTargetDepartmentAndAllowedTrue(
+        return assignmentDepartmentRepository.existsByRoleAndSourceDepartmentAndTargetDepartmentAndAllowedTrue(
                 fromUser.getRole(), fromUser.getDepartment(), toUser.getDepartment()
         );
     }
@@ -107,12 +109,10 @@ public class AssignmentRuleService {
         return userDetails.getUser();
     }
 
-    private AssignmentRuleDTO convertToDTO(AssignmentRule rule) {
-        AssignmentRuleDTO dto = new AssignmentRuleDTO();
+    private AssignmentDepartmentDTO convertToDTO(AssignmentDepartment rule) {
+        AssignmentDepartmentDTO dto = new AssignmentDepartmentDTO();
         dto.setId(rule.getId());
         dto.setAllowed(rule.isAllowed());
-        dto.setRoleCode(rule.getRole().getCode());
-        dto.setRoleName(rule.getRole().getDisplayName());
         dto.setSourceDepartment(rule.getSourceDepartment().getName());
         dto.setTargetDepartment(rule.getTargetDepartment().getName());
         return dto;

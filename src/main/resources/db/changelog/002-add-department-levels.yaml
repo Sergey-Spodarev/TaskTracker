@@ -1,0 +1,26 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002-add-departments-level
+      author: sergejspodarev (generated)
+      changes:
+        - createTable:
+            tableName: departmet_level
+            columns:
+              - column:
+                  name: department_level_id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: level
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: level_name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:

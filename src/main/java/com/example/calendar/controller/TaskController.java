@@ -7,6 +7,7 @@ import com.example.calendar.service.TaskService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -97,6 +98,14 @@ public class TaskController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(taskService.getTasksByReporter());
+    }
+
+    @GetMapping("/task-my-department")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<TaskDTO>> getTasksByDepartment() {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(taskService.getTasksByDepartment());
     }
 
     @GetMapping("/project/{projectId}")

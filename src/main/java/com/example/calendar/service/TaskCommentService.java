@@ -13,6 +13,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -20,91 +21,115 @@ import java.util.List;
 public class TaskCommentService {
     private final TaskCommentRepository taskCommentRepository;
     private final TaskService taskService;
-    public TaskCommentService(TaskCommentRepository taskCommentRepository, TaskService taskService) {
+
+    public TaskCommentService(TaskCommentRepository taskCommentRepository,
+                              TaskService taskService) {
         this.taskCommentRepository = taskCommentRepository;
         this.taskService = taskService;
     }
 
     public TaskCommentDTO createTaskComment(TaskCommentDTO taskCommentDTO, Long taskId) {
         User user = getCurrentUser();
-
         Task task = taskService.GetTaskById(taskId);
 
-        if (!task.getProject().getCompany().getId().equals(user.getCompany().getId())) {
-            throw new AccessDeniedException("Доступ к задаче запрещён");
+        // Проверка компании
+        if (!task.getProject().getDepartment().getCompany().getId()
+                .equals(user.getCompany().getId())) {
+            throw new SecurityException("Задача не принадлежит вашей компании");
         }
-        if (!task.getAssignee().getId().equals(user.getId()) && !task.getReporter().getId().equals(user.getId())) {
-            throw new AccessDeniedException("Только исполнитель или создатель может оставить комментарий");
-        }//надо потом добавить чтобы автоматом добавлялось в историю изменений и может добавить поле на проверку изменения и чтобы было то в визуале писало редактированно
+
+        // Проверяем, что пользователь - создатель или исполнитель задачи
+        boolean isReporter = task.getReporter() != null &&
+                task.getReporter().getId().equals(user.getId());
+        boolean isAssignee = task.getAssignee() != null &&
+                task.getAssignee().getId().equals(user.getId());
+
+        if (!isReporter && !isAssignee) {
+            throw new SecurityException("Только создатель или исполнитель задачи может оставить комментарий");
+        }
 
         TaskComment taskComment = new TaskComment();
         taskComment.setTask(task);
         taskComment.setAuthor(user);
         taskComment.setComment(taskCommentDTO.getComment());
+
         return convertToDTO(taskCommentRepository.save(taskComment));
     }
 
-    public TaskCommentDTO updateTaskComment(TaskCommentDTO taskCommentDTO, Long taskId, Long commentId) {//переделать надо чтобы ещё id передовала задачи
+    public TaskCommentDTO updateTaskComment(Long taskId, Long commentId, TaskCommentDTO taskCommentDTO) {
         User user = getCurrentUser();
 
-        if (!taskService.existsByAssigneeAndId(user, taskId)) {
-            throw new RuntimeException("Вы не можете сделать комментарий к данной задаче");
+        Task task = taskService.GetTaskById(taskId);
+
+        // Проверка компании
+        if (!task.getProject().getDepartment().getCompany().getId()
+                .equals(user.getCompany().getId())) {
+            throw new SecurityException("Задача не принадлежит вашей компании");
         }
+
         TaskComment taskComment = taskCommentRepository.findById(commentId)
                 .orElseThrow(() -> new EntityNotFoundException("Комментарий не найден"));
 
         if (!taskComment.getTask().getId().equals(taskId)) {
             throw new IllegalArgumentException("Комментарий не принадлежит указанной задаче");
         }
-        if (!taskComment.getAuthor().equals(user)) {
-            throw new AccessDeniedException("Вы можете редактировать только свои комментарии");
+
+        // Только автор комментария может его редактировать
+        if (!taskComment.getAuthor().getId().equals(user.getId())) {
+            throw new SecurityException("Вы можете редактировать только свои комментарии");
         }
 
         taskComment.setComment(taskCommentDTO.getComment());
-        taskComment.setAuthor(user);
+        taskComment.setUpdatedAt(LocalDateTime.now());
+
         return convertToDTO(taskCommentRepository.save(taskComment));
     }
 
     public void deleteTaskComment(Long taskId, Long commentId) {
         User user = getCurrentUser();
 
-        TaskComment taskComment = taskCommentRepository.findByIdAndAuthor(commentId, user)
+        TaskComment taskComment = taskCommentRepository.findById(commentId)
                 .orElseThrow(() -> new EntityNotFoundException("Комментарий не найден"));
 
-        if (!taskComment.getTask().getProject().getCompany().equals(user.getCompany())) {
-            throw new AccessDeniedException("Доступ запрещён");
-        }
         if (!taskComment.getTask().getId().equals(taskId)) {
             throw new IllegalArgumentException("Комментарий не принадлежит указанной задаче");
         }
-        if (!taskComment.getAuthor().equals(user)) {
-            throw  new RuntimeException("Удалять можно только свои комментарии");
+
+        // Проверка компании
+        if (!taskComment.getTask().getProject().getDepartment().getCompany()
+                .getId().equals(user.getCompany().getId())) {
+            throw new SecurityException("Комментарий не принадлежит вашей компании");
+        }
+
+        // Только автор комментария может его удалить
+        if (!taskComment.getAuthor().getId().equals(user.getId())) {
+            throw new SecurityException("Вы можете удалять только свои комментарии");
         }
 
         taskCommentRepository.delete(taskComment);
     }
 
-    public List<TaskCommentDTO> getTaskComment(Long taskId) {
+    public List<TaskCommentDTO> getTaskComments(Long taskId) {
         User user = getCurrentUser();
         Task task = taskService.GetTaskById(taskId);
 
-        if (user.getCompany() == null || task.getProject().getCompany() == null ||
-                !user.getCompany().getId().equals(task.getProject().getCompany().getId())) {
-            throw new AccessDeniedException("Доступ запрещён");
+        // Проверка компании
+        if (!task.getProject().getDepartment().getCompany().getId()
+                .equals(user.getCompany().getId())) {
+            throw new SecurityException("Задача не принадлежит вашей компании");
         }
 
-        boolean isAssignee = task.getAssignee() != null && task.getAssignee().getId().equals(user.getId());
-        boolean isReporter = task.getReporter() != null && task.getReporter().getId().equals(user.getId());
-        boolean isAdmin = "ADMIN".equals(user.getRole().getCode());
-        boolean isManager = "MANAGER".equals(user.getRole().getCode());
+        // Проверяем доступ к задаче (только создатель или исполнитель)
+        boolean isReporter = task.getReporter() != null &&
+                task.getReporter().getId().equals(user.getId());
+        boolean isAssignee = task.getAssignee() != null &&
+                task.getAssignee().getId().equals(user.getId());
 
-        boolean canView = isAssignee || isReporter || isAdmin || isManager;
-
-        if (!canView) {
-            throw new AccessDeniedException("Нет прав на просмотр комментариев задачи");
+        if (!isReporter && !isAssignee) {
+            throw new SecurityException("Только создатель или исполнитель задачи может просматривать комментарии");
         }
 
-        List<TaskComment> taskComments = taskCommentRepository.findByTask(task);
+        List<TaskComment> taskComments = taskCommentRepository.findByTaskOrderByCreatedAtDesc(task);
         return taskComments.stream()
                 .map(this::convertToDTO)
                 .toList();
@@ -120,9 +145,13 @@ public class TaskCommentService {
         TaskCommentDTO taskCommentDTO = new TaskCommentDTO();
         taskCommentDTO.setId(taskComment.getId());
         taskCommentDTO.setComment(taskComment.getComment());
-        taskCommentDTO.setAuthorId(taskComment.getAuthor().getId());
-        taskCommentDTO.setAuthorName(taskComment.getAuthor().getUserName());
         taskCommentDTO.setCreatedAt(taskComment.getCreatedAt());
+
+        if (taskComment.getAuthor() != null) {
+            taskCommentDTO.setAuthorId(taskComment.getAuthor().getId());
+            taskCommentDTO.setAuthorName(taskComment.getAuthor().getUserName());
+        }
+
         return taskCommentDTO;
     }
 }

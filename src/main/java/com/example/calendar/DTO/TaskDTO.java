@@ -7,10 +7,12 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 public class TaskDTO {
     private Long id;
+
     @NotBlank(message = "Название задачи обязательно")
     private String title;
 
@@ -27,7 +29,15 @@ public class TaskDTO {
     private TaskPriority priority;
 
     private Long assigneeId;
-    private Long projectId;
     private String assigneeName;
+
+    private Long reporterId;
     private String reporterName;
+
+    private Long projectId;
+    private String projectName;
+
+    // Для подзадач
+    private Long parentTaskId;
+    private List<TaskDTO> subtasks;
 }

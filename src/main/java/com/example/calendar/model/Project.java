@@ -21,11 +21,7 @@ public class Project {
     private String projectKey;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "company_id", nullable = false)
+    @JoinColumn(name = "department_id", nullable = false)
     @JsonBackReference
-    private Company company;
-
-    @OneToMany(mappedBy = "project", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    @ToString.Exclude
-    private List<Task> tasks = new ArrayList<>();
+    private Department department;
 }

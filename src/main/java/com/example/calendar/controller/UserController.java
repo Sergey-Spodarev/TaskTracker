@@ -1,8 +1,10 @@
 package com.example.calendar.controller;
 
+import com.example.calendar.DTO.UserAssignmentDTO;
 import com.example.calendar.DTO.UserDTO;
 import com.example.calendar.DTO.UserWithRoleDTO;
 import com.example.calendar.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,10 +21,10 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(Long userId, String codeRole, String nameDepartment) {
+    public ResponseEntity<?> registerUser(@RequestBody @Valid UserAssignmentDTO userAssignmentDTO) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(userService.assignUser(userId, codeRole, nameDepartment));
+                .body(userService.assignUser(userAssignmentDTO));
     }
 
     @PostMapping("/update/dataUser")

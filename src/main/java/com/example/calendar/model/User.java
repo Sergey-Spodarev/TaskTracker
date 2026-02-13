@@ -28,6 +28,13 @@ public class User {
     private String email;
 
     @ManyToOne
+    @JoinColumn(name = "department_id")
+    private Department department;
+
+    @Column(nullable = false)//надо переделать логику чтобы при создании компании выдавался Владелец компании, а при приглашении пользователя Обычный сотрудник
+    private SystemRole systemRole;
+
+    @ManyToOne
     @JoinColumn(name = "company_id")
     @JsonBackReference
     private Company company;
@@ -37,18 +44,8 @@ public class User {
     private Role role;
 
     @ManyToOne
-    @JoinColumn(name = "department_id")
-    private Department department;
-
-    @OneToMany(mappedBy = "reporter", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference
-    @ToString.Exclude
-    private List<Task> reportedTasks = new ArrayList<>();
-
-    @OneToMany(mappedBy = "assignee", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference
-    @ToString.Exclude
-    private List<Task> assignedTasks = new ArrayList<>();
+    @JoinColumn(name = "role_level_id")
+    private RoleLevel roleLevel;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
@@ -56,15 +53,6 @@ public class User {
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private InvitationToken invitationToken;
-
-    @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference
-    @ToString.Exclude
-    private List<TaskComment> taskComments = new ArrayList<>();
-
-    @OneToMany(mappedBy = "changedBy", cascade = CascadeType.ALL, orphanRemoval = true)
-    @ToString.Exclude
-    private List<TaskHistory> taskHistories = new ArrayList<>();
 
     @Override
     public String toString() {

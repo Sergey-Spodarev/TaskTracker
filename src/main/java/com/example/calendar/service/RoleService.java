@@ -49,7 +49,7 @@ public class RoleService {
         else{
             Role newRole = new Role();
             newRole.setCode(roleDTO.getCode());
-            newRole.setCompany(company);
+            newRole.setDepartment(user.getDepartment());//тут вопрос ибо может ли он быть из другого департамента или нет по сравнению с нами
             newRole.setDisplayName(roleDTO.getDisplayName());
             return convertRole(roleRepository.save(newRole));
         }
@@ -85,7 +85,7 @@ public class RoleService {
         if(!"ADMIN".equals(admin.getRole().getCode())){
             throw new AccessDeniedException("The user is not admin");
         }
-        if (!role.getCompany().equals(admin.getCompany())) {
+        if (!role.getDepartment().getCompany().equals(admin.getCompany())) {
             throw new AccessDeniedException("You can't change a role from another company.");
         }
         roleRepository.deleteById(roleId);

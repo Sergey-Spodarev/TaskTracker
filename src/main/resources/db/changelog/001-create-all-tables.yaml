@@ -4,6 +4,11 @@ databaseChangeLog:
   - changeSet:
       id: 001-create-company-table
       author: sergejspodarev (generated)
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: companies
       changes:
         - createTable:
             tableName: companies

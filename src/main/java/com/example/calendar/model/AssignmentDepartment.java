@@ -5,16 +5,12 @@ import lombok.Data;
 
 @Entity
 @Data
-@Table(name = "assignment_rules")
-public class AssignmentRule {
+@Table(name = "assignment_department")
+public class AssignmentDepartment {
     @Id
     @Column(name = "assignment_rule_id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @ManyToOne
-    @JoinColumn(name = "role_id", nullable = false)
-    private Role role;
 
     @ManyToOne
     @JoinColumn(name = "source_department_id", nullable = false)

@@ -27,18 +27,6 @@ public class Department {
     @JsonBackReference
     private Company company;
 
-    @OneToMany(mappedBy = "department", cascade = CascadeType.ALL, orphanRemoval = true)
-    @ToString.Exclude
-    private List<User> users = new ArrayList<>();
-
-    @OneToMany(mappedBy = "sourceDepartment", cascade = CascadeType.ALL, orphanRemoval = true)
-    @ToString.Exclude
-    private List<AssignmentRule> assignmentRulesAsSource = new ArrayList<>();
-
-    @OneToMany(mappedBy = "targetDepartment", cascade = CascadeType.ALL, orphanRemoval = true)
-    @ToString.Exclude
-    private List<AssignmentRule> assignmentRulesAsTarget = new ArrayList<>();
-
     @Override
     public String toString() {
         return "Department{" +

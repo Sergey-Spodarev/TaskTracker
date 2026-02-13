@@ -6,8 +6,14 @@ import lombok.Data;
 @Data
 public class ProjectDTO {
     private Long id;
+
     @NotBlank(message = "Имя проекта обязательно")
     private String name;
+
     @NotBlank(message = "Ключ проекта обязателен")
     private String projectKey;
+    private Long departmentId;
+    private String departmentName;
+    private Long companyId;
+    private String companyName;
 }

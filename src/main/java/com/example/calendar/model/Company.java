@@ -31,29 +31,13 @@ public class Company {
     private Integer smtpPort;
     private String emailPassword;
 
-    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
-    @ToString.Exclude
-    private List<User> users = new ArrayList<>();
-
-    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
-    @ToString.Exclude
-    private List<Role> roles = new ArrayList<>();
-
-    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
-    @ToString.Exclude
-    private List<Department> departments = new ArrayList<>();
-
-    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
-    @ToString.Exclude
-    private List<Project> projects = new ArrayList<>();
-
     @Override
     public String toString() {
         return "Company{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
                 ", INN='" + INN + '\'' +
-                ", workEmail='" + workEmail + '\'' +
+                ", workEmail='" + workEmail +
                 '}';
     }
 }
