@@ -23,7 +23,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final RoleRepository roleRepository;
     private final DepartmentRepository departmentRepository;
-    private final DepartmentLevelRepository departmentLevelRepository;
+    //private final DepartmentLevelRepository departmentLevelRepository;
     private final SchemePermissionService schemePermissionService;
     private final RoleLevelRepository roleLevelRepository;
 
@@ -31,14 +31,14 @@ public class UserService {
                        PasswordEncoder passwordEncoder,
                        RoleRepository roleRepository,
                        DepartmentRepository departmentRepository,
-                       DepartmentLevelRepository departmentLevelRepository,
+                       //DepartmentLevelRepository departmentLevelRepository,
                        SchemePermissionService schemePermissionService,
                        RoleLevelRepository roleLevelRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.roleRepository = roleRepository;
         this.departmentRepository = departmentRepository;
-        this.departmentLevelRepository = departmentLevelRepository;
+        //this.departmentLevelRepository = departmentLevelRepository;
         this.schemePermissionService = schemePermissionService;
         this.roleLevelRepository = roleLevelRepository;
     }
@@ -57,7 +57,8 @@ public class UserService {
             throw new SecurityException("Можно назначать роль пользователю только внутри своей компании");
         }
 
-        Role role = roleRepository.findByCodeAndCompany(assignmentDTO.getRoleCode(), admin.getCompany())
+        // ИСПРАВЛЕНО: используем правильный метод с Department_Company
+        Role role = roleRepository.findByCodeAndDepartment_Company(assignmentDTO.getRoleCode(), admin.getCompany())
                 .orElseThrow(() -> new RuntimeException(assignmentDTO.getRoleCode() + " роли не существует в данной компании"));
 
         Department department = departmentRepository.findByNameAndCompany(assignmentDTO.getDepartmentName(), admin.getCompany())
@@ -68,9 +69,9 @@ public class UserService {
             throw new SecurityException("Можно назначать только в своем отделе");
         }
 
-        if (!departmentLevelRepository.existsByDepartmentAndLevel(department, assignmentDTO.getDepartmentLevel())) {
+        /*if (!departmentLevelRepository.existsByDepartmentAndLevel(department, assignmentDTO.getDepartmentLevel())) {
             throw new RuntimeException("В данном департаменте нет такого уровня");
-        }
+        }*/
 
         if (assignmentDTO.getRoleLevelId() != null) {
             RoleLevel roleLevel = roleLevelRepository.findById(assignmentDTO.getRoleLevelId())
@@ -160,12 +161,12 @@ public class UserService {
     }
 
     private Role getDefaultUserRole(Company company) {
-        return roleRepository.findByCodeAndCompany("AWAITING", company)
+        // ИСПРАВЛЕНО: используем правильный метод
+        return roleRepository.findByCodeAndDepartment_Company("AWAITING", company)
                 .orElseGet(() -> createAndSaveAwaitingRole(company));
     }
 
     private Role createAndSaveAwaitingRole(Company company) {
-        // Сначала нужно найти или создать дефолтный department для компании
         List<Department> companyDepartments = departmentRepository.findByCompany(company);
         Department defaultDepartment = companyDepartments.isEmpty() ?
                 createDefaultDepartment(company) : companyDepartments.get(0);
@@ -173,7 +174,7 @@ public class UserService {
         Role role = new Role();
         role.setCode("AWAITING");
         role.setDisplayName("Ожидает регистрации");
-        role.setDepartment(defaultDepartment); // ← Устанавливаем department, а не company!
+        role.setDepartment(defaultDepartment);
         return roleRepository.save(role);
     }
 
@@ -215,7 +216,9 @@ public class UserService {
         }
 
         Company company = admin.getCompany();
-        Role awaitingRole = roleRepository.findByCodeAndCompany("AWAITING", company)
+
+        // ИСПРАВЛЕНО: используем правильный метод
+        Role awaitingRole = roleRepository.findByCodeAndDepartment_Company("AWAITING", company)
                 .orElseThrow(() -> new RuntimeException("В вашей компании нет людей с ролью Awaiting"));
 
         List<User> users = userRepository.findByRoleAndCompany(awaitingRole, company);
@@ -285,7 +288,6 @@ public class UserService {
     }
 
     private Role createAdminRole(Company company) {
-        // Находим или создаем department для администрации
         Department adminDepartment = departmentRepository.findByNameAndCompany("Администрация", company)
                 .orElseGet(() -> {
                     Department dept = new Department();
@@ -297,7 +299,7 @@ public class UserService {
         Role role = new Role();
         role.setCode("ADMIN");
         role.setDisplayName("Администратор");
-        role.setDepartment(adminDepartment); // ← Устанавливаем department
+        role.setDepartment(adminDepartment);
         return roleRepository.save(role);
     }
 

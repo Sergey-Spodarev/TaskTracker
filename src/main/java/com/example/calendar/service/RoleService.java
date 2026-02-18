@@ -29,19 +29,23 @@ public class RoleService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         User user = userDetails.getUser();
-        List<Role> allRoleCompany = roleRepository.findByCompany(user.getCompany());
+
+        // ИСПРАВЛЕНО: используем правильный метод
+        List<Role> allRoleCompany = roleRepository.findByDepartment_Company(user.getCompany());
         return allRoleCompany.stream()
                 .map(this::convertRole)
                 .toList();
     }
 
-    public RoleDTO addRole(RoleDTO roleDTO) {//может потом сделать проверку того что этот метод вызывает только админ
+    public RoleDTO addRole(RoleDTO roleDTO) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         User user = userDetails.getUser();
 
         Company company = user.getCompany();
-        boolean flag = roleRepository.existsByCodeAndCompany(roleDTO.getCode(), company);
+
+        // ИСПРАВЛЕНО: правильный метод проверки
+        boolean flag = roleRepository.existsByCodeAndDepartment_Company(roleDTO.getCode(), company);
 
         if (flag){
             throw new IllegalArgumentException("The role is already there");
@@ -49,7 +53,11 @@ public class RoleService {
         else{
             Role newRole = new Role();
             newRole.setCode(roleDTO.getCode());
-            newRole.setDepartment(user.getDepartment());//тут вопрос ибо может ли он быть из другого департамента или нет по сравнению с нами
+
+            // TODO: Проверить, может ли пользователь создавать роль для другого департамента
+            // Сейчас роль создается для департамента текущего пользователя
+            // Если нужно разрешить выбирать департамент - передавать его в DTO
+            newRole.setDepartment(user.getDepartment());
             newRole.setDisplayName(roleDTO.getDisplayName());
             return convertRole(roleRepository.save(newRole));
         }
@@ -59,13 +67,17 @@ public class RoleService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         User admin = userDetails.getUser();
+
+        // TODO: Проверить права админа
         if(!"ADMIN".equals(admin.getRole().getCode())){
             throw new AccessDeniedException("The user is not admin");
         }
 
         User user = userRepository.findByUserName(userName)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-        Role newRole = roleRepository.findByCodeAndCompany(roleDTO.getCode(), user.getCompany())
+
+        // ИСПРАВЛЕНО: правильный метод поиска
+        Role newRole = roleRepository.findByCodeAndDepartment_Company(roleDTO.getCode(), user.getCompany())
                 .orElseThrow(() -> new UsernameNotFoundException("Role not found"));
 
         user.setRole(newRole);
@@ -82,17 +94,22 @@ public class RoleService {
         Role role = roleRepository.findById(roleId)
                 .orElseThrow(() -> new UsernameNotFoundException("Role not found"));
 
+        // TODO: Проверить права админа
         if(!"ADMIN".equals(admin.getRole().getCode())){
             throw new AccessDeniedException("The user is not admin");
         }
+
+        // TODO: Проверить, что роль из той же компании
         if (!role.getDepartment().getCompany().equals(admin.getCompany())) {
             throw new AccessDeniedException("You can't change a role from another company.");
         }
+
         roleRepository.deleteById(roleId);
     }
 
     public Role getRoleByCodeAndCompany(String code, Company company) {
-        return roleRepository.findByCodeAndCompany(code, company)
+        // ИСПРАВЛЕНО: правильный метод поиска
+        return roleRepository.findByCodeAndDepartment_Company(code, company)
                 .orElseThrow(() -> new UsernameNotFoundException("Роль не найдена"));
     }
 

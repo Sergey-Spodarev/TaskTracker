@@ -41,7 +41,7 @@ public class SchemePermissionService {
         }
         PermissionScheme permissionScheme = permissionSchemeRepository.findById(schemeId)
                 .orElseThrow(() -> new RuntimeException("Схема не найдена"));
-        List<SchemePermission> allSchemePermission = schemePermissionRepository.findByPermissionScheme(permissionScheme);
+        List<SchemePermission> allSchemePermission = schemePermissionRepository.findByScheme(permissionScheme);
         return allSchemePermission.stream()
                 .map(this::convertToDTO)
                 .toList();
@@ -54,7 +54,7 @@ public class SchemePermissionService {
         }
         PermissionScheme searchPermissionScheme = permissionSchemeRepository.findByCompanyAndId(user.getCompany(), permissionId)
                 .orElseThrow(() -> new RuntimeException("Схема не найдена"));
-        SchemePermission schemePermission = schemePermissionRepository.findByIdAndPermissionScheme(schemeId, searchPermissionScheme)
+        SchemePermission schemePermission = schemePermissionRepository.findByIdAndScheme(schemeId, searchPermissionScheme)
                 .orElseThrow(() -> new RuntimeException("Ничего не найдено"));
         return convertToDTO(schemePermission);
     }
@@ -66,7 +66,7 @@ public class SchemePermissionService {
         }
         PermissionScheme searchPermissionScheme = permissionSchemeRepository.findByCompanyAndId(user.getCompany(), permissionId)
                 .orElseThrow(() -> new RuntimeException("Схема не найдена"));
-        SchemePermission schemePermission = schemePermissionRepository.findByIdAndPermissionScheme(schemeId, searchPermissionScheme)
+        SchemePermission schemePermission = schemePermissionRepository.findByIdAndScheme(schemeId, searchPermissionScheme)
                 .orElseThrow(() -> new RuntimeException("Ничего не найдено"));
 
         schemePermission.setMaxLevel(schemePermissionDTO.getMaxLevel());
@@ -82,7 +82,7 @@ public class SchemePermissionService {
         }
         PermissionScheme searchPermissionScheme = permissionSchemeRepository.findByCompanyAndId(user.getCompany(), permissionId)
                 .orElseThrow(() -> new RuntimeException("Схема не найдена"));
-        SchemePermission schemePermission = schemePermissionRepository.findByIdAndPermissionScheme(schemeId, searchPermissionScheme)
+        SchemePermission schemePermission = schemePermissionRepository.findByIdAndScheme(schemeId, searchPermissionScheme)
                 .orElseThrow(() -> new RuntimeException("Ничего не найдено"));
         schemePermissionRepository.delete(schemePermission);
     }

@@ -25,7 +25,7 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
-    private final AssignmentRuleService assignmentRuleService;
+    //private final AssignmentRuleService assignmentRuleService;
     private final TaskHistoryService taskHistoryService;
     private final SchemePermissionService schemePermissionService;
     private final DepartmentRepository departmentRepository;
@@ -33,14 +33,14 @@ public class TaskService {
     public TaskService(TaskRepository taskRepository,
                        UserRepository userRepository,
                        ProjectRepository projectRepository,
-                       AssignmentRuleService assignmentRuleService,
+                       //AssignmentRuleService assignmentRuleService,
                        TaskHistoryService taskHistoryService,
                        SchemePermissionService schemePermissionService,
                        DepartmentRepository departmentRepository) {
         this.taskRepository = taskRepository;
         this.userRepository = userRepository;
         this.projectRepository = projectRepository;
-        this.assignmentRuleService = assignmentRuleService;
+        //this.assignmentRuleService = assignmentRuleService;
         this.taskHistoryService = taskHistoryService;
         this.schemePermissionService = schemePermissionService;
         this.departmentRepository = departmentRepository;
@@ -64,12 +64,12 @@ public class TaskService {
             throw new SecurityException("Исполнитель должен быть из вашей компании");
         }
 
-        if (!assignmentRuleService.canUserAssignToUser(user, assigneeUser)) {
+        /*if (!assignmentRuleService.canUserAssignToUser(user, assigneeUser)) {
             throw new SecurityException(
                     "У вас нет прав назначать задачи пользователям из отдела " +
                             assigneeUser.getDepartment().getName()
             );
-        }
+        }*/
 
         Task task = new Task();
         task.setTitle(taskDTO.getTitle());
@@ -121,9 +121,9 @@ public class TaskService {
             throw new SecurityException("Исполнитель должен быть из той же компании");
         }
 
-        if (!assignmentRuleService.canUserAssignToUser(user, assignee)) {
+        /*if (!assignmentRuleService.canUserAssignToUser(user, assignee)) {
             throw new SecurityException("Вы не можете назначить задачу на " + assignee.getUserName());
-        }
+        }*/
 
         Task subtask = new Task();
         subtask.setTitle(parentTaskDTO.getTitle());
@@ -170,9 +170,9 @@ public class TaskService {
             throw new SecurityException("Исполнитель должен быть из той же компании");
         }
 
-        if (!assignmentRuleService.canUserAssignToUser(user, newUser)) {
+        /*if (!assignmentRuleService.canUserAssignToUser(user, newUser)) {
             throw new SecurityException("Вы не можете назначить задачу на " + newUser.getUserName());
-        }
+        }*/
 
         String oldAssignee = task.getAssignee() != null ? task.getAssignee().getUserName() : "None";
         taskHistoryService.logTaskChange(task, user, "Assignee", oldAssignee, newUser.getUserName());

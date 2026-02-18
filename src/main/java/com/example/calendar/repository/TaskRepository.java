@@ -11,15 +11,16 @@ import java.util.Optional;
 
 public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findByProject(Project project);
-    List<Task> findByDepartment(Department department);
+
+    @Query("SELECT t FROM Task t WHERE t.project.department = :department")
+    List<Task> findByDepartment(@Param("department") Department department);
+
     List<Task> findByAssignee(User user);
     List<Task> findByReporter(User user);
 
-    // Для поиска всех задач компании
     @Query("SELECT t FROM Task t WHERE t.project.department.company = :company")
     List<Task> findByProject_Department_Company(@Param("company") Company company);
 
-    // Для поиска задач по исполнителю или создателю
     @Query("SELECT t FROM Task t WHERE t.assignee = :user OR t.reporter = :user")
     List<Task> findByAssigneeOrReporter(@Param("user") User user);
 
