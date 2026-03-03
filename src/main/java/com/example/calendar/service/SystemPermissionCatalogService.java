@@ -3,8 +3,12 @@ package com.example.calendar.service;
 import com.example.calendar.DTO.SystemPermissionCatalogDTO;
 import com.example.calendar.model.SystemPermissionCatalog;
 import com.example.calendar.model.SystemPermissionKey;
+import com.example.calendar.model.User;
 import com.example.calendar.repository.SystemPermissionCatalogRepository;
+import com.example.calendar.security.CustomUserDetails;
 import jakarta.annotation.PostConstruct;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,15 +18,21 @@ import java.util.List;
 @Transactional
 public class SystemPermissionCatalogService {
     private final SystemPermissionCatalogRepository catalogRepository;
-    public SystemPermissionCatalogService(SystemPermissionCatalogRepository catalogRepository) {
+    private final PermissionCheckService permissionCheckService;
+    public SystemPermissionCatalogService(SystemPermissionCatalogRepository catalogRepository, PermissionCheckService permissionCheckService) {
         this.catalogRepository = catalogRepository;
+        this.permissionCheckService = permissionCheckService;
     }
 
     public SystemPermissionCatalogDTO updateSystemPermissionCatalog(SystemPermissionCatalogDTO systemPermissionCatalogDTO) {
+        User user = getCurrentUser();
+        if (!permissionCheckService.hasPermission(user, "MANAGE_PERMISSION_CATALOG")) {
+            throw new RuntimeException("У вас нет прав для обновление данных");
+        }
+
         SystemPermissionCatalog systemPermissionCatalog = catalogRepository.findByKey(systemPermissionCatalogDTO.getKey())
                 .orElseThrow(() -> new RuntimeException("Правило для изменение не найдено"));
 
-        //todo нужно сделать проверку прав
         systemPermissionCatalog.setName(systemPermissionCatalogDTO.getName());
         systemPermissionCatalog.setDescription(systemPermissionCatalogDTO.getDescription());
         systemPermissionCatalog.setGroup(systemPermissionCatalogDTO.getGroup());
@@ -32,14 +42,32 @@ public class SystemPermissionCatalogService {
     }
 
     public SystemPermissionCatalogDTO getSystemPermissionCatalogByName(String name) {
+        User user = getCurrentUser();
+        if (!permissionCheckService.hasPermission(user, "VIEW_PERMISSION_CATALOG")) {
+            throw new RuntimeException("У вас нет прав для получение данных");
+        }
+
         SystemPermissionCatalog systemPermissionCatalog = catalogRepository.findByName(name)
                 .orElseThrow(() -> new RuntimeException("Задачи с названием " + name + " не была найдена"));
 
-        //todo нужно сделать проверку прав
         return convertToDTO(systemPermissionCatalog);
     }
 
+    public Boolean existsSystemPermissionCatalogByKey(SystemPermissionKey key) {
+        return catalogRepository.existsByKey(key);
+    }
+
+    public SystemPermissionCatalog getByKey(SystemPermissionKey key) {
+        return catalogRepository.findByKey(key)
+                .orElseThrow(() -> new RuntimeException("Задачи с ключом " + key + " не был найден" ));
+    }
+
     public List<SystemPermissionCatalogDTO> getAllSystemPermissionCatalog() {
+        User user = getCurrentUser();
+        if (!permissionCheckService.hasPermission(user, "VIEW_PERMISSION_CATALOG")) {
+            throw new RuntimeException("У вас нет прав для получения данных");
+        }
+
         return catalogRepository.getAllPermissionCatalog().stream()
                 .map(this::convertToDTO)
                 .toList();
@@ -53,6 +81,12 @@ public class SystemPermissionCatalogService {
         dto.setGroup(systemPermissionCatalog.getGroup());
         dto.setIcon(systemPermissionCatalog.getIcon());
         return dto;
+    }
+
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
+        return customUserDetails.getUser();
     }
 
     @PostConstruct
@@ -114,7 +148,10 @@ public class SystemPermissionCatalogService {
             case VIEW_REPORTS: return "Просмотр отчетов";
             case MANAGE_COMPANY_SETTINGS: return "Настройки компании";
 
-            // На всякий случай, если забудешь добавить новое право
+            // ==================== УПРАВЛЕНИЕ КАТАЛОГОМ ====================
+            case MANAGE_PERMISSION_CATALOG: return "Управление каталогом";
+            case VIEW_PERMISSION_CATALOG: return "Просмотр каталога";
+
             default: return key.name();
         }
     }
@@ -160,6 +197,10 @@ public class SystemPermissionCatalogService {
             // ==================== ОТЧЕТЫ И НАСТРОЙКИ ====================
             case VIEW_REPORTS: return "Доступ к аналитическим отчетам";
             case MANAGE_COMPANY_SETTINGS: return "Управление SMTP, профилем компании и другими настройками";
+
+            // ==================== УПРАВЛЕНИЕ КАТАЛОГОМ ====================
+            case MANAGE_PERMISSION_CATALOG: return "Редактирование названий, описаний, иконок и групп системных прав";
+            case VIEW_PERMISSION_CATALOG: return "Просмотр всех доступных системных прав в каталоге";
 
             default: return "";
         }
@@ -207,6 +248,11 @@ public class SystemPermissionCatalogService {
             case MANAGE_COMPANY_SETTINGS:
                 return "Настройки";
 
+            // ==================== УПРАВЛЕНИЕ КАТАЛОГОМ ====================
+            case MANAGE_PERMISSION_CATALOG:
+            case VIEW_PERMISSION_CATALOG:
+                return "Администрирование";
+
             default:
                 return "Другое";
         }
@@ -226,6 +272,11 @@ public class SystemPermissionCatalogService {
             case VIEW_REPORTS: return "fa-chart-bar";
             case MANAGE_COMPANY_SETTINGS: return "fa-cog";
             case ADD_PERMISSION_TO_SCHEME: return "fa-plus-circle";
+
+            // ==================== УПРАВЛЕНИЕ КАТАЛОГОМ ====================
+            case MANAGE_PERMISSION_CATALOG: return "fa-database";
+            case VIEW_PERMISSION_CATALOG: return "fa-list";
+
             default: return "fa-circle";
         }
     }

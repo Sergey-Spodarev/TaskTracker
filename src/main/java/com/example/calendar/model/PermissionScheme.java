@@ -21,10 +21,6 @@ public class PermissionScheme {
     private String name;
     private String description;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "role_level_id")
-    private RoleLevel roleLevel;
-
     @ManyToOne
     @JoinColumn(name = "company_id")// добавил данную связь надо докрутить присваивание, ну и конечно и в dto
     private Company company;
@@ -32,6 +28,11 @@ public class PermissionScheme {
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User creator;
+
+    @ManyToOne
+    @JoinColumn(name = "system_permission_definition_id")
+    private SystemPermissionDefinition systemPermissionDefinition;
+    //todo надо сделать все правки и наконец получить правильную логику где будут все стандартные права и все кастомные у пользователя
 
     private LocalDateTime createdAt;
 }

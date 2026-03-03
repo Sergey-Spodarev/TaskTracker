@@ -11,6 +11,7 @@ import java.util.Optional;
 @Repository
 public interface SystemPermissionCatalogRepository extends JpaRepository<SystemPermissionCatalog, Long> {
     boolean existsByKey(SystemPermissionKey key);
+    boolean existsByName(String name);
     Optional<SystemPermissionCatalog> findByKey(SystemPermissionKey key);
     Optional<SystemPermissionCatalog> findByName(String name);
     List<SystemPermissionCatalog> getAllPermissionCatalog();

@@ -85,5 +85,19 @@ public enum SystemPermissionKey {
     VIEW_REPORTS,
 
     /** Управление настройками компании (SMTP, профиль компании и т.д.) */
-    MANAGE_COMPANY_SETTINGS
+    MANAGE_COMPANY_SETTINGS,
+
+    // ==================== УПРАВЛЕНИЕ КАТАЛОГОМ ====================
+    /** Редактирование названий, описаний, иконок системных прав */
+    MANAGE_PERMISSION_CATALOG,
+
+    /** Просмотр каталога системных прав */
+    VIEW_PERMISSION_CATALOG,
+
+    // ==================== УПРАВЛЕНИЕ НАБОРАМИ ====================
+    /** Создание, редактирование, удаление наборов прав */
+    MANAGE_PERMISSION_DEFINITIONS,
+
+    /** Просмотр наборов прав */
+    VIEW_PERMISSION_DEFINITIONS,
 }
