@@ -23,4 +23,8 @@ public class RoleLevel {
     @ManyToOne
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;
+
+    @OneToOne
+    @JoinColumn(name = "permission_scheme_id")
+    private PermissionScheme permissionScheme;
 }
