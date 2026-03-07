@@ -94,10 +94,61 @@ public enum SystemPermissionKey {
     /** Просмотр каталога системных прав */
     VIEW_PERMISSION_CATALOG,
 
-    // ==================== УПРАВЛЕНИЕ НАБОРАМИ ====================
-    /** Создание, редактирование, удаление наборов прав */
-    MANAGE_PERMISSION_DEFINITIONS,
+    // ==================== УПРАВЛЕНИЕ НАБОРАМИ (DEFINITIONS) ====================
+    /** Создание нового набора прав */
+    CREATE_PERMISSION_DEFINITION,
+
+    /** Редактирование набора прав */
+    EDIT_PERMISSION_DEFINITION,
+
+    /** Удаление набора прав */
+    DELETE_PERMISSION_DEFINITION,
 
     /** Просмотр наборов прав */
     VIEW_PERMISSION_DEFINITIONS,
+
+    // ==================== УПРАВЛЕНИЕ КАСТОМНЫМИ ПРАВАМИ ====================
+    /** Создание нового кастомного права */
+    CREATE_CUSTOM_PERMISSION,
+
+    /** Редактирование кастомного права */
+    EDIT_CUSTOM_PERMISSION,
+
+    /** Удаление кастомного права */
+    DELETE_CUSTOM_PERMISSION,
+
+    /** Просмотр кастомных прав */
+    VIEW_CUSTOM_PERMISSIONS,
+
+    /** Добавление уровня к кастомному праву */
+    ADD_SCHEME_LEVEL_TO_CUSTOM,
+
+    /** Удаление уровня из кастомного права */
+    REMOVE_SCHEME_LEVEL_FROM_CUSTOM,
+
+    // ==================== УПРАВЛЕНИЕ УРОВНЯМИ (SCHEME_PERMISSIONS) ====================
+    /** Создание нового уровня доступа */
+    CREATE_SCHEME_PERMISSION,
+
+    /** Редактирование уровня доступа */
+    EDIT_SCHEME_PERMISSION,
+
+    /** Удаление уровня доступа */
+    DELETE_SCHEME_PERMISSION,
+
+    /** Просмотр уровней доступа */
+    VIEW_SCHEME_PERMISSIONS,
+
+    // ==================== ДОПОЛНИТЕЛЬНЫЕ ПРАВА ====================
+    /** Просмотр истории изменений */
+    VIEW_AUDIT_LOG,
+
+    /** Экспорт данных */
+    EXPORT_DATA,
+
+    /** Импорт данных */
+    IMPORT_DATA,
+
+    /** Управление интеграциями (API, webhooks) */
+    MANAGE_INTEGRATIONS
 }
