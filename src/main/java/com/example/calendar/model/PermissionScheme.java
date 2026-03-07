@@ -34,5 +34,9 @@ public class PermissionScheme {
     private SystemPermissionDefinition systemPermissionDefinition;
     //todo надо сделать все правки и наконец получить правильную логику где будут все стандартные права и все кастомные у пользователя
 
+    @ManyToOne
+    @JoinColumn(name = "custom_permission_id")
+    private CustomPermission customPermission;
+
     private LocalDateTime createdAt;
 }
