@@ -2,7 +2,6 @@ package com.example.calendar.service;
 
 import com.example.calendar.DTO.SchemePermissionDTO;
 import com.example.calendar.model.*;
-import com.example.calendar.repository.PermissionSchemeRepository;
 import com.example.calendar.repository.SchemePermissionRepository;
 import com.example.calendar.security.CustomUserDetails;
 import org.springframework.security.core.Authentication;
@@ -16,105 +15,103 @@ import java.util.List;
 @Transactional
 public class SchemePermissionService {
     private final SchemePermissionRepository schemePermissionRepository;
-    private final PermissionSchemeRepository permissionSchemeRepository;
-    public SchemePermissionService(SchemePermissionRepository schemePermissionRepository, PermissionSchemeRepository permissionSchemeRepository) {
+    private final PermissionCheckService permissionCheckService;
+    public SchemePermissionService(SchemePermissionRepository schemePermissionRepository, PermissionCheckService permissionCheckService) {
         this.schemePermissionRepository = schemePermissionRepository;
-        this.permissionSchemeRepository = permissionSchemeRepository;
+        this.permissionCheckService = permissionCheckService;
     }
 
-    public SchemePermissionDTO createSchemePermission(Long schemeId, SchemePermissionDTO schemePermissionDTO) {
-        User user = getCurrentUser();//делать проверку может или как
-        PermissionScheme permissionScheme = permissionSchemeRepository.findById(schemeId)
-                .orElseThrow(() -> new RuntimeException("Схема не найдена"));
-        if (!hasPermission(user, "create_scheme_permission")) {
-            throw new SecurityException("Вы не можете сделать новое правило");
+    public SchemePermissionDTO createSchemePermission(SchemePermissionDTO schemePermissionDTO) {
+        User user = getCurrentUser();
+
+        if (!permissionCheckService.hasPermission(user, "CREATE_SCHEME_PERMISSION")) {
+            throw new SecurityException("Нет права на создание уровня доступа");
         }
-        SchemePermission newSchemePermission = getSchemePermission(schemePermissionDTO);
-        newSchemePermission.setScheme(permissionScheme);
-        return convertToDTO(schemePermissionRepository.save(newSchemePermission));
+        if (schemePermissionRepository.existsByPermissionKey(schemePermissionDTO.getPermissionKey())) {
+            throw new RuntimeException("Правило с таким " + schemePermissionDTO.getPermissionKey() + " уже существует");
+        }
+        if (schemePermissionDTO.getMinLevel() < schemePermissionDTO.getMaxLevel()) {//у меня логика что самый высокий уровень доступа меньше значение так легче ибо не надо переделывать если появится новая роль
+            throw new RuntimeException("Минимальный доступ меньше чем максимальный");
+        }
+
+        SchemePermission schemePermission = new SchemePermission();
+        schemePermission.setPermissionKey(schemePermissionDTO.getPermissionKey());
+        schemePermission.setDescription(schemePermissionDTO.getDescription());
+        schemePermission.setMinLevel(schemePermissionDTO.getMinLevel());
+        schemePermission.setMaxLevel(schemePermissionDTO.getMaxLevel());
+        schemePermissionRepository.save(schemePermission);
+        return schemePermissionDTO;
     }
 
-    public List<SchemePermissionDTO> getSchemePermissions(Long schemeId) {
-        User user = getCurrentUser();//делать проверку может или как
-        if (!hasPermission(user, "get_scheme_permission")) {
-            throw new SecurityException("Вы не можете получить схему, ибо у вас не достаточный уровень доступа");
+    public SchemePermissionDTO updateSchemePermission(SchemePermissionDTO schemePermissionDTO) {
+        User user = getCurrentUser();
+        if (!permissionCheckService.hasPermission(user, "EDIT_SCHEME_PERMISSION")) {
+            throw new SecurityException("Нет права на редактирование уровня доступа");
         }
-        PermissionScheme permissionScheme = permissionSchemeRepository.findById(schemeId)
-                .orElseThrow(() -> new RuntimeException("Схема не найдена"));
-        List<SchemePermission> allSchemePermission = schemePermissionRepository.findByScheme(permissionScheme);
-        return allSchemePermission.stream()
+        SchemePermission schemePermission = schemePermissionRepository.findByPermissionKey(schemePermissionDTO.getPermissionKey())
+                .orElseThrow(() -> new RuntimeException("Задачи с таким кодом " + schemePermissionDTO.getPermissionKey() + " не существует"));
+
+        schemePermission.setDescription(schemePermissionDTO.getDescription());
+        schemePermission.setMinLevel(schemePermissionDTO.getMinLevel());
+        schemePermission.setMaxLevel(schemePermissionDTO.getMaxLevel());
+        return convertToDTO(schemePermissionRepository.save(schemePermission));
+    }
+
+    public SchemePermissionDTO getSchemePermissionByKey(String permissionKey){
+        User user = getCurrentUser();
+        if (!permissionCheckService.hasPermission(user, "VIEW_SCHEME_PERMISSIONS")) {
+            throw new SecurityException("Нет права на просмотр уровней доступа");
+        }
+        SchemePermission schemePermission = schemePermissionRepository.findByPermissionKey(permissionKey)
+                .orElseThrow(() -> new RuntimeException("Право с таким кодом " + permissionKey + " не существует"));
+        return convertToDTO(schemePermission);
+    }
+
+    public SchemePermission getSchemePermissionByCode(String permissionKey){
+        User user = getCurrentUser();
+        if (!permissionCheckService.hasPermission(user, "VIEW_SCHEME_PERMISSIONS")) {
+            throw new SecurityException("Нет права на просмотр уровней доступа");
+        }
+        return schemePermissionRepository.findByPermissionKey(permissionKey)
+                .orElseThrow(() -> new RuntimeException("Право с таким кодом " + permissionKey + " не существует"));
+    }
+
+    public SchemePermissionDTO getSchemePermission(Long id) {
+        User user = getCurrentUser();
+        if (!permissionCheckService.hasPermission(user, "VIEW_SCHEME_PERMISSIONS")) {
+            throw new SecurityException("Нет права на просмотр уровней доступа");
+        }
+
+        SchemePermission schemePermission = schemePermissionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Задачи с id = " + id + " не существует"));
+        return convertToDTO(schemePermission);
+    }
+
+    public List<SchemePermissionDTO> getAllSchemePermissions() {
+        User user = getCurrentUser();
+        if (!permissionCheckService.hasPermission(user, "VIEW_SCHEME_PERMISSIONS")) {
+            throw new SecurityException("Нет права на просмотр уровней доступа");
+        }
+
+        return schemePermissionRepository.getAll().stream()
                 .map(this::convertToDTO)
                 .toList();
     }
 
-    public SchemePermissionDTO getSchemePermission(Long schemeId, Long permissionId){
-        User user = getCurrentUser();
-        if (!hasPermission(user, "get_scheme_permission")) {
-            throw new SecurityException("Вы не можете получить схему, ибо у вас не достаточный уровень доступа");
-        }
-        PermissionScheme searchPermissionScheme = permissionSchemeRepository.findByCompanyAndId(user.getCompany(), permissionId)
-                .orElseThrow(() -> new RuntimeException("Схема не найдена"));
-        SchemePermission schemePermission = schemePermissionRepository.findByIdAndScheme(schemeId, searchPermissionScheme)
-                .orElseThrow(() -> new RuntimeException("Ничего не найдено"));
-        return convertToDTO(schemePermission);
-    }
+    /** может потом сделать
+     * Получение уровней, подходящих под указанный уровень пользователя
+     */
 
-    public SchemePermissionDTO updateSchemePermission(Long schemeId, Long permissionId, SchemePermissionDTO schemePermissionDTO) {
+    public void deleteSchemePermission(String permissionKey) {
         User user = getCurrentUser();
-        if (!hasPermission(user, "update_scheme_permission")) {
-            throw new SecurityException("Вы не можете обновить схему, ибо у вас не достаточный уровень доступа");
+        if (!permissionCheckService.hasPermission(user, "DELETE_SCHEME_PERMISSION")) {
+            throw new SecurityException("Нет права на удаление уровня доступа");
         }
-        PermissionScheme searchPermissionScheme = permissionSchemeRepository.findByCompanyAndId(user.getCompany(), permissionId)
-                .orElseThrow(() -> new RuntimeException("Схема не найдена"));
-        SchemePermission schemePermission = schemePermissionRepository.findByIdAndScheme(schemeId, searchPermissionScheme)
-                .orElseThrow(() -> new RuntimeException("Ничего не найдено"));
 
-        schemePermission.setMaxLevel(schemePermissionDTO.getMaxLevel());
-        schemePermission.setMinLevel(schemePermissionDTO.getMinLevel());
-        schemePermission.setDescription(schemePermissionDTO.getDescription());
-        return convertToDTO(schemePermissionRepository.save(schemePermission));
-    }
+        SchemePermission schemePermission = schemePermissionRepository.findByPermissionKey(permissionKey)
+                .orElseThrow(() -> new RuntimeException("Право с таким кодом " + permissionKey + " не существует"));
 
-    public void deleteSchemePermission(Long schemeId, Long permissionId) {
-        User user = getCurrentUser();
-        if (!hasPermission(user, "delete_scheme_permission")) {
-            throw new SecurityException("Вы не можете удалить схему, ибо у вас не достаточный уровень доступа");
-        }
-        PermissionScheme searchPermissionScheme = permissionSchemeRepository.findByCompanyAndId(user.getCompany(), permissionId)
-                .orElseThrow(() -> new RuntimeException("Схема не найдена"));
-        SchemePermission schemePermission = schemePermissionRepository.findByIdAndScheme(schemeId, searchPermissionScheme)
-                .orElseThrow(() -> new RuntimeException("Ничего не найдено"));
         schemePermissionRepository.delete(schemePermission);
-    }
-
-    private static SchemePermission getSchemePermission(SchemePermissionDTO schemePermissionDTO) {
-        SchemePermission newSchemePermission = new SchemePermission();
-        //BeanUtils.copyProperties(schemePermissionDTO, newSchemePermission); прикольная вещь которая копирует все поля, может надо будет где использовать
-        newSchemePermission.setPermissionKey(schemePermissionDTO.getPermissionKey());
-        newSchemePermission.setDescription(schemePermissionDTO.getDescription());
-        newSchemePermission.setMinLevel(schemePermissionDTO.getMinLevel());
-        newSchemePermission.setMaxLevel(schemePermissionDTO.getMaxLevel());
-        return newSchemePermission;
-    }
-
-    public boolean hasPermission(User user, String action) {
-        if (user.getSystemRole().equals(SystemRole.COMPANY_OWNER) ||
-                user.getSystemRole().equals(SystemRole.DEPARTMENT_HEAD)) {
-            return true;
-        }
-
-        RoleLevel userRoleLevel = user.getRoleLevel();
-        Integer userLevel = userRoleLevel.getLevel();
-
-        PermissionScheme permissionScheme = permissionSchemeRepository.findByRoleLevel(userRoleLevel)
-                .orElseThrow(() -> new RuntimeException("Схема разрешений не найдена для уровня: " + userRoleLevel.getLevelName()));
-
-        SchemePermission schemePermission = schemePermissionRepository.findBySchemeAndPermissionKey(permissionScheme, action)
-                .orElseThrow(() -> new RuntimeException("Действие '" + action + "' запрещено для уровня: " + userRoleLevel.getLevelName()));
-
-
-
-        return userLevel >= schemePermission.getMinLevel() && userLevel <= schemePermission.getMaxLevel();
     }
 
     private User getCurrentUser() {
