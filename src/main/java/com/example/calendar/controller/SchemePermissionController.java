@@ -16,37 +16,44 @@ public class SchemePermissionController {
         this.schemePermissionService = schemePermissionService;
     }
 
-    @PostMapping("/schemes/{schemeId}/permissions")
-    public ResponseEntity<SchemePermissionDTO> createSchemePermission(@PathVariable Long schemeId, @RequestBody SchemePermissionDTO schemePermissionDTO) {
+    @PostMapping("/schemes")
+    public ResponseEntity<SchemePermissionDTO> createSchemePermission(@RequestBody SchemePermissionDTO schemePermissionDTO) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(schemePermissionService.createSchemePermission(schemeId, schemePermissionDTO));
+                .body(schemePermissionService.createSchemePermission(schemePermissionDTO));
     }
 
-    @GetMapping("/schemes/{schemeId}/permissions")
-    public ResponseEntity<List<SchemePermissionDTO>> getSchemePermissions(@PathVariable Long schemeId) {
+    @PatchMapping("/update")
+    public ResponseEntity<SchemePermissionDTO> updateSchemePermission(@RequestBody SchemePermissionDTO updateSchemePermissionDTO) {
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body(schemePermissionService.getSchemePermissions(schemeId));
+                .body(schemePermissionService.updateSchemePermission(updateSchemePermissionDTO));
     }
 
-    @GetMapping("/schemes/{schemeId}/permissions/{permissionId}")
-    public ResponseEntity<SchemePermissionDTO> getSchemePermission(@PathVariable Long schemeId, @PathVariable Long permissionId) {
+    @GetMapping("/get/{id}")
+    public ResponseEntity<SchemePermissionDTO> getSchemePermissionById(@PathVariable Long id) {
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body(schemePermissionService.getSchemePermission(schemeId, permissionId));
+                .body(schemePermissionService.getSchemePermission(id));
     }
 
-    @PutMapping("/{schemeId}/permissions/{permissionId}")
-    public ResponseEntity<SchemePermissionDTO> updateSchemePermission(@PathVariable Long schemeId, @PathVariable Long permissionId, @RequestBody SchemePermissionDTO updateSchemePermissionDTO) {
+    @GetMapping("/get/{permissionKey}")
+    public ResponseEntity<SchemePermissionDTO> getSchemePermissions(@PathVariable String permissionKey) {
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body(schemePermissionService.updateSchemePermission(schemeId, permissionId, updateSchemePermissionDTO));
+                .body(schemePermissionService.getSchemePermissionByKey(permissionKey));
     }
 
-    @DeleteMapping("/{schemeId}/permissions/{permissionId}")
-    public ResponseEntity<Void> deleteSchemePermission(@PathVariable Long schemeId, @PathVariable Long permissionId) {
-        schemePermissionService.deleteSchemePermission(schemeId, permissionId);
+    @GetMapping("/getALL")
+    public ResponseEntity<List<SchemePermissionDTO>> getAllSchemePermissions() {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(schemePermissionService.getAllSchemePermissions());
+    }
+
+    @DeleteMapping("/del/{permissionKey}")
+    public ResponseEntity<Void> delSchemePermission(@PathVariable String permissionKey) {
+        schemePermissionService.deleteSchemePermission(permissionKey);
         return ResponseEntity.noContent().build();
     }
 }
