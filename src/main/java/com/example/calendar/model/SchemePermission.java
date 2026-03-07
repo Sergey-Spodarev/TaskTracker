@@ -16,10 +16,6 @@ public class SchemePermission {
     @Column(name = "scheme_permission_id")
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "permission_scheme_id")
-    private PermissionScheme scheme;
-
     private String permissionKey;
     private String description;
 

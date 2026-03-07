@@ -15,7 +15,6 @@ public class SystemPermissionDefinition {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    //todo возможно расписать как именно происходит связь
     @ManyToMany
     private Set<SystemPermissionCatalog> systemPermissionCatalog = new HashSet<>();
 
