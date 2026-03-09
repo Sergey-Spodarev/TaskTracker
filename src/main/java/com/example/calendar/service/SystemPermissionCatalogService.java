@@ -68,7 +68,7 @@ public class SystemPermissionCatalogService {
             throw new RuntimeException("У вас нет прав для получения данных");
         }
 
-        return catalogRepository.getAllPermissionCatalog().stream()
+        return catalogRepository.findAll().stream()
                 .map(this::convertToDTO)
                 .toList();
     }

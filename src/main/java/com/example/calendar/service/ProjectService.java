@@ -17,21 +17,21 @@ import java.util.List;
 public class ProjectService {
     private final ProjectRepository projectRepository;
     private final DepartmentRepository departmentRepository;
-    private final SchemePermissionService schemePermissionService; // ← Добавляем проверку прав!
+    private final PermissionCheckService permissionCheckService;
 
     public ProjectService(ProjectRepository projectRepository,
                           DepartmentRepository departmentRepository,
-                          SchemePermissionService schemePermissionService) {
+                          PermissionCheckService permissionCheckService) {
         this.projectRepository = projectRepository;
         this.departmentRepository = departmentRepository;
-        this.schemePermissionService = schemePermissionService;
+        this.permissionCheckService = permissionCheckService;
     }
 
     public ProjectDTO create(ProjectDTO projectDTO) {
         User user = getCurrentUser();
 
         // Проверка прав
-        if (!schemePermissionService.hasPermission(user, "create_project")) {
+        if (!permissionCheckService.hasPermission(user, "CREATE_PROJECT")) {
             throw new SecurityException("Недостаточно прав для создания проекта");
         }
 
@@ -71,7 +71,7 @@ public class ProjectService {
         User user = getCurrentUser();
 
         // Проверка прав
-        if (!schemePermissionService.hasPermission(user, "update_project")) {
+        if (!permissionCheckService.hasPermission(user, "EDIT_PROJECT")) {
             throw new SecurityException("Недостаточно прав для обновления проекта");
         }
 
@@ -108,7 +108,7 @@ public class ProjectService {
         User user = getCurrentUser();
 
         // Проверка прав
-        if (!schemePermissionService.hasPermission(user, "view_projects")) {
+        if (!permissionCheckService.hasPermission(user, "VIEW_PROJECTS")) {
             throw new SecurityException("Недостаточно прав для просмотра проектов");
         }
 
@@ -141,7 +141,7 @@ public class ProjectService {
         User user = getCurrentUser();
 
         // Проверка прав
-        if (!schemePermissionService.hasPermission(user, "view_project_details")) {
+        if (!permissionCheckService.hasPermission(user, "VIEW_PROJECT_DETAILS")) {
             throw new SecurityException("Недостаточно прав для просмотра деталей проекта");
         }
 
@@ -160,7 +160,7 @@ public class ProjectService {
         User user = getCurrentUser();
 
         // Проверка прав
-        if (!schemePermissionService.hasPermission(user, "delete_project")) {
+        if (!permissionCheckService.hasPermission(user, "DELETE_PROJECT")) {
             throw new SecurityException("Недостаточно прав для удаления проекта");
         }
 

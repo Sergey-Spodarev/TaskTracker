@@ -118,7 +118,7 @@ public class CustomPermissionService {
             throw new SecurityException("Нет права на просмотр кастомных прав");
         }
 
-        return customPermissionRepository.getAll().stream()
+        return customPermissionRepository.findAll().stream()
                 .map(this::convertToDTO)
                 .toList();
     }

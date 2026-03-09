@@ -19,22 +19,21 @@ import java.util.List;
 @Transactional
 public class RoleLevelService {
     private final RoleLevelRepository roleLevelRepository;
-    private final SchemePermissionService schemePermissionService;
+    private final PermissionCheckService permissionCheckService;
     private final RoleRepository roleRepository; // ← Добавляем
 
     public RoleLevelService(RoleLevelRepository roleLevelRepository,
-                            SchemePermissionService schemePermissionService,
+                            PermissionCheckService permissionCheckService,
                             RoleRepository roleRepository) {
         this.roleLevelRepository = roleLevelRepository;
-        this.schemePermissionService = schemePermissionService;
+        this.permissionCheckService = permissionCheckService;
         this.roleRepository = roleRepository;
     }
 
     public RoleLevelDTO create(CreateRoleLevelDTO roleLevelDTO) {
         User user = getCurrentUser();
 
-        // ФИКС: инвертируем условие
-        if (!schemePermissionService.hasPermission(user, "create_role_level")) {
+        if (!permissionCheckService.hasPermission(user, "CREATE_ROLE_LEVEL")) {
             throw new SecurityException("Недостаточно прав для создания уровня роли");
         }
 
@@ -67,7 +66,7 @@ public class RoleLevelService {
     public RoleLevelDTO getById(Long id) {
         User user = getCurrentUser();
 
-        if (!schemePermissionService.hasPermission(user, "get_role_level")) {
+        if (!permissionCheckService.hasPermission(user, "VIEW_ROLE_LEVELS")) {
             throw new SecurityException("Недостаточно прав для просмотра уровня роли");
         }
 
@@ -85,7 +84,7 @@ public class RoleLevelService {
     public List<RoleLevelDTO> getAll() {
         User user = getCurrentUser();
 
-        if (!schemePermissionService.hasPermission(user, "get_role_level")) {
+        if (!permissionCheckService.hasPermission(user, "VIEW_ROLE_LEVELS")) {
             throw new SecurityException("Недостаточно прав для просмотра уровней ролей");
         }
 
@@ -98,7 +97,7 @@ public class RoleLevelService {
     public RoleLevelDTO update(RoleLevelDTO roleLevelDTO) {
         User user = getCurrentUser();
 
-        if (!schemePermissionService.hasPermission(user, "update_role_level")) {
+        if (!permissionCheckService.hasPermission(user, "EDIT_ROLE_LEVEL")) {
             throw new SecurityException("Недостаточно прав для обновления уровня роли");
         }
 
@@ -131,7 +130,7 @@ public class RoleLevelService {
     public void delete(Long id) {
         User user = getCurrentUser();
 
-        if (!schemePermissionService.hasPermission(user, "delete_role_level")) {
+        if (!permissionCheckService.hasPermission(user, "DELETE_ROLE_LEVEL")) {
             throw new SecurityException("Недостаточно прав для удаления уровня роли");
         }
 

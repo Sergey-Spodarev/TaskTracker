@@ -21,41 +21,30 @@ import java.util.List;
 @Transactional
 public class PermissionSchemeService {
     private final PermissionSchemeRepository permissionSchemeRepository;
-    private final SchemePermissionService schemePermissionService; // ← Добавил для проверки прав
-    private final RoleLevelRepository roleLevelRepository; // ← Для установки RoleLevel
+    private final PermissionCheckService permissionCheckService;
+    private final RoleLevelRepository roleLevelRepository;
 
     public PermissionSchemeService(PermissionSchemeRepository permissionSchemeRepository,
-                                   SchemePermissionService schemePermissionService,
+                                   PermissionCheckService permissionCheckService,
                                    RoleLevelRepository roleLevelRepository) {
         this.permissionSchemeRepository = permissionSchemeRepository;
-        this.schemePermissionService = schemePermissionService;
+        this.permissionCheckService = permissionCheckService;
         this.roleLevelRepository = roleLevelRepository;
     }
 
-    public PermissionSchemeDTO addPermissionScheme(PermissionSchemeDTO permissionSchemeDTO) {
+    public PermissionSchemeDTO addPermissionScheme(PermissionSchemeDTO dto) {
         User user = getCurrentUser();
 
-        // Проверка прав
-        if (!schemePermissionService.hasPermission(user, "create_permission_scheme")) {
+        if (!permissionCheckService.hasPermission(user, "CREATE_PERMISSION_SCHEME")) {
             throw new SecurityException("Недостаточно прав для создания схемы разрешений");
         }
 
         PermissionScheme permissionScheme = new PermissionScheme();
 
-        // Устанавливаем RoleLevel из DTO
-        if (permissionSchemeDTO.getRoleLevelId() != null) {
-            RoleLevel roleLevel = roleLevelRepository.findById(permissionSchemeDTO.getRoleLevelId())
-                    .orElseThrow(() -> new RuntimeException("Уровень роли не найден"));
 
-            // Проверяем, что RoleLevel принадлежит компании пользователя
-            if (!roleLevel.getRole().getDepartment().getCompany().equals(user.getCompany())) {
-                throw new SecurityException("Уровень роли не принадлежит вашей компании");
-            }
-            permissionScheme.setRoleLevel(roleLevel);
-        }
 
-        permissionScheme.setName(permissionSchemeDTO.getName());
-        permissionScheme.setDescription(permissionSchemeDTO.getDescription());
+        permissionScheme.setName(dto.getName());
+        permissionScheme.setDescription(dto.getDescription());
         permissionScheme.setCreator(user);
         permissionScheme.setCompany(user.getCompany());
         permissionScheme.setCreatedAt(LocalDateTime.now());
@@ -66,14 +55,12 @@ public class PermissionSchemeService {
     public List<PermissionSchemeDTO> getAllPermissionSchemes() {
         User user = getCurrentUser();
 
-        // Проверка прав
-        if (!schemePermissionService.hasPermission(user, "view_permission_schemes")) {
+        // ✅ Проверка прав
+        if (!permissionCheckService.hasPermission(user, "VIEW_PERMISSION_SCHEMES")) {
             throw new SecurityException("Недостаточно прав для просмотра схем разрешений");
         }
 
-        Company company = user.getCompany();
-        List<PermissionScheme> allPermissionSchemes = permissionSchemeRepository.findByCompany(company);
-        return allPermissionSchemes.stream()
+        return permissionSchemeRepository.findByCompany(user.getCompany()).stream()
                 .map(this::convertToDTO)
                 .toList();
     }
@@ -81,46 +68,32 @@ public class PermissionSchemeService {
     public PermissionSchemeDTO getPermissionScheme(Long id) {
         User user = getCurrentUser();
 
-        // Проверка прав
-        if (!schemePermissionService.hasPermission(user, "view_permission_schemes")) {
+        // ✅ Проверка прав
+        if (!permissionCheckService.hasPermission(user, "VIEW_PERMISSION_SCHEMES")) {
             throw new SecurityException("Недостаточно прав для просмотра схемы разрешений");
         }
 
-        Company company = user.getCompany();
-        PermissionScheme permissionScheme = permissionSchemeRepository.findByCompanyAndId(company, id)
+        PermissionScheme permissionScheme = permissionSchemeRepository
+                .findByCompanyAndId(user.getCompany(), id)
                 .orElseThrow(() -> new RuntimeException("Схема разрешений не найдена"));
+
         return convertToDTO(permissionScheme);
     }
 
-    public PermissionSchemeDTO updatePermissionScheme(Long schemeId, PermissionSchemeDTO permissionSchemeDTO) {
+    public PermissionSchemeDTO updatePermissionScheme(Long schemeId, PermissionSchemeDTO dto) {
         User user = getCurrentUser();
 
-        // Проверка прав
-        if (!schemePermissionService.hasPermission(user, "update_permission_scheme")) {
+        // ✅ Проверка прав
+        if (!permissionCheckService.hasPermission(user, "EDIT_PERMISSION_SCHEME")) {
             throw new SecurityException("Недостаточно прав для обновления схемы разрешений");
         }
 
-        PermissionScheme permissionScheme = permissionSchemeRepository.findByCompanyAndId(user.getCompany(), schemeId)
+        PermissionScheme permissionScheme = permissionSchemeRepository
+                .findByCompanyAndId(user.getCompany(), schemeId)
                 .orElseThrow(() -> new RuntimeException("Схема разрешений не найдена"));
 
-        // Обновляем RoleLevel если нужно
-        if (permissionSchemeDTO.getRoleLevelId() != null &&
-                !permissionSchemeDTO.getRoleLevelId().equals(permissionScheme.getRoleLevel().getId())) {
-
-            RoleLevel newRoleLevel = roleLevelRepository.findById(permissionSchemeDTO.getRoleLevelId())
-                    .orElseThrow(() -> new RuntimeException("Уровень роли не найден"));
-
-            // Проверяем принадлежность компании
-            if (!newRoleLevel.getRole().getDepartment().getCompany().equals(user.getCompany())) {
-                throw new SecurityException("Уровень роли не принадлежит вашей компании");
-            }
-            permissionScheme.setRoleLevel(newRoleLevel);
-        }
-
-        permissionScheme.setName(permissionSchemeDTO.getName());
-        permissionScheme.setDescription(permissionSchemeDTO.getDescription());
-        // creator и company не меняем при обновлении
-        // createdAt тоже не меняем - это дата создания
+        permissionScheme.setName(dto.getName());
+        permissionScheme.setDescription(dto.getDescription());
 
         return convertToDTO(permissionSchemeRepository.save(permissionScheme));
     }
@@ -128,33 +101,37 @@ public class PermissionSchemeService {
     public void deletePermissionScheme(Long id) {
         User user = getCurrentUser();
 
-        // Проверка прав
-        if (!schemePermissionService.hasPermission(user, "delete_permission_scheme")) {
+        // ✅ Проверка прав
+        if (!permissionCheckService.hasPermission(user, "DELETE_PERMISSION_SCHEME")) {
             throw new SecurityException("Недостаточно прав для удаления схемы разрешений");
         }
 
-        Company company = user.getCompany();
-        PermissionScheme permissionScheme = permissionSchemeRepository.findByCompanyAndId(company, id)
+        PermissionScheme permissionScheme = permissionSchemeRepository
+                .findByCompanyAndId(user.getCompany(), id)
                 .orElseThrow(() -> new RuntimeException("Схема разрешений не найдена"));
+
         permissionSchemeRepository.delete(permissionScheme);
     }
 
-    // Дополнительный метод для поиска схем по уровню роли
-    public List<PermissionSchemeDTO> getSchemesByRoleLevel(Long roleLevelId) {
+    /*public List<PermissionSchemeDTO> getSchemesByRoleLevel(Long roleLevelId) {
         User user = getCurrentUser();
+
+        // ✅ Проверка прав
+        if (!permissionCheckService.hasPermission(user, "VIEW_PERMISSION_SCHEMES")) {
+            throw new SecurityException("Недостаточно прав для просмотра схем");
+        }
+
         RoleLevel roleLevel = roleLevelRepository.findById(roleLevelId)
                 .orElseThrow(() -> new RuntimeException("Уровень роли не найден"));
 
-        // Проверяем принадлежность компании
         if (!roleLevel.getRole().getDepartment().getCompany().equals(user.getCompany())) {
             throw new SecurityException("Уровень роли не принадлежит вашей компании");
         }
 
-        List<PermissionScheme> schemes = permissionSchemeRepository.findByRoleLevelAndCompany(roleLevel, user.getCompany());
-        return schemes.stream()
+        return permissionSchemeRepository.findByRoleLevelAndCompany(roleLevel, user.getCompany()).stream()
                 .map(this::convertToDTO)
                 .toList();
-    }
+    }*/
 
     private User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -163,22 +140,17 @@ public class PermissionSchemeService {
     }
 
     private PermissionSchemeDTO convertToDTO(PermissionScheme permissionScheme) {
-        PermissionSchemeDTO permissionSchemeDTO = new PermissionSchemeDTO();
-        permissionSchemeDTO.setId(permissionScheme.getId());
-        permissionSchemeDTO.setName(permissionScheme.getName());
-        permissionSchemeDTO.setDescription(permissionScheme.getDescription());
-        permissionSchemeDTO.setCreatedAt(permissionScheme.getCreatedAt());
+        PermissionSchemeDTO dto = new PermissionSchemeDTO();
+        dto.setId(permissionScheme.getId());
+        dto.setName(permissionScheme.getName());
+        dto.setDescription(permissionScheme.getDescription());
+        dto.setCreatedAt(permissionScheme.getCreatedAt());
 
-        // Добавляем ID связанных сущностей
-        if (permissionScheme.getRoleLevel() != null) {
-            permissionSchemeDTO.setRoleLevelId(permissionScheme.getRoleLevel().getId());
-            permissionSchemeDTO.setRoleLevelName(permissionScheme.getRoleLevel().getLevelName());
-        }
         if (permissionScheme.getCreator() != null) {
-            permissionSchemeDTO.setCreatorId(permissionScheme.getCreator().getId());
-            permissionSchemeDTO.setCreatorName(permissionScheme.getCreator().getUserName());
+            dto.setCreatorId(permissionScheme.getCreator().getId());
+            dto.setCreatorName(permissionScheme.getCreator().getUserName());
         }
 
-        return permissionSchemeDTO;
+        return dto;
     }
 }

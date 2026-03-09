@@ -23,30 +23,27 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final RoleRepository roleRepository;
     private final DepartmentRepository departmentRepository;
-    //private final DepartmentLevelRepository departmentLevelRepository;
-    private final SchemePermissionService schemePermissionService;
+    private final PermissionCheckService permissionCheckService;
     private final RoleLevelRepository roleLevelRepository;
 
     public UserService(UserRepository userRepository,
                        PasswordEncoder passwordEncoder,
                        RoleRepository roleRepository,
                        DepartmentRepository departmentRepository,
-                       //DepartmentLevelRepository departmentLevelRepository,
-                       SchemePermissionService schemePermissionService,
+                       PermissionCheckService permissionCheckService,
                        RoleLevelRepository roleLevelRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.roleRepository = roleRepository;
         this.departmentRepository = departmentRepository;
-        //this.departmentLevelRepository = departmentLevelRepository;
-        this.schemePermissionService = schemePermissionService;
+        this.permissionCheckService = permissionCheckService;
         this.roleLevelRepository = roleLevelRepository;
     }
 
     public UserDTO assignUser(UserAssignmentDTO assignmentDTO) {
         User admin = getCurrentUser();
 
-        if (!schemePermissionService.hasPermission(admin, "assign_user_role")) {
+        if (!permissionCheckService.hasPermission(admin, "ASSIGN_USER_ROLE")) {
             throw new SecurityException("Недостаточно прав для назначения ролей пользователям");
         }
 
@@ -57,7 +54,6 @@ public class UserService {
             throw new SecurityException("Можно назначать роль пользователю только внутри своей компании");
         }
 
-        // ИСПРАВЛЕНО: используем правильный метод с Department_Company
         Role role = roleRepository.findByCodeAndDepartment_Company(assignmentDTO.getRoleCode(), admin.getCompany())
                 .orElseThrow(() -> new RuntimeException(assignmentDTO.getRoleCode() + " роли не существует в данной компании"));
 
@@ -68,10 +64,6 @@ public class UserService {
                 !admin.getDepartment().equals(department)) {
             throw new SecurityException("Можно назначать только в своем отделе");
         }
-
-        /*if (!departmentLevelRepository.existsByDepartmentAndLevel(department, assignmentDTO.getDepartmentLevel())) {
-            throw new RuntimeException("В данном департаменте нет такого уровня");
-        }*/
 
         if (assignmentDTO.getRoleLevelId() != null) {
             RoleLevel roleLevel = roleLevelRepository.findById(assignmentDTO.getRoleLevelId())
@@ -136,7 +128,7 @@ public class UserService {
     public User createPendingUser(String email) {
         User admin = getCurrentUser();
 
-        if (!schemePermissionService.hasPermission(admin, "invite_user")) {
+        if (!permissionCheckService.hasPermission(admin, "INVITE_USER")) {
             throw new SecurityException("Недостаточно прав для приглашения пользователей");
         }
 
@@ -161,7 +153,6 @@ public class UserService {
     }
 
     private Role getDefaultUserRole(Company company) {
-        // ИСПРАВЛЕНО: используем правильный метод
         return roleRepository.findByCodeAndDepartment_Company("AWAITING", company)
                 .orElseGet(() -> createAndSaveAwaitingRole(company));
     }
@@ -182,7 +173,7 @@ public class UserService {
         User currentUser = getCurrentUser();
 
         if (!currentUser.getId().equals(userDTO.getId())) {
-            if (!schemePermissionService.hasPermission(currentUser, "update_other_user")) {
+            if (!permissionCheckService.hasPermission(currentUser, "UPDATE_OTHER_USER")) {
                 throw new SecurityException("Недостаточно прав для обновления данных другого пользователя");
             }
         }
@@ -207,7 +198,7 @@ public class UserService {
     public List<UserWithRoleDTO> getAwaitingRole(Long companyId) {
         User admin = getCurrentUser();
 
-        if (!schemePermissionService.hasPermission(admin, "view_users")) {
+        if (!permissionCheckService.hasPermission(admin, "VIEW_USERS")) {
             throw new SecurityException("Недостаточно прав для просмотра пользователей");
         }
 
@@ -230,7 +221,7 @@ public class UserService {
     public List<UserDTO> getAllUsers() {
         User user = getCurrentUser();
 
-        if (!schemePermissionService.hasPermission(user, "view_users")) {
+        if (!permissionCheckService.hasPermission(user, "VIEW_USERS")) {
             throw new SecurityException("Недостаточно прав для просмотра пользователей");
         }
 
@@ -243,7 +234,7 @@ public class UserService {
     public User getUserById(Long id) {
         User currentUser = getCurrentUser();
 
-        if (!schemePermissionService.hasPermission(currentUser, "view_user_details")) {
+        if (!permissionCheckService.hasPermission(currentUser, "VIEW_USER_DETAILS")) {
             throw new SecurityException("Недостаточно прав для просмотра данных пользователя");
         }
 
@@ -264,7 +255,7 @@ public class UserService {
     public UserDTO changeUserDepartment(Long userId, Long newDepartmentId) {
         User admin = getCurrentUser();
 
-        if (!schemePermissionService.hasPermission(admin, "change_user_department")) {
+        if (!permissionCheckService.hasPermission(admin, "CHANGE_USER_DEPARTMENT")) {
             throw new SecurityException("Недостаточно прав для смены отдела пользователя");
         }
 

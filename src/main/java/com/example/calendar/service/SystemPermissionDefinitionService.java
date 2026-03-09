@@ -116,7 +116,7 @@ public class SystemPermissionDefinitionService {
             throw new SecurityException("Нет права на просмотр наборов прав");
         }
 
-        return permissionDefinitionRepository.getAll().stream()
+        return permissionDefinitionRepository.findAll().stream()
                 .map(this::convertToDTO)
                 .toList();
     }

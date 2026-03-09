@@ -25,31 +25,25 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
-    //private final AssignmentRuleService assignmentRuleService;
     private final TaskHistoryService taskHistoryService;
-    private final SchemePermissionService schemePermissionService;
-    private final DepartmentRepository departmentRepository;
+    private final PermissionCheckService permissionCheckService;
 
     public TaskService(TaskRepository taskRepository,
                        UserRepository userRepository,
                        ProjectRepository projectRepository,
-                       //AssignmentRuleService assignmentRuleService,
                        TaskHistoryService taskHistoryService,
-                       SchemePermissionService schemePermissionService,
-                       DepartmentRepository departmentRepository) {
+                       PermissionCheckService permissionCheckService) {
         this.taskRepository = taskRepository;
         this.userRepository = userRepository;
         this.projectRepository = projectRepository;
-        //this.assignmentRuleService = assignmentRuleService;
         this.taskHistoryService = taskHistoryService;
-        this.schemePermissionService = schemePermissionService;
-        this.departmentRepository = departmentRepository;
+        this.permissionCheckService = permissionCheckService;
     }
 
     public TaskDTO createTask(TaskDTO taskDTO) {
         User user = getCurrentUser();
 
-        if (!schemePermissionService.hasPermission(user, "create_task")) {
+        if (!permissionCheckService.hasPermission(user, "CREATE_TASK")) {
             throw new SecurityException("Недостаточно прав для создания задачи");
         }
 
@@ -63,13 +57,6 @@ public class TaskService {
         if (!assigneeUser.getCompany().getId().equals(user.getCompany().getId())) {
             throw new SecurityException("Исполнитель должен быть из вашей компании");
         }
-
-        /*if (!assignmentRuleService.canUserAssignToUser(user, assigneeUser)) {
-            throw new SecurityException(
-                    "У вас нет прав назначать задачи пользователям из отдела " +
-                            assigneeUser.getDepartment().getName()
-            );
-        }*/
 
         Task task = new Task();
         task.setTitle(taskDTO.getTitle());
@@ -90,7 +77,7 @@ public class TaskService {
     public TaskDTO createSubtask(Long taskId, TaskDTO parentTaskDTO) {
         User user = getCurrentUser();
 
-        if (!schemePermissionService.hasPermission(user, "create_subtask")) {
+        if (!permissionCheckService.hasPermission(user, "CREATE_SUBTASK")) {
             throw new SecurityException("Недостаточно прав для создания подзадачи");
         }
 
@@ -121,10 +108,6 @@ public class TaskService {
             throw new SecurityException("Исполнитель должен быть из той же компании");
         }
 
-        /*if (!assignmentRuleService.canUserAssignToUser(user, assignee)) {
-            throw new SecurityException("Вы не можете назначить задачу на " + assignee.getUserName());
-        }*/
-
         Task subtask = new Task();
         subtask.setTitle(parentTaskDTO.getTitle());
         subtask.setDescription(parentTaskDTO.getDescription());
@@ -152,7 +135,7 @@ public class TaskService {
     public TaskDTO changeAssignee(Long taskId, Long assigneeId) {
         User user = getCurrentUser();
 
-        if (!schemePermissionService.hasPermission(user, "change_assignee")) {
+        if (!permissionCheckService.hasPermission(user, "CHANGE_TASK_ASSIGNEE")) {
             throw new SecurityException("Недостаточно прав для смены исполнителя");
         }
 
@@ -170,10 +153,6 @@ public class TaskService {
             throw new SecurityException("Исполнитель должен быть из той же компании");
         }
 
-        /*if (!assignmentRuleService.canUserAssignToUser(user, newUser)) {
-            throw new SecurityException("Вы не можете назначить задачу на " + newUser.getUserName());
-        }*/
-
         String oldAssignee = task.getAssignee() != null ? task.getAssignee().getUserName() : "None";
         taskHistoryService.logTaskChange(task, user, "Assignee", oldAssignee, newUser.getUserName());
         task.setAssignee(newUser);
@@ -184,7 +163,7 @@ public class TaskService {
     public TaskDTO changeStatus(Long taskId, TaskStatus newStatus) {
         User user = getCurrentUser();
 
-        if (!schemePermissionService.hasPermission(user, "change_task_status")) {
+        if (!permissionCheckService.hasPermission(user, "CHANGE_TASK_STATUS")) {
             throw new SecurityException("Недостаточно прав для смены статуса задачи");
         }
 
@@ -221,7 +200,7 @@ public class TaskService {
     public TaskDTO changeEndTime(Long taskId, LocalDateTime endTime) {
         User user = getCurrentUser();
 
-        if (!schemePermissionService.hasPermission(user, "change_task_deadline")) {
+        if (!permissionCheckService.hasPermission(user, "CHANGE_TASK_DEADLINE")) {
             throw new SecurityException("Недостаточно прав для смены дедлайна задачи");
         }
 
@@ -250,7 +229,7 @@ public class TaskService {
     public TaskDTO changeTitle(Long taskId, String title) {
         User user = getCurrentUser();
 
-        if (!schemePermissionService.hasPermission(user, "change_task_title")) {
+        if (!permissionCheckService.hasPermission(user, "CHANGE_TASK_TITLE")) {
             throw new SecurityException("Недостаточно прав для смены названия задачи");
         }
 
@@ -278,7 +257,7 @@ public class TaskService {
     public TaskDTO changePriority(Long taskId, TaskPriority priority) {
         User user = getCurrentUser();
 
-        if (!schemePermissionService.hasPermission(user, "change_task_priority")) {
+        if (!permissionCheckService.hasPermission(user, "CHANGE_TASK_PRIORITY")) {
             throw new SecurityException("Недостаточно прав для смены приоритета задачи");
         }
 
@@ -307,7 +286,7 @@ public class TaskService {
     public TaskDTO changeDescription(Long taskId, String description) {
         User user = getCurrentUser();
 
-        if (!schemePermissionService.hasPermission(user, "change_task_description")) {
+        if (!permissionCheckService.hasPermission(user, "CHANGE_TASK_DESCRIPTION")) {
             throw new SecurityException("Недостаточно прав для смены описания задачи");
         }
 
@@ -319,7 +298,7 @@ public class TaskService {
         }
 
         if (!task.getAssignee().getId().equals(user.getId()) &&
-                !schemePermissionService.hasPermission(user, "edit_any_task_description")) {
+                !permissionCheckService.hasPermission(user, "EDIT_ANY_TASK_DESCRIPTION")) {
             throw new SecurityException("Только исполнитель задачи может менять её описание");
         }
 
@@ -337,7 +316,7 @@ public class TaskService {
     public TaskDTO getTaskById(Long taskId) {
         User user = getCurrentUser();
 
-        if (!schemePermissionService.hasPermission(user, "view_task")) {
+        if (!permissionCheckService.hasPermission(user, "VIEW_TASK")) {
             throw new SecurityException("Недостаточно прав для просмотра задачи");
         }
 
@@ -370,7 +349,7 @@ public class TaskService {
     public List<TaskDTO> getTasksByAssignee(){
         User user = getCurrentUser();
 
-        if (!schemePermissionService.hasPermission(user, "view_my_tasks")) {
+        if (!permissionCheckService.hasPermission(user, "VIEW_MY_TASKS")) {
             throw new SecurityException("Недостаточно прав для просмотра своих задач");
         }
 
@@ -382,7 +361,7 @@ public class TaskService {
     public List<TaskDTO> getTasksByReporter(){
         User user = getCurrentUser();
 
-        if (!schemePermissionService.hasPermission(user, "view_created_tasks")) {
+        if (!permissionCheckService.hasPermission(user, "VIEW_CREATED_TASKS")) {
             throw new SecurityException("Недостаточно прав для просмотра созданных задач");
         }
 
@@ -394,7 +373,7 @@ public class TaskService {
     public List<TaskDTO> getTasksByDepartment(){
         User user = getCurrentUser();
 
-        if (!schemePermissionService.hasPermission(user, "view_department_tasks")) {
+        if (!permissionCheckService.hasPermission(user, "VIEW_DEPARTMENT_TASKS")) {
             throw new SecurityException("Недостаточно прав для просмотра задач отдела");
         }
 
@@ -410,7 +389,7 @@ public class TaskService {
     public List<TaskDTO> getTasksByProjectId(Long projectId){
         User user = getCurrentUser();
 
-        if (!schemePermissionService.hasPermission(user, "view_project_tasks")) {
+        if (!permissionCheckService.hasPermission(user, "VIEW_PROJECT_TASKS")) {
             throw new SecurityException("Недостаточно прав для просмотра задач проекта");
         }
 
@@ -426,7 +405,7 @@ public class TaskService {
     public List<TaskDTO> getSubTasksByTaskId(Long taskId){
         User user = getCurrentUser();
 
-        if (!schemePermissionService.hasPermission(user, "view_subtasks")) {
+        if (!permissionCheckService.hasPermission(user, "VIEW_SUBTASKS")) {
             throw new SecurityException("Недостаточно прав для просмотра подзадач");
         }
 
@@ -450,7 +429,7 @@ public class TaskService {
     public List<TaskDTO> getAllTasksInCompany(){
         User user = getCurrentUser();
 
-        if (!schemePermissionService.hasPermission(user, "view_all_company_tasks")) {
+        if (!permissionCheckService.hasPermission(user, "VIEW_ALL_COMPANY_TASKS")) {
             throw new SecurityException("Недостаточно прав для просмотра всех задач компании");
         }
 
@@ -475,7 +454,7 @@ public class TaskService {
     public void deleteTask(Long taskId){
         User user = getCurrentUser();
 
-        if (!schemePermissionService.hasPermission(user, "delete_task")) {
+        if (!permissionCheckService.hasPermission(user, "DELETE_TASK")) {
             throw new SecurityException("Недостаточно прав для удаления задачи");
         }
 
@@ -487,7 +466,7 @@ public class TaskService {
         }
 
         if (!task.getReporter().getId().equals(user.getId()) &&
-                !schemePermissionService.hasPermission(user, "delete_any_task")) {
+                !permissionCheckService.hasPermission(user, "DELETE_ANY_TASK")) {
             throw new SecurityException("Только создатель может удалить задачу");
         }
 
@@ -528,8 +507,7 @@ public class TaskService {
         boolean isReporter = task.getReporter() != null &&
                 task.getReporter().getId().equals(user.getId());
 
-        boolean hasAccessPermission = schemePermissionService
-                .hasPermission(user, "view_all_tasks");
+        boolean hasAccessPermission = permissionCheckService.hasPermission(user, "VIEW_ALL_TASKS");
 
         return isAssignee || isReporter || hasAccessPermission;
     }

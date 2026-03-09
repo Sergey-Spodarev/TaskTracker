@@ -32,7 +32,6 @@ public class PermissionScheme {
     @ManyToOne
     @JoinColumn(name = "system_permission_definition_id")
     private SystemPermissionDefinition systemPermissionDefinition;
-    //todo надо сделать все правки и наконец получить правильную логику где будут все стандартные права и все кастомные у пользователя
 
     @ManyToOne
     @JoinColumn(name = "custom_permission_id")

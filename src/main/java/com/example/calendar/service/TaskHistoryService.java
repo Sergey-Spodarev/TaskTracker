@@ -23,14 +23,14 @@ import java.util.List;
 public class TaskHistoryService {
     private final TaskHistoryRepository taskHistoryRepository;
     private final TaskRepository taskRepository;
-    private final SchemePermissionService schemePermissionService;
+    private final PermissionCheckService permissionCheckService;
 
     public TaskHistoryService(TaskHistoryRepository taskHistoryRepository,
                               TaskRepository taskRepository,
-                              SchemePermissionService schemePermissionService) {
+                              PermissionCheckService permissionCheckService) {
         this.taskHistoryRepository = taskHistoryRepository;
         this.taskRepository = taskRepository;
-        this.schemePermissionService = schemePermissionService;
+        this.permissionCheckService = permissionCheckService;
     }
 
     public void logTaskChange(
@@ -55,7 +55,7 @@ public class TaskHistoryService {
         User currentUser = getCurrentUser();
 
         // Проверка прав через систему разрешений
-        if (!schemePermissionService.hasPermission(currentUser, "view_task_history")) {
+        if (!permissionCheckService.hasPermission(currentUser, "VIEW_TASK_HISTORY")) {
             throw new SecurityException("Недостаточно прав для просмотра истории задач");
         }
 
@@ -128,7 +128,7 @@ public class TaskHistoryService {
     public List<TaskHistoryDTO> getRecentTaskHistory(Long taskId, int limit) {
         User currentUser = getCurrentUser();
 
-        if (!schemePermissionService.hasPermission(currentUser, "view_task_history")) {
+        if (!permissionCheckService.hasPermission(currentUser, "VIEW_TASK_HISTORY")) {
             throw new SecurityException("Недостаточно прав для просмотра истории задач");
         }
 
@@ -155,7 +155,7 @@ public class TaskHistoryService {
     public List<TaskHistoryDTO> getUserActivityHistory(User user, LocalDateTime startDate, LocalDateTime endDate) {
         User currentUser = getCurrentUser();
 
-        if (!schemePermissionService.hasPermission(currentUser, "view_user_activity")) {
+        if (!permissionCheckService.hasPermission(currentUser, "VIEW_USER_ACTIVITY")) {
             throw new SecurityException("Недостаточно прав для просмотра активности пользователей");
         }
 

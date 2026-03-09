@@ -93,7 +93,7 @@ public class SchemePermissionService {
             throw new SecurityException("Нет права на просмотр уровней доступа");
         }
 
-        return schemePermissionRepository.getAll().stream()
+        return schemePermissionRepository.findAll().stream()
                 .map(this::convertToDTO)
                 .toList();
     }

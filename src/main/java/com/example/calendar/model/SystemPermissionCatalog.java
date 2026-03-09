@@ -17,6 +17,7 @@ public class SystemPermissionCatalog {
 
     private String name;        // "Создание задачи" (для отображения)
     private String description; // описание
+    @Column(name = "permission_group")
     private String group;        // "Задачи"
     private String icon;         // "fa-plus"
     private boolean builtIn;     // true
