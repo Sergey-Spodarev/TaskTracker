@@ -33,7 +33,7 @@ public class CustomPermissionService {
             throw new SecurityException("Нет права на создание кастомного права");
         }
 
-        if (!customPermissionRepository.existsByCode(customPermissionDTO.getCode())) {
+        if (customPermissionRepository.existsByCode(customPermissionDTO.getCode())) {
             throw new RuntimeException("Схема с таким кодом " + customPermissionDTO.getCode() + " уже существует.");
         }
 

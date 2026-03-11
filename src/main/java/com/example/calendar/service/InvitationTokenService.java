@@ -1,5 +1,6 @@
 package com.example.calendar.service;
 
+import com.example.calendar.DTO.InvitationRequestDTO;
 import com.example.calendar.DTO.InvitationTokenDTO;
 import com.example.calendar.model.InvitationToken;
 import com.example.calendar.model.User;
@@ -28,18 +29,23 @@ public class InvitationTokenService {
         this.companyEmailService = companyEmailService;
     }
 
-    public InvitationTokenDTO createInvitationToken(String email) {//мы просто создаём токен
-        User user = userService.createPendingUser(email);
+    public InvitationTokenDTO createInvitationToken(InvitationRequestDTO requestDTO) {
+        System.out.println("📧 Email received in service: '" + requestDTO.getEmail() + "'");
+
+        if (requestDTO.getEmail() == null || requestDTO.getEmail().trim().isEmpty()) {
+            throw new RuntimeException("Email не может быть пустым");
+        }
+
+        User user = userService.createPendingUser(requestDTO.getEmail());
+        System.out.println("✅ User created with email: " + user.getEmail());
+
         InvitationToken invitationToken = new InvitationToken();
-        //надо сделать отправку на почту сообщения
         invitationToken.setExpiresAt(LocalDateTime.now().plusHours(24));
-        System.out.println("Token created at: " + LocalDateTime.now());
-        System.out.println("Expires at: " + invitationToken.getExpiresAt());
         invitationToken.setUser(user);
         invitationToken.setToken(UUID.randomUUID().toString());
 
         InvitationToken saved = invitationTokenRepository.save(invitationToken);
-        companyEmailService.sendInvitation(user.getCompany(),email, saved.getToken());
+        companyEmailService.sendInvitation(user.getCompany(), requestDTO.getEmail(), saved.getToken());
 
         return convertToDto(saved);
     }

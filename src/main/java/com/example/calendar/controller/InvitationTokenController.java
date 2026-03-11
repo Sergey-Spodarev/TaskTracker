@@ -1,11 +1,13 @@
 package com.example.calendar.controller;
 
+import com.example.calendar.DTO.InvitationRequestDTO;
 import com.example.calendar.DTO.InvitationTokenDTO;
 import com.example.calendar.service.InvitationTokenService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
@@ -17,10 +19,10 @@ public class InvitationTokenController {
     }
 
     @PostMapping("/addInvitationToken")
-    public ResponseEntity<InvitationTokenDTO> addInvitationToken(String email) {
+    public ResponseEntity<InvitationTokenDTO> addInvitationToken(@RequestBody InvitationRequestDTO invitationRequestDTO) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(invitationTokenService.createInvitationToken(email));
+                .body(invitationTokenService.createInvitationToken(invitationRequestDTO));
     }
 
     @PostMapping("/completeRegistration")

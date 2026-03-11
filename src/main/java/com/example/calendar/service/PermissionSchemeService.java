@@ -1,35 +1,31 @@
 package com.example.calendar.service;
 
 import com.example.calendar.DTO.PermissionSchemeDTO;
-import com.example.calendar.model.Company;
-import com.example.calendar.model.PermissionScheme;
-import com.example.calendar.model.RoleLevel;
-import com.example.calendar.model.User;
+import com.example.calendar.model.*;
 import com.example.calendar.repository.PermissionSchemeRepository;
-import com.example.calendar.repository.RoleLevelRepository;
 import com.example.calendar.security.CustomUserDetails;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.RequestBody;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
 public class PermissionSchemeService {
     private final PermissionSchemeRepository permissionSchemeRepository;
     private final PermissionCheckService permissionCheckService;
-    private final RoleLevelRepository roleLevelRepository;
 
     public PermissionSchemeService(PermissionSchemeRepository permissionSchemeRepository,
-                                   PermissionCheckService permissionCheckService,
-                                   RoleLevelRepository roleLevelRepository) {
+                                   PermissionCheckService permissionCheckService) {
         this.permissionSchemeRepository = permissionSchemeRepository;
         this.permissionCheckService = permissionCheckService;
-        this.roleLevelRepository = roleLevelRepository;
     }
 
     public PermissionSchemeDTO addPermissionScheme(PermissionSchemeDTO dto) {
@@ -50,6 +46,26 @@ public class PermissionSchemeService {
         permissionScheme.setCreatedAt(LocalDateTime.now());
 
         return convertToDTO(permissionSchemeRepository.save(permissionScheme));
+    }
+
+    public Set<String> getUserPermissionSchemes() {
+        User user = getCurrentUser();
+        if (user.getSystemRole().equals(SystemRole.COMPANY_OWNER)) {
+            return Arrays.stream(SystemPermissionKey.values())
+                    .map(Enum::name)
+                    .collect(Collectors.toSet());
+        }
+
+        PermissionScheme userPermissionScheme = user.getRoleLevel().getPermissionScheme();
+        Set<String> result = new HashSet<>();
+        for (SystemPermissionCatalog userSystemPermission : userPermissionScheme.getSystemPermissionDefinition().getSystemPermissionCatalog()) {
+            result.add(userSystemPermission.getKey().name());
+        }
+
+        for (SchemePermission schemePermission : userPermissionScheme.getCustomPermission().getSchemePermission()) {
+            result.add(schemePermission.getPermissionKey());
+        }
+        return result;
     }
 
     public List<PermissionSchemeDTO> getAllPermissionSchemes() {

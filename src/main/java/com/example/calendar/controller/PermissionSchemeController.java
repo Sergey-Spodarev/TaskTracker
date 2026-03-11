@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("api/permission-schemes")
@@ -21,6 +22,13 @@ public class PermissionSchemeController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(permissionSchemeService.addPermissionScheme(permissionSchemeDTO));
+    }
+
+    @GetMapping("/user")
+    public ResponseEntity<Set<String>> getUserPermissionSchemes() {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(permissionSchemeService.getUserPermissionSchemes());
     }
 
     @GetMapping("/all")
