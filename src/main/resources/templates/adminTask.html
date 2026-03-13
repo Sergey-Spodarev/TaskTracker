@@ -139,6 +139,47 @@
       letter-spacing: 0.5px;
       margin-top: 8px;
     }
+    .debug-panel {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 9999;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      display: none;
+      max-width: 400px;
+    }
+    .debug-panel.show {
+      display: block;
+    }
+    .debug-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+    .debug-content {
+      max-height: 300px;
+      overflow-y: auto;
+      font-size: 12px;
+    }
+    .debug-log {
+      border-bottom: 1px solid #eee;
+      padding: 5px;
+    }
+    .debug-log.error {
+      color: #dc3545;
+    }
+    .debug-log.success {
+      color: #28a745;
+    }
+    .debug-log.warning {
+      color: #ffc107;
+    }
   </style>
 </head>
 <body>
@@ -180,6 +221,25 @@
 
     <!-- Kanban доска -->
     <div id="kanban-board"></div>
+  </div>
+</div>
+
+<!-- Кнопка отладки -->
+<button class="btn btn-sm btn-warning" id="debugToggle" style="position: fixed; bottom: 20px; left: 20px; z-index: 9999;">🐞 Отладка</button>
+
+<!-- Панель отладки -->
+<div class="debug-panel" id="debugPanel">
+  <div class="debug-header">
+    <span>🐞 Панель отладки</span>
+    <button class="btn btn-sm btn-close" id="debugClose"></button>
+  </div>
+  <div class="debug-content" id="debugContent">
+    <div class="debug-log">Готов к отладке...</div>
+  </div>
+  <div class="mt-2">
+    <button class="btn btn-sm btn-primary" onclick="diagnoseEndpoints()">🔍 Диагностика эндпоинтов</button>
+    <button class="btn btn-sm btn-info" onclick="debugSchemeController()">🔧 Отладка контроллера</button>
+    <button class="btn btn-sm btn-secondary" onclick="clearDebug()">Очистить</button>
   </div>
 </div>
 
@@ -540,184 +600,160 @@
   </div>
 </div>
 
+<!-- ==================== МОДАЛЬНЫЕ ОКНА ДЛЯ НАБОРОВ ПРАВ ==================== -->
+
+<!-- Модальное окно: Создать набор прав -->
+<div class="modal fade" id="createPermissionDefinitionModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">📦 Создать набор прав</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Код набора (уникальный)</label>
+          <input type="text" id="definitionCode" class="form-control" placeholder="credit_approval" required />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Название</label>
+          <input type="text" id="definitionName" class="form-control" placeholder="Утверждение кредитов" required />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Описание</label>
+          <textarea id="definitionDescription" class="form-control" rows="2" placeholder="Права для работы с кредитами"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+        <button type="button" class="btn btn-primary" onclick="createPermissionDefinition()">Создать</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно: Список наборов прав -->
+<div class="modal fade" id="listPermissionDefinitionsModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">📋 Наборы прав</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="permissionDefinitionsList" class="text-center p-3">
+          Загрузка...
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ==================== НОВЫЕ МОДАЛЬНЫЕ ОКНА ==================== -->
+
+<!-- Модальное окно: Мастер создания кастомного права -->
+<div class="modal fade" id="createCustomPermissionWizardModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">✨ Мастер создания кастомного права</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-info">
+          <strong>Шаг 1 из 3:</strong> Данные права
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Код (уникальный)</label>
+          <input type="text" id="wizardCode" class="form-control" placeholder="approve_credit" required />
+          <small class="text-muted">Будет использоваться для проверки прав в коде</small>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Название</label>
+          <input type="text" id="wizardName" class="form-control" placeholder="Утверждение кредита" required />
+          <small class="text-muted">Отображается в интерфейсе</small>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Описание</label>
+          <textarea id="wizardDescription" class="form-control" rows="2" placeholder="Позволяет утверждать кредиты до 1 млн"></textarea>
+        </div>
+
+        <hr>
+        <div class="alert alert-info">
+          <strong>Шаг 2 из 3:</strong> Уровень доступа
+        </div>
+
+        <div class="row">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label class="form-label">Минимальный уровень (самый высокий)</label>
+              <input type="number" id="wizardMinLevel" class="form-control" value="10" required />
+              <small class="text-muted">Чем меньше число, тем выше уровень (1 - самый высокий)</small>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label class="form-label">Максимальный уровень (самый низкий)</label>
+              <input type="number" id="wizardMaxLevel" class="form-control" value="1" required />
+              <small class="text-muted">Чем больше число, тем ниже уровень (10 - самый низкий)</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Ключ уровня (оставьте пустым для автогенерации)</label>
+          <input type="text" id="wizardLevelKey" class="form-control" placeholder="approve_credit_level" />
+        </div>
+
+        <hr>
+        <div class="alert alert-info">
+          <strong>Шаг 3 из 3:</strong> Назначение (опционально)
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Создать схему разрешений</label>
+          <input type="text" id="wizardSchemeName" class="form-control" placeholder="Кредитный отдел" />
+          <small class="text-muted">Если оставить пустым - схема не создастся</small>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Назначить уровню роли</label>
+          <select id="wizardRoleLevel" class="form-control">
+            <option value="">Не назначать</option>
+          </select>
+        </div>
+
+        <div class="alert alert-warning mt-3" id="wizardDebugInfo" style="display: none;">
+          <strong>Отладка:</strong>
+          <pre id="wizardDebugPre" style="font-size: 11px;"></pre>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+        <button type="button" class="btn btn-primary" onclick="createCustomPermissionWizard()">✨ Создать право</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Модальное окно: Каталог прав -->
 <div class="modal fade" id="permissionCatalogModal" tabindex="-1">
   <div class="modal-dialog modal-xl">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Управление каталогом прав</h5>
+        <h5 class="modal-title">⚙️ Управление каталогом прав</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <div id="permissionsList"></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Модальное окно: Создать кастомное право -->
-<div class="modal fade" id="createCustomPermissionModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Создать кастомное право</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <div class="mb-3">
-          <label class="form-label">Код (уникальный)</label>
-          <input type="text" id="customCode" class="form-control" placeholder="approve_credit" required />
+        <div id="permissionsList" class="text-center p-5">
+          Загрузка...
         </div>
-        <div class="mb-3">
-          <label class="form-label">Название</label>
-          <input type="text" id="customName" class="form-control" placeholder="Утверждение кредита" required />
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Описание</label>
-          <textarea id="customDescription" class="form-control" rows="2"></textarea>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-        <button type="button" class="btn btn-primary" onclick="createCustomPermission()">Создать</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Модальное окно: Создать уровень доступа -->
-<div class="modal fade" id="createSchemePermissionModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Создать уровень доступа</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <div class="mb-3">
-          <label class="form-label">Ключ уровня</label>
-          <input type="text" id="schemeKey" class="form-control" placeholder="basic_access" required />
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Описание</label>
-          <textarea id="schemeDesc" class="form-control" rows="2"></textarea>
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Минимальный уровень</label>
-          <input type="number" id="schemeMin" class="form-control" value="1" required />
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Максимальный уровень</label>
-          <input type="number" id="schemeMax" class="form-control" value="10" required />
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-        <button type="button" class="btn btn-primary" onclick="createSchemePermission()">Создать</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Модальное окно: Добавить уровень к кастомному праву -->
-<div class="modal fade" id="addLevelToCustomModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Добавить уровень к кастомному праву</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <div class="mb-3">
-          <label class="form-label">Кастомное право</label>
-          <select id="customPermissionSelect" class="form-control" required>
-            <option value="">Загрузка...</option>
-          </select>
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Уровень доступа</label>
-          <select id="schemePermissionSelect" class="form-control" required>
-            <option value="">Загрузка...</option>
-          </select>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-        <button type="button" class="btn btn-primary" onclick="addLevelToCustom()">Добавить</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Модальное окно: Создать набор системных прав -->
-<div class="modal fade" id="createDefinitionModal" tabindex="-1">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Создать набор системных прав</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <div class="mb-3">
-          <label class="form-label">Код набора</label>
-          <input type="text" id="defCode" class="form-control" placeholder="dev_base" required />
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Название</label>
-          <input type="text" id="defName" class="form-control" placeholder="Базовые права разработчика" required />
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Описание</label>
-          <textarea id="defDescription" class="form-control" rows="2"></textarea>
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Выберите права</label>
-          <div id="systemPermissionsCheckboxes" class="border p-3" style="max-height: 300px; overflow-y: auto;"></div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-        <button type="button" class="btn btn-primary" onclick="createDefinition()">Создать</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Модальное окно: Создать схему разрешений -->
-<div class="modal fade" id="createPermissionSchemeModal" tabindex="-1">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Создать схему разрешений</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <div class="mb-3">
-          <label class="form-label">Название схемы</label>
-          <input type="text" id="schemeName" class="form-control" required />
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Описание</label>
-          <textarea id="schemeDescription" class="form-control" rows="2"></textarea>
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Набор системных прав</label>
-          <select id="systemDefSelect" class="form-control">
-            <option value="">Выберите набор</option>
-          </select>
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Кастомное право</label>
-          <select id="customPermSelect" class="form-control">
-            <option value="">Выберите кастомное право</option>
-          </select>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-        <button type="button" class="btn btn-primary" onclick="createPermissionScheme()">Создать</button>
       </div>
     </div>
   </div>
@@ -728,26 +764,124 @@
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Управление уровнями ролей</h5>
+        <h5 class="modal-title">📊 Управление уровнями ролей</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <div class="col-md-6">
+            <h6>Создать новый уровень</h6>
+            <div class="mb-3">
+              <label class="form-label">Роль</label>
+              <select id="roleForLevel" class="form-control"></select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Уровень (число)</label>
+              <input type="number" id="levelNumber" class="form-control" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Название уровня</label>
+              <input type="text" id="levelName" class="form-control" placeholder="Senior" />
+            </div>
+            <button class="btn btn-success" onclick="createRoleLevel()">➕ Создать уровень</button>
+          </div>
+          <div class="col-md-6">
+            <h6>Существующие уровни</h6>
+            <div id="roleLevelsList" style="max-height: 300px; overflow-y: auto;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== НОВЫЕ МОДАЛЬНЫЕ ОКНА ДЛЯ УРОВНЕЙ ДОСТУПА ==================== -->
+
+<!-- Модальное окно: Создать уровень доступа -->
+<div class="modal fade" id="createSchemePermissionModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">📊 Создать уровень доступа</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
         <div class="mb-3">
-          <label class="form-label">Роль</label>
-          <select id="roleForLevel" class="form-control">
-            <option value="">Выберите роль</option>
+          <label class="form-label">Ключ уровня (уникальный)</label>
+          <input type="text" id="schemePermissionKey" class="form-control" placeholder="approve_credit_level" required />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Описание</label>
+          <textarea id="schemeDescription" class="form-control" rows="2" placeholder="Описание уровня доступа"></textarea>
+        </div>
+        <div class="row">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label class="form-label">Минимальный уровень (самый высокий)</label>
+              <input type="number" id="schemeMinLevel" class="form-control" value="10" required />
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label class="form-label">Максимальный уровень (самый низкий)</label>
+              <input type="number" id="schemeMaxLevel" class="form-control" value="1" required />
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+        <button type="button" class="btn btn-primary" onclick="createSchemePermission()">Создать</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно: Список уровней доступа -->
+<div class="modal fade" id="listSchemePermissionsModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">📋 Уровни доступа</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="schemePermissionsList" class="text-center p-3">
+          Загрузка...
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно: Добавить уровень к праву -->
+<div class="modal fade" id="addLevelToCustomModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">➕ Добавить уровень к праву</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Кастомное право</label>
+          <select id="customPermissionForLevel" class="form-control" required>
+            <option value="">Загрузка...</option>
           </select>
         </div>
         <div class="mb-3">
-          <label class="form-label">Уровень (число)</label>
-          <input type="number" id="levelNumber" class="form-control" required />
+          <label class="form-label">Уровень доступа</label>
+          <select id="schemePermissionForCustom" class="form-control" required>
+            <option value="">Загрузка...</option>
+          </select>
         </div>
-        <div class="mb-3">
-          <label class="form-label">Название уровня</label>
-          <input type="text" id="levelName" class="form-control" placeholder="Senior" required />
-        </div>
-        <button class="btn btn-success mb-3" onclick="createRoleLevel()">➕ Добавить уровень</button>
-        <div id="roleLevelsList"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+        <button type="button" class="btn btn-primary" onclick="addLevelToCustomPermission()">Добавить</button>
       </div>
     </div>
   </div>
@@ -774,6 +908,148 @@
   let allRoleLevels = [];
   let currentTaskId = null;
   let userPermissions = [];
+  let debugLogs = [];
+
+  // ==================== ФУНКЦИИ ОТЛАДКИ ====================
+  function addDebugLog(message, type = 'info') {
+    const timestamp = new Date().toLocaleTimeString();
+    const log = `[${timestamp}] ${message}`;
+    debugLogs.push({ message: log, type });
+
+    const debugContent = document.getElementById('debugContent');
+    if (debugContent) {
+      const logEl = document.createElement('div');
+      logEl.className = `debug-log ${type}`;
+      logEl.textContent = log;
+      debugContent.appendChild(logEl);
+      debugContent.scrollTop = debugContent.scrollHeight;
+    }
+    console.log(`[DEBUG] ${message}`);
+  }
+
+  function clearDebug() {
+    debugLogs = [];
+    const debugContent = document.getElementById('debugContent');
+    if (debugContent) {
+      debugContent.innerHTML = '<div class="debug-log">Готов к отладке...</div>';
+    }
+  }
+
+  // ==================== ДИАГНОСТИКА ЭНДПОИНТОВ ====================
+  function diagnoseEndpoints() {
+    addDebugLog('🔍 НАЧИНАЕМ ДИАГНОСТИКУ ЭНДПОИНТОВ...', 'info');
+    addDebugLog('==========================================', 'info');
+
+    // Проверяем базовые URL для схем
+    const schemeUrls = [
+      '/api/v1/schemes/getALL',
+      '/api/v1/schemes/getAll',
+      '/api/v1/schemes/all',
+      '/api/v1/schemes',
+      '/api/v1/scheme-permissions/all',
+      '/api/v1/scheme-permissions',
+      '/api/v1/permission-schemes/all',
+      '/api/v1/permission-schemes'
+    ];
+
+    addDebugLog('📋 ПРОВЕРКА URL ДЛЯ СХЕМ:', 'info');
+
+    function checkNextUrl(index) {
+      if (index >= schemeUrls.length) {
+        addDebugLog('==========================================', 'info');
+        addDebugLog('✅ Диагностика завершена', 'success');
+        return;
+      }
+
+      const url = schemeUrls[index];
+      addDebugLog(`➡️ Проверяем: ${url}`, 'info');
+
+      axios.get(url)
+              .then(response => {
+                addDebugLog(`✅ УСПЕХ! ${url} - статус ${response.status}`, 'success');
+                addDebugLog(`   Ответ: ${JSON.stringify(response.data).substring(0, 200)}...`, 'info');
+                checkNextUrl(index + 1);
+              })
+              .catch(error => {
+                if (error.response) {
+                  const status = error.response.status;
+                  const data = error.response.data;
+
+                  if (status === 404) {
+                    addDebugLog(`❌ ${url} - НЕ НАЙДЕН (404)`, 'error');
+                  } else if (status === 405) {
+                    addDebugLog(`⚠️ ${url} - метод не поддерживается (405) - это нормально для POST эндпоинтов`, 'warning');
+                    addDebugLog(`   📌 URL существует, но GET не разрешен`, 'info');
+                  } else if (status === 403) {
+                    addDebugLog(`🔒 ${url} - нет доступа (403)`, 'warning');
+                  } else if (status === 400) {
+                    addDebugLog(`ℹ️ ${url} - существует, но нужны параметры (400)`, 'info');
+                    addDebugLog(`   📝 Детали: ${JSON.stringify(data)}`, 'info');
+                  } else {
+                    addDebugLog(`❓ ${url} - ошибка ${status}: ${JSON.stringify(data)}`, 'warning');
+                  }
+                } else if (error.request) {
+                  addDebugLog(`❌ ${url} - сервер не отвечает`, 'error');
+                } else {
+                  addDebugLog(`❌ ${url} - ошибка: ${error.message}`, 'error');
+                }
+
+                checkNextUrl(index + 1);
+              });
+    }
+
+    checkNextUrl(0);
+  }
+
+  function debugSchemeController() {
+    addDebugLog('🔍 ДЕТАЛЬНАЯ ДИАГНОСТИКА КОНТРОЛЛЕРА СХЕМ', 'info');
+
+    const endpoints = [
+      { url: '/api/v1/schemes', method: 'post', desc: 'Создание схемы' },
+      { url: '/api/v1/update', method: 'patch', desc: 'Обновление схемы' },
+      { url: '/api/v1/get/1', method: 'get', desc: 'Получение по ID' },
+      { url: '/api/v1/get/test-key', method: 'get', desc: 'Получение по ключу' },
+      { url: '/api/v1/getALL', method: 'get', desc: 'Получение всех схем' },
+      { url: '/api/v1/del/test-key', method: 'delete', desc: 'Удаление схемы' }
+    ];
+
+    function checkEndpoint(index) {
+      if (index >= endpoints.length) {
+        addDebugLog('✅ Диагностика контроллера завершена', 'success');
+        return;
+      }
+
+      const endpoint = endpoints[index];
+      setTimeout(() => {
+        addDebugLog(`➡️ Проверяем: ${endpoint.method.toUpperCase()} ${endpoint.url} - ${endpoint.desc}`, 'info');
+
+        axios({
+          method: endpoint.method,
+          url: endpoint.url,
+          data: endpoint.method !== 'get' ? { test: true } : undefined
+        }).then(() => {
+          addDebugLog(`✅ ${endpoint.method.toUpperCase()} ${endpoint.url} - работает`, 'success');
+          checkEndpoint(index + 1);
+        }).catch(error => {
+          if (error.response?.status === 404) {
+            addDebugLog(`❌ ${endpoint.method.toUpperCase()} ${endpoint.url} - НЕ НАЙДЕН (404)`, 'error');
+          } else if (error.response?.status === 405) {
+            addDebugLog(`⚠️ ${endpoint.method.toUpperCase()} ${endpoint.url} - метод не поддерживается (405)`, 'warning');
+          } else if (error.response?.status === 400) {
+            addDebugLog(`ℹ️ ${endpoint.method.toUpperCase()} ${endpoint.url} - существует (400)`, 'info');
+            addDebugLog(`   📝 Ожидаемые поля: ${JSON.stringify(error.response.data)}`, 'info');
+          } else if (error.response?.status === 403) {
+            addDebugLog(`🔒 ${endpoint.method.toUpperCase()} ${endpoint.url} - нет доступа (403)`, 'warning');
+          } else {
+            addDebugLog(`❓ ${endpoint.method.toUpperCase()} ${endpoint.url} - ${error.response?.status}`, 'warning');
+          }
+          checkEndpoint(index + 1);
+        });
+      }, 100 * index);
+    }
+
+    checkEndpoint(0);
+  }
 
   // ==================== ОБНОВЛЕННЫЙ MENU_ITEMS ====================
   const MENU_ITEMS = [
@@ -793,12 +1069,12 @@
     { permission: 'ACTIVATE_USER', name: '✅ Активировать пользователя', handler: 'openActivateUserModal', section: 'Пользователи' },
 
     // Кастомные права
-    { permission: 'CREATE_CUSTOM_PERMISSION', name: '✨ Создать кастомное право', handler: 'openCreateCustomPermissionModal', section: 'Кастомные права' },
+    { permission: 'CREATE_CUSTOM_PERMISSION', name: '✨ Создать кастомное право', handler: 'openCreateCustomPermissionWizard', section: 'Кастомные права' },
     { permission: 'VIEW_CUSTOM_PERMISSIONS', name: '📋 Список кастомных прав', handler: 'openListCustomPermissions', section: 'Кастомные права' },
 
     // Уровни доступа
     { permission: 'CREATE_SCHEME_PERMISSION', name: '📊 Создать уровень доступа', handler: 'openCreateSchemePermissionModal', section: 'Уровни доступа' },
-    { permission: 'VIEW_SCHEME_PERMISSIONS', name: '📋 Уровни доступа', handler: 'openListSchemePermissions', section: 'Уровни доступа' },
+    { permission: 'VIEW_SCHEME_PERMISSIONS', name: '📋 Уровни доступа', handler: 'openListSchemePermissionsModal', section: 'Уровни доступа' },
     { permission: 'ADD_SCHEME_LEVEL_TO_CUSTOM', name: '➕ Добавить уровень к праву', handler: 'openAddLevelToCustomModal', section: 'Уровни доступа' },
 
     // Системные права
@@ -822,15 +1098,15 @@
 
   // --- ЗАГРУЗКА ПРАВ ПОЛЬЗОВАТЕЛЯ ---
   function loadUserPermissions() {
-    console.log('🔍 Загрузка прав пользователя...');
+    addDebugLog('🔍 Загрузка прав пользователя...');
     axios.get('/api/permission-schemes/user')
             .then(response => {
               userPermissions = response.data;
-              console.log('✅ Права пользователя:', userPermissions);
+              addDebugLog(`✅ Права пользователя: ${userPermissions.length}`);
               renderSidebar();
             })
             .catch(error => {
-              console.error('❌ Ошибка загрузки прав:', error);
+              addDebugLog(`❌ Ошибка загрузки прав: ${error.message}`, 'error');
               renderSidebar();
             });
   }
@@ -872,15 +1148,49 @@
 
   // --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ ЗАГРУЗКИ ДАННЫХ ---
   function loadUsers() {
-    console.log('🔍 Загрузка пользователей...');
+    addDebugLog('🔍 Загрузка пользователей...');
     axios.get('/api/users/all')
             .then(response => {
               allUsers = response.data;
-              console.log('✅ Получены пользователи:', allUsers);
+              addDebugLog(`✅ Получены пользователи: ${allUsers.length}`);
               updateUserSelects();
             })
             .catch(error => {
-              console.error('❌ Ошибка загрузки пользователей:', error);
+              addDebugLog(`❌ Ошибка загрузки пользователей: ${error.message}`, 'error');
+            });
+  }
+
+  function loadRoles() {
+    axios.get('/role/all')
+            .then(response => {
+              allRoles = response.data;
+              const roleSelects = ['ruleRoleSelect', 'assignRoleSelect', 'inviteRole', 'roleForLevel'];
+              roleSelects.forEach(selectId => {
+                const select = document.getElementById(selectId);
+                if (!select) return;
+                select.innerHTML = '<option value="">Выберите роль</option>';
+                allRoles.forEach(role => {
+                  const option = document.createElement('option');
+                  option.value = role.code;
+                  option.textContent = role.displayName;
+                  select.appendChild(option);
+                });
+              });
+            })
+            .catch(error => {
+              addDebugLog(`❌ Ошибка загрузки ролей: ${error.message}`, 'error');
+            });
+  }
+
+  function loadRoleLevels() {
+    axios.get('/api/v1/role-levels')
+            .then(response => {
+              allRoleLevels = response.data;
+              updateRoleLevelSelect();
+              renderRoleLevelsList();
+            })
+            .catch(error => {
+              addDebugLog(`❌ Ошибка загрузки уровней ролей: ${error.message}`, 'error');
             });
   }
 
@@ -890,43 +1200,56 @@
               allCustomPermissions = response.data;
               updateCustomPermissionSelects();
             })
-            .catch(error => console.error('Ошибка загрузки кастомных прав:', error));
+            .catch(error => {
+              addDebugLog(`❌ Ошибка загрузки кастомных прав: ${error.message}`, 'error');
+            });
   }
 
   function loadSchemePermissions() {
-    axios.get('/api/v1/scheme-permissions')
+    axios.get('/api/v1/schemes/getALL')
             .then(response => {
               allSchemePermissions = response.data;
               updateSchemePermissionSelects();
             })
-            .catch(error => console.error('Ошибка загрузки уровней доступа:', error));
+            .catch(error => {
+              addDebugLog(`❌ Ошибка загрузки уровней доступа: ${error.message}`, 'error');
+            });
   }
 
-  function loadDefinitions() {
-    axios.get('/api/v1/permission-definition')
-            .then(response => {
-              allDefinitions = response.data;
-              updateDefinitionSelects();
-              renderSystemPermissionsCheckboxes();
-            })
-            .catch(error => console.error('Ошибка загрузки наборов прав:', error));
+  function updateRoleLevelSelect() {
+    const select = document.getElementById('wizardRoleLevel');
+    if (!select) return;
+    select.innerHTML = '<option value="">Не назначать</option>';
+    allRoleLevels.forEach(rl => {
+      const option = document.createElement('option');
+      option.value = rl.id;
+      option.textContent = `${rl.levelName} (уровень ${rl.level})`;
+      select.appendChild(option);
+    });
   }
 
-  function loadPermissionSchemes() {
-    axios.get('/api/permission-schemes/all')
-            .then(response => {
-              allPermissionSchemes = response.data;
-            })
-            .catch(error => console.error('Ошибка загрузки схем разрешений:', error));
+  function updateCustomPermissionSelects() {
+    const select = document.getElementById('customPermissionForLevel');
+    if (!select) return;
+    select.innerHTML = '<option value="">Выберите кастомное право</option>';
+    allCustomPermissions.forEach(cp => {
+      const option = document.createElement('option');
+      option.value = cp.code;
+      option.textContent = `${cp.name} (${cp.code})`;
+      select.appendChild(option);
+    });
   }
 
-  function loadRoleLevels() {
-    axios.get('/api/v1/role-levels')
-            .then(response => {
-              allRoleLevels = response.data;
-              renderRoleLevelsList();
-            })
-            .catch(error => console.error('Ошибка загрузки уровней ролей:', error));
+  function updateSchemePermissionSelects() {
+    const select = document.getElementById('schemePermissionForCustom');
+    if (!select) return;
+    select.innerHTML = '<option value="">Выберите уровень доступа</option>';
+    allSchemePermissions.forEach(sp => {
+      const option = document.createElement('option');
+      option.value = sp.permissionKey;
+      option.textContent = `${sp.permissionKey} (min:${sp.minLevel}, max:${sp.maxLevel})`;
+      select.appendChild(option);
+    });
   }
 
   function updateUserSelects() {
@@ -945,71 +1268,109 @@
     });
   }
 
-  function updateCustomPermissionSelects() {
-    const select = document.getElementById('customPermissionSelect');
-    if (!select) return;
-    select.innerHTML = '<option value="">Выберите кастомное право</option>';
-    allCustomPermissions.forEach(cp => {
-      const option = document.createElement('option');
-      option.value = cp.id;
-      option.textContent = cp.name;
-      select.appendChild(option);
-    });
+  function loadProjects() {
+    addDebugLog('🔍 Загрузка проектов...');
+    axios.get('/project/getAll')
+            .then(response => {
+              const projects = Array.isArray(response.data) ? response.data : [];
+              addDebugLog(`✅ Проекты: ${projects.length}`);
+              const select = document.getElementById('taskProject');
+              if (!select) return;
+              select.innerHTML = '<option value="">Выберите проект</option>';
+              projects.forEach(project => {
+                if (!project.id) return;
+                const option = document.createElement('option');
+                option.value = project.id;
+                option.textContent = `${project.name} (${project.projectKey})`;
+                select.appendChild(option);
+              });
+            })
+            .catch(error => {
+              addDebugLog(`❌ Ошибка загрузки проектов: ${error.message}`, 'error');
+            });
   }
 
-  function updateSchemePermissionSelects() {
-    const select = document.getElementById('schemePermissionSelect');
-    if (!select) return;
-    select.innerHTML = '<option value="">Выберите уровень доступа</option>';
-    allSchemePermissions.forEach(sp => {
-      const option = document.createElement('option');
-      option.value = sp.permissionKey;
-      option.textContent = sp.description || sp.permissionKey;
-      select.appendChild(option);
-    });
+  function loadDepartments() {
+    axios.get('/api/v1/department/get')
+            .then(response => {
+              allDepartments = response.data;
+              updateDepartmentSelects();
+            })
+            .catch(error => {
+              addDebugLog(`❌ Ошибка загрузки департаментов: ${error.message}`, 'error');
+            });
   }
 
-  function updateDefinitionSelects() {
-    const select = document.getElementById('systemDefSelect');
-    if (!select) return;
-    select.innerHTML = '<option value="">Выберите набор</option>';
-    allDefinitions.forEach(def => {
-      const option = document.createElement('option');
-      option.value = def.id;
-      option.textContent = def.name;
-      select.appendChild(option);
-    });
-  }
+  function updateDepartmentSelects() {
+    const deptSelects = [
+      { id: 'ruleSourceDeptSelect', useName: true },
+      { id: 'ruleTargetDeptSelect', useName: true },
+      { id: 'assignDeptSelect', useName: true },
+      { id: 'departmentForUser', useName: false }
+    ];
 
-  function renderSystemPermissionsCheckboxes() {
-    const container = document.getElementById('systemPermissionsCheckboxes');
-    if (!container) return;
-    axios.get('/api/v1/system-permissions').then(response => {
-      const permissions = response.data;
-      container.innerHTML = '';
-      permissions.forEach(perm => {
-        container.innerHTML += `
-          <div class="form-check">
-            <input class="form-check-input" type="checkbox" value="${perm.key}" id="perm_${perm.key}">
-            <label class="form-check-label" for="perm_${perm.key}">
-              ${perm.name} (${perm.key})
-            </label>
-          </div>
-        `;
+    deptSelects.forEach(config => {
+      const select = document.getElementById(config.id);
+      if (!select) return;
+
+      select.innerHTML = '<option value="">Выберите отдел</option>';
+      allDepartments.forEach(dept => {
+        const option = document.createElement('option');
+        if (config.useName) {
+          option.value = dept.name;
+          option.textContent = dept.name;
+        } else {
+          option.value = dept.id;
+          option.textContent = dept.name;
+        }
+        select.appendChild(option);
       });
     });
   }
 
-  function renderRoleLevelsList() {
-    const container = document.getElementById('roleLevelsList');
-    if (!container) return;
-    container.innerHTML = '<h6>Существующие уровни:</h6>';
-    allRoleLevels.forEach(rl => {
-      container.innerHTML += `
-        <div class="border p-2 mb-2">
-          ${rl.levelName} (уровень ${rl.level})
-        </div>
+  function loadTasks() {
+    axios.get('/api/v1/task/all')
+            .then(response => {
+              allTasks = response.data;
+              renderKanban();
+            })
+            .catch(error => {
+              alert('Ошибка загрузки задач: ' + (error.response?.data?.message || 'Неизвестная ошибка'));
+            });
+  }
+
+  function loadAssignmentRules() {
+    axios.get('/assignmentRuleService/getAllRoleCompany')
+            .then(response => {
+              allAssignmentRules = response.data;
+              renderAssignmentRules();
+            })
+            .catch(error => {
+              addDebugLog(`❌ Ошибка загрузки правил: ${error.message}`, 'error');
+            });
+  }
+
+  function renderAssignmentRules() {
+    const tbody = document.getElementById('rulesTableBody');
+    tbody.innerHTML = '';
+    if (allAssignmentRules.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center">Нет правил</td></tr>';
+      return;
+    }
+    allAssignmentRules.forEach(rule => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${rule.roleName} (${rule.roleCode})</td>
+        <td>${rule.sourceDepartment}</td>
+        <td>${rule.targetDepartment}</td>
+        <td>${rule.allowed ? '✅ Да' : '❌ Нет'}</td>
+        <td>
+          <button class="btn btn-sm btn-danger" onclick="deleteAssignmentRule(${rule.id})">
+            Удалить
+          </button>
+        </td>
       `;
+      tbody.appendChild(tr);
     });
   }
 
@@ -1301,9 +1662,297 @@
             });
   }
 
+  // --- ИСПРАВЛЕННЫЙ МАСТЕР СОЗДАНИЯ КАСТОМНОГО ПРАВА ---
+  async function createCustomPermissionWizard() {
+    const code = document.getElementById('wizardCode').value.trim();
+    const name = document.getElementById('wizardName').value.trim();
+    const description = document.getElementById('wizardDescription').value.trim();
+
+    const minLevel = parseInt(document.getElementById('wizardMinLevel').value);
+    const maxLevel = parseInt(document.getElementById('wizardMaxLevel').value);
+
+    const levelKey = document.getElementById('wizardLevelKey').value.trim() || `${code}_level`;
+    const schemeName = document.getElementById('wizardSchemeName').value.trim();
+    const roleLevelId = document.getElementById('wizardRoleLevel').value;
+
+    const debugInfo = document.getElementById('wizardDebugInfo');
+    const debugPre = document.getElementById('wizardDebugPre');
+    debugInfo.style.display = 'block';
+    debugPre.textContent = JSON.stringify({
+      code, name, description, minLevel, maxLevel, levelKey, schemeName, roleLevelId,
+      minLevelType: typeof minLevel, maxLevelType: typeof maxLevel
+    }, null, 2);
+
+    if (!code || !name) {
+      alert('Заполните код и название права');
+      return;
+    }
+
+    if (minLevel < maxLevel) {
+      alert('По логике сервера минимальный уровень (самый высокий) должен быть БОЛЬШЕ максимального (самого низкого).\n' +
+              'Пожалуйста, поменяйте значения местами (например, minLevel=10, maxLevel=1)');
+      return;
+    }
+
+    const codeRegex = /^[A-Za-z0-9_]+$/;
+    if (!codeRegex.test(code)) {
+      alert('Код должен содержать только латинские буквы, цифры и подчеркивание');
+      return;
+    }
+
+    if (!codeRegex.test(levelKey)) {
+      alert('Ключ уровня должен содержать только латинские буквы, цифры и подчеркивание');
+      return;
+    }
+
+    try {
+      addDebugLog('1️⃣ Создаём кастомное право...');
+      addDebugLog(`URL: /api/v1/custom-permission/create`);
+      addDebugLog(`Данные: ${JSON.stringify({ code, name, description })}`);
+
+      const permResponse = await axios.post('/api/v1/custom-permission/create', {
+        code: code,
+        name: name,
+        description: description
+      });
+
+      const customPermission = permResponse.data;
+      addDebugLog(`✅ Кастомное право создано: ${JSON.stringify(customPermission)}`, 'success');
+
+      addDebugLog('2️⃣ Создаём уровень доступа...');
+      addDebugLog(`URL: /api/v1/schemes`);
+
+      const schemeData = {
+        permissionKey: levelKey,
+        description: `Уровень для ${name}`,
+        minLevel: minLevel,
+        maxLevel: maxLevel
+      };
+
+      addDebugLog(`Данные: ${JSON.stringify(schemeData)}`);
+
+      const levelResponse = await axios.post('/api/v1/schemes', schemeData);
+      const schemePermission = levelResponse.data;
+      addDebugLog(`✅ Уровень доступа создан: ${JSON.stringify(schemePermission)}`, 'success');
+
+      addDebugLog('3️⃣ Привязываем уровень к праву...');
+      addDebugLog(`URL: /api/v1/custom-permission/add`);
+
+      const addPermissionData = {
+        customPermissionCode: code,
+        schemePermissionCode: schemePermission.permissionKey
+      };
+      addDebugLog(`Данные для привязки: ${JSON.stringify(addPermissionData)}`);
+
+      await axios.patch('/api/v1/custom-permission/add', addPermissionData);
+      addDebugLog(`✅ Уровень привязан`, 'success');
+
+      let permissionScheme = null;
+      if (schemeName) {
+        addDebugLog('4️⃣ Создаём схему разрешений...');
+        addDebugLog(`URL: /api/permission-schemes/add`);
+
+        const schemeResponse = await axios.post('/api/permission-schemes/add', {
+          name: schemeName,
+          description: `Схема для ${name}`,
+          customPermissionId: customPermission.id
+        });
+        permissionScheme = schemeResponse.data;
+        addDebugLog(`✅ Схема создана: ${JSON.stringify(permissionScheme)}`, 'success');
+      }
+
+      if (roleLevelId && permissionScheme) {
+        addDebugLog('5️⃣ Назначаем схему уровню роли...');
+        addDebugLog(`Данные: ${JSON.stringify({ permissionSchemeId: permissionScheme.id })}`);
+        addDebugLog(`⚠️ Назначение схемы уровню роли пока пропущено`, 'warning');
+      }
+
+      alert('✅ Кастомное право успешно создано и настроено!');
+      bootstrap.Modal.getInstance(document.getElementById('createCustomPermissionWizardModal')).hide();
+      loadCustomPermissions();
+
+    } catch (error) {
+      addDebugLog('❌ ОШИБКА!', 'error');
+      addDebugLog(`Статус: ${error.response?.status}`, 'error');
+      addDebugLog(`Статус текст: ${error.response?.statusText}`, 'error');
+      addDebugLog(`URL запроса: ${error.response?.config?.url}`, 'error');
+      addDebugLog(`Метод: ${error.response?.config?.method}`, 'error');
+      addDebugLog(`Данные запроса: ${error.response?.config?.data}`, 'error');
+      addDebugLog(`Ответ сервера: ${JSON.stringify(error.response?.data)}`, 'error');
+
+      let errorMessage = 'Произошла ошибка';
+
+      if (error.response) {
+        errorMessage += `\nСтатус: ${error.response.status} ${error.response.statusText}`;
+
+        if (error.response.data) {
+          if (typeof error.response.data === 'string') {
+            errorMessage += `\nСообщение: ${error.response.data}`;
+          } else if (error.response.data.message) {
+            errorMessage += `\nСообщение: ${error.response.data.message}`;
+          } else if (error.response.data.error) {
+            errorMessage += `\nОшибка: ${error.response.data.error}`;
+          } else {
+            errorMessage += `\nДетали: ${JSON.stringify(error.response.data)}`;
+          }
+        }
+      } else if (error.request) {
+        errorMessage += '\n❌ Сервер не отвечает. Проверьте соединение.';
+      } else {
+        errorMessage += '\n❌ ' + error.message;
+      }
+
+      alert(errorMessage);
+    }
+  }
+
+  // --- НОВЫЕ ФУНКЦИИ ДЛЯ УРОВНЕЙ ДОСТУПА ---
+
+  // Создание уровня доступа
+  function openCreateSchemePermissionModal() {
+    document.getElementById('schemePermissionKey').value = '';
+    document.getElementById('schemeDescription').value = '';
+    document.getElementById('schemeMinLevel').value = 10;
+    document.getElementById('schemeMaxLevel').value = 1;
+
+    new bootstrap.Modal(document.getElementById('createSchemePermissionModal')).show();
+  }
+
+  async function createSchemePermission() {
+    const permissionKey = document.getElementById('schemePermissionKey').value.trim();
+    const description = document.getElementById('schemeDescription').value.trim();
+    const minLevel = parseInt(document.getElementById('schemeMinLevel').value);
+    const maxLevel = parseInt(document.getElementById('schemeMaxLevel').value);
+
+    if (!permissionKey) {
+      alert('Введите ключ уровня');
+      return;
+    }
+
+    if (minLevel < maxLevel) {
+      alert('Минимальный уровень (самый высокий) должен быть БОЛЬШЕ максимального (самого низкого)');
+      return;
+    }
+
+    try {
+      addDebugLog('📝 Создание уровня доступа...');
+      const response = await axios.post('/api/v1/schemes', {
+        permissionKey: permissionKey,
+        description: description,
+        minLevel: minLevel,
+        maxLevel: maxLevel
+      });
+      addDebugLog(`✅ Уровень доступа создан: ${JSON.stringify(response.data)}`, 'success');
+      alert('✅ Уровень доступа успешно создан!');
+      bootstrap.Modal.getInstance(document.getElementById('createSchemePermissionModal')).hide();
+      loadSchemePermissions();
+    } catch (error) {
+      addDebugLog(`❌ Ошибка: ${error.message}`, 'error');
+      alert('Ошибка: ' + (error.response?.data?.message || error.message));
+    }
+  }
+
+  // Список уровней доступа
+  function openListSchemePermissionsModal() {
+    const modal = new bootstrap.Modal(document.getElementById('listSchemePermissionsModal'));
+    const container = document.getElementById('schemePermissionsList');
+    container.innerHTML = '<div class="text-center p-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Загрузка...</span></div></div>';
+    modal.show();
+
+    // Правильные URL из контроллера (без /schemes/)
+    axios.get('/api/v1/getALL')
+            .then(response => {
+              displaySchemes(response.data, '/api/v1/getALL');
+            })
+            .catch(() => {
+              axios.get('/api/v1/getAll')
+                      .then(response => {
+                        displaySchemes(response.data, '/api/v1/getAll');
+                      })
+                      .catch(() => {
+                        axios.get('/api/v1/all')
+                                .then(response => {
+                                  displaySchemes(response.data, '/api/v1/all');
+                                })
+                                .catch(error => {
+                                  container.innerHTML = `
+                                <div class="alert alert-danger">
+                                    <h6>❌ Не удалось загрузить уровни доступа</h6>
+                                    <p>Проверены URL:</p>
+                                    <ul class="text-start">
+                                        <li><code>/api/v1/getALL</code> - 404</li>
+                                        <li><code>/api/v1/getAll</code> - 404</li>
+                                        <li><code>/api/v1/all</code> - 404</li>
+                                    </ul>
+                                    <hr>
+                                    <p class="mb-0"><strong>Контроллер:</strong> SchemePermissionController с базовым URL <code>/api/v1</code></p>
+                                    <p class="mb-0">Метод должен быть: <code>@GetMapping("/getALL")</code></p>
+                                    <p class="mb-0 mt-2"><strong>Ошибка:</strong> ${error.message}</p>
+                                </div>
+                            `;
+                                });
+                      });
+            });
+  }
+
+  function displaySchemes(permissions) {
+    const container = document.getElementById('schemePermissionsList');
+
+    if (!permissions || permissions.length === 0) {
+      container.innerHTML = '<p class="text-muted">Нет уровней доступа</p>';
+      return;
+    }
+
+    let html = '<table class="table table-striped table-hover">';
+    html += '<thead><tr><th>Ключ</th><th>Описание</th><th>Min уровень</th><th>Max уровень</th></tr></thead><tbody>';
+
+    permissions.forEach(p => {
+      html += `<tr>
+            <td>${p.permissionKey || p.key || p.id || '—'}</td>
+            <td>${p.description || '—'}</td>
+            <td>${p.minLevel || p.min || '—'}</td>
+            <td>${p.maxLevel || p.max || '—'}</td>
+        </tr>`;
+    });
+
+    html += '</tbody></table>';
+    container.innerHTML = html;
+  }
+
+  // Добавление уровня к праву
+  function openAddLevelToCustomModal() {
+    loadCustomPermissions();
+    loadSchemePermissions();
+    new bootstrap.Modal(document.getElementById('addLevelToCustomModal')).show();
+  }
+
+  async function addLevelToCustomPermission() {
+    const customPermissionCode = document.getElementById('customPermissionForLevel').value;
+    const schemePermissionCode = document.getElementById('schemePermissionForCustom').value;
+
+    if (!customPermissionCode || !schemePermissionCode) {
+      alert('Выберите кастомное право и уровень доступа');
+      return;
+    }
+
+    try {
+      addDebugLog('📝 Добавление уровня к праву...');
+      await axios.patch('/api/v1/custom-permission/add', {
+        customPermissionCode: customPermissionCode,
+        schemePermissionCode: schemePermissionCode
+      });
+      addDebugLog('✅ Уровень добавлен к праву', 'success');
+      alert('✅ Уровень успешно добавлен к праву!');
+      bootstrap.Modal.getInstance(document.getElementById('addLevelToCustomModal')).hide();
+    } catch (error) {
+      addDebugLog(`❌ Ошибка: ${error.message}`, 'error');
+      alert('Ошибка: ' + (error.response?.data?.message || error.message));
+    }
+  }
+
   // --- ФУНКЦИИ ДЛЯ СОЗДАНИЯ (существующие) ---
   function createProject() {
-    console.log('📝 Начинаем создание проекта');
+    addDebugLog('📝 Начинаем создание проекта');
 
     if (!hasPermission('CREATE_PROJECT')) {
       alert('У вас нет прав для создания проекта');
@@ -1333,7 +1982,7 @@
   }
 
   function createRole() {
-    console.log('📝 Начинаем создание роли');
+    addDebugLog('📝 Начинаем создание роли');
 
     if (!hasPermission('CREATE_ROLE')) {
       alert('У вас нет прав для создания роли');
@@ -1363,7 +2012,7 @@
   }
 
   function addDepartment() {
-    console.log('📝 Добавление департамента');
+    addDebugLog('📝 Добавление департамента');
 
     if (!hasPermission('CREATE_DEPARTMENT')) {
       alert('У вас нет прав для добавления департамента');
@@ -1389,7 +2038,7 @@
   }
 
   function inviteUser() {
-    console.log('📝 Приглашение пользователя');
+    addDebugLog('📝 Приглашение пользователя');
 
     if (!hasPermission('INVITE_USER')) {
       alert('У вас нет прав для приглашения пользователя');
@@ -1416,7 +2065,7 @@
   }
 
   function assignUserToDepartment() {
-    console.log('📝 Назначение пользователя в департамент');
+    addDebugLog('📝 Назначение пользователя в департамент');
 
     if (!hasPermission('ASSIGN_USER_DEPARTMENT')) {
       alert('У вас нет прав для назначения департамента');
@@ -1443,7 +2092,7 @@
   }
 
   function saveUserRole() {
-    console.log('📝 Назначение роли и департамента');
+    addDebugLog('📝 Назначение роли и департамента');
 
     if (!hasPermission('ASSIGN_ROLE_DEPARTMENT')) {
       alert('У вас нет прав для назначения роли');
@@ -1474,7 +2123,7 @@
   }
 
   function addAssignmentRule() {
-    console.log('📝 Добавление правила назначения');
+    addDebugLog('📝 Добавление правила назначения');
 
     if (!hasPermission('MANAGE_ASSIGNMENT_RULES')) {
       alert('У вас нет прав для управления правилами');
@@ -1516,215 +2165,126 @@
             });
   }
 
-  // --- НОВЫЕ ФУНКЦИИ ДЛЯ УПРАВЛЕНИЯ ПРАВАМИ ---
-  function openPermissionCatalogModal() {
-    alert('Управление каталогом прав (в разработке)');
+  // --- НОВЫЙ МАСТЕР СОЗДАНИЯ КАСТОМНОГО ПРАВА ---
+  function openCreateCustomPermissionWizard() {
+    loadRoleLevels();
+
+    document.getElementById('wizardCode').value = '';
+    document.getElementById('wizardName').value = '';
+    document.getElementById('wizardDescription').value = '';
+    document.getElementById('wizardMinLevel').value = 10;
+    document.getElementById('wizardMaxLevel').value = 1;
+    document.getElementById('wizardLevelKey').value = '';
+    document.getElementById('wizardSchemeName').value = '';
+    document.getElementById('wizardDebugInfo').style.display = 'none';
+
+    new bootstrap.Modal(document.getElementById('createCustomPermissionWizardModal')).show();
   }
 
-  function openCreateCustomPermissionModal() {
-    document.getElementById('customCode').value = '';
-    document.getElementById('customName').value = '';
-    document.getElementById('customDescription').value = '';
-    new bootstrap.Modal(document.getElementById('createCustomPermissionModal')).show();
-  }
-
-  function createCustomPermission() {
-    const code = document.getElementById('customCode').value.trim();
-    const name = document.getElementById('customName').value.trim();
-    const description = document.getElementById('customDescription').value.trim();
-
-    if (!code || !name) {
-      alert('Заполните код и название');
-      return;
-    }
-
-    axios.post('/api/v1/custom-permission/create', { code, name, description })
-            .then(() => {
-              alert('✅ Кастомное право создано!');
-              bootstrap.Modal.getInstance(document.getElementById('createCustomPermissionModal')).hide();
-              loadCustomPermissions();
-            })
-            .catch(error => {
-              alert('❌ Ошибка: ' + (error.response?.data?.message || error.message));
-            });
-  }
-
-  function openListCustomPermissions() {
-    axios.get('/api/v1/custom-permission/all').then(response => {
-      let html = '<h5>Кастомные права:</h5><ul>';
-      response.data.forEach(cp => {
-        html += `<li>${cp.name} (${cp.code}) - ${cp.description || ''}</li>`;
-      });
-      html += '</ul>';
-      alert(html);
-    });
-  }
-
-  function openCreateSchemePermissionModal() {
-    document.getElementById('schemeKey').value = '';
-    document.getElementById('schemeDesc').value = '';
-    document.getElementById('schemeMin').value = 1;
-    document.getElementById('schemeMax').value = 10;
-    new bootstrap.Modal(document.getElementById('createSchemePermissionModal')).show();
-  }
-
-  function createSchemePermission() {
-    const key = document.getElementById('schemeKey').value.trim();
-    const desc = document.getElementById('schemeDesc').value.trim();
-    const min = parseInt(document.getElementById('schemeMin').value);
-    const max = parseInt(document.getElementById('schemeMax').value);
-
-    if (!key) {
-      alert('Введите ключ уровня');
-      return;
-    }
-
-    axios.post('/api/v1/scheme-permissions/create', {
-      permissionKey: key,
-      description: desc,
-      minLevel: min,
-      maxLevel: max
-    })
-            .then(() => {
-              alert('✅ Уровень доступа создан!');
-              bootstrap.Modal.getInstance(document.getElementById('createSchemePermissionModal')).hide();
-              loadSchemePermissions();
-            })
-            .catch(error => {
-              alert('❌ Ошибка: ' + (error.response?.data?.message || error.message));
-            });
-  }
-
-  function openListSchemePermissions() {
-    axios.get('/api/v1/scheme-permissions').then(response => {
-      let html = '<h5>Уровни доступа:</h5><ul>';
-      response.data.forEach(sp => {
-        html += `<li>${sp.permissionKey}: уровни ${sp.minLevel}-${sp.maxLevel} (${sp.description || ''})</li>`;
-      });
-      html += '</ul>';
-      alert(html);
-    });
-  }
-
-  function openAddLevelToCustomModal() {
-    loadCustomPermissions();
-    loadSchemePermissions();
-    new bootstrap.Modal(document.getElementById('addLevelToCustomModal')).show();
-  }
-
-  function addLevelToCustom() {
-    const customId = document.getElementById('customPermissionSelect').value;
-    const schemeKey = document.getElementById('schemePermissionSelect').value;
-
-    if (!customId || !schemeKey) {
-      alert('Выберите право и уровень');
-      return;
-    }
-
-    axios.post('/api/v1/custom-permission/add-permission', {
-      customPermissionCode: customId,
-      schemePermissionCode: schemeKey
-    })
-            .then(() => {
-              alert('✅ Уровень добавлен к праву!');
-              bootstrap.Modal.getInstance(document.getElementById('addLevelToCustomModal')).hide();
-            })
-            .catch(error => {
-              alert('❌ Ошибка: ' + (error.response?.data?.message || error.message));
-            });
-  }
+  // ==================== ФУНКЦИИ ДЛЯ НАБОРОВ ПРАВ ====================
 
   function openCreateDefinitionModal() {
-    document.getElementById('defCode').value = '';
-    document.getElementById('defName').value = '';
-    document.getElementById('defDescription').value = '';
-    renderSystemPermissionsCheckboxes();
-    new bootstrap.Modal(document.getElementById('createDefinitionModal')).show();
+    document.getElementById('definitionCode').value = '';
+    document.getElementById('definitionName').value = '';
+    document.getElementById('definitionDescription').value = '';
+    new bootstrap.Modal(document.getElementById('createPermissionDefinitionModal')).show();
   }
 
-  function createDefinition() {
-    const code = document.getElementById('defCode').value.trim();
-    const name = document.getElementById('defName').value.trim();
-    const description = document.getElementById('defDescription').value.trim();
-
-    const selectedPerms = [];
-    document.querySelectorAll('#systemPermissionsCheckboxes input:checked').forEach(cb => {
-      selectedPerms.push({ key: cb.value });
-    });
+  async function createPermissionDefinition() {
+    const code = document.getElementById('definitionCode').value.trim();
+    const name = document.getElementById('definitionName').value.trim();
+    const description = document.getElementById('definitionDescription').value.trim();
 
     if (!code || !name) {
       alert('Заполните код и название');
       return;
     }
 
-    axios.post('/api/v1/permission-definition/create', {
-      code,
-      name,
-      description,
-      systemPermissionCatalog: selectedPerms
-    })
-            .then(() => {
-              alert('✅ Набор прав создан!');
-              bootstrap.Modal.getInstance(document.getElementById('createDefinitionModal')).hide();
-              loadDefinitions();
-            })
-            .catch(error => {
-              alert('❌ Ошибка: ' + (error.response?.data?.message || error.message));
-            });
+    try {
+      addDebugLog('📝 Создание набора прав...');
+
+      // Отправляем пустой список прав, так как при создании он не нужен
+      const response = await axios.post('/api/v1/permission-definition/create', {
+        code: code,
+        name: name,
+        description: description,
+        systemPermissionCatalog: [] // Добавляем пустой массив
+      });
+
+      addDebugLog(`✅ Набор прав создан: ${JSON.stringify(response.data)}`, 'success');
+      alert('✅ Набор прав успешно создан!');
+      bootstrap.Modal.getInstance(document.getElementById('createPermissionDefinitionModal')).hide();
+    } catch (error) {
+      addDebugLog(`❌ Ошибка: ${error.message}`, 'error');
+      if (error.response?.data) {
+        addDebugLog(`📝 Детали: ${JSON.stringify(error.response.data)}`, 'error');
+      }
+      alert('Ошибка: ' + (error.response?.data?.message || error.message));
+    }
   }
 
   function openListDefinitions() {
-    axios.get('/api/v1/permission-definition').then(response => {
-      let html = '<h5>Наборы прав:</h5><ul>';
-      response.data.forEach(def => {
-        html += `<li>${def.name} (${def.code}) - ${def.description || ''}</li>`;
-      });
-      html += '</ul>';
-      alert(html);
-    });
-  }
+    const modal = new bootstrap.Modal(document.getElementById('listPermissionDefinitionsModal'));
+    const container = document.getElementById('permissionDefinitionsList');
+    container.innerHTML = '<div class="text-center p-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Загрузка...</span></div></div>';
+    modal.show();
 
-  function openCreatePermissionSchemeModal() {
-    loadDefinitions();
-    loadCustomPermissions();
-    new bootstrap.Modal(document.getElementById('createPermissionSchemeModal')).show();
-  }
+    // ИСПРАВЛЕННЫЙ URL
+    axios.get('/api/v1/permission-definition')
+            .then(response => {
+              const definitions = response.data;
 
-  function createPermissionScheme() {
-    const name = document.getElementById('schemeName').value.trim();
-    const description = document.getElementById('schemeDescription').value.trim();
-    const defId = document.getElementById('systemDefSelect').value;
-    const customId = document.getElementById('customPermSelect').value;
+              if (!definitions || definitions.length === 0) {
+                container.innerHTML = '<p class="text-muted">Нет наборов прав</p>';
+                return;
+              }
 
-    if (!name) {
-      alert('Введите название схемы');
-      return;
-    }
+              let html = '<table class="table table-striped table-hover">';
+              html += '<thead><tr><th>Код</th><th>Название</th><th>Описание</th></tr></thead><tbody>';
 
-    axios.post('/api/permission-schemes/add', {
-      name,
-      description,
-      systemPermissionDefinitionId: defId || null,
-      customPermissionId: customId || null
-    })
-            .then(() => {
-              alert('✅ Схема создана!');
-              bootstrap.Modal.getInstance(document.getElementById('createPermissionSchemeModal')).hide();
+              definitions.forEach(d => {
+                html += `<tr>
+                    <td>${d.code || '—'}</td>
+                    <td>${d.name || '—'}</td>
+                    <td>${d.description || '—'}</td>
+                </tr>`;
+              });
+
+              html += '</tbody></table>';
+              container.innerHTML = html;
             })
             .catch(error => {
-              alert('❌ Ошибка: ' + (error.response?.data?.message || error.message));
+              container.innerHTML = `
+                <div class="alert alert-danger">
+                    <h6>❌ Ошибка загрузки</h6>
+                    <p>${error.message}</p>
+                </div>
+            `;
             });
   }
 
-  function openListPermissionSchemes() {
-    axios.get('/api/permission-schemes/all').then(response => {
-      let html = '<h5>Схемы разрешений:</h5><ul>';
-      response.data.forEach(ps => {
-        html += `<li>${ps.name} - ${ps.description || ''}</li>`;
+  // --- ФУНКЦИИ ДЛЯ ОТКРЫТИЯ МОДАЛОК (новые) ---
+  function openPermissionCatalogModal() {
+    axios.get('/api/v1/system-permissions').then(response => {
+      const permissions = response.data;
+      let html = '<table class="table table-striped"><thead><tr><th>Ключ</th><th>Название</th><th>Группа</th><th>Иконка</th></tr></thead><tbody>';
+      permissions.forEach(p => {
+        html += `<tr><td>${p.key}</td><td>${p.name}</td><td>${p.group || '-'}</td><td><i class="fas ${p.icon}"></i> ${p.icon}</td></tr>`;
       });
-      html += '</ul>';
-      alert(html);
+      html += '</tbody></table>';
+      document.getElementById('permissionsList').innerHTML = html;
+    }).catch(() => {
+      document.getElementById('permissionsList').innerHTML = '<div class="alert alert-danger">Ошибка загрузки</div>';
     });
+    new bootstrap.Modal(document.getElementById('permissionCatalogModal')).show();
+  }
+
+  function openCreatePermissionSchemeModal() {
+    alert('Создание схемы разрешений (в разработке)');
+  }
+
+  function openListPermissionSchemes() {
+    alert('Список схем разрешений (в разработке)');
   }
 
   function openRoleLevelsModal() {
@@ -1747,6 +2307,8 @@
             .then(() => {
               alert('✅ Уровень роли создан!');
               loadRoleLevels();
+              document.getElementById('levelNumber').value = '';
+              document.getElementById('levelName').value = '';
             })
             .catch(error => {
               alert('❌ Ошибка: ' + (error.response?.data?.message || error.message));
@@ -1755,17 +2317,42 @@
 
   function openListRoleLevels() {
     axios.get('/api/v1/role-levels').then(response => {
-      let html = '<h5>Уровни ролей:</h5><ul>';
+      let html = '<ul class="list-group">';
       response.data.forEach(rl => {
-        html += `<li>${rl.levelName} (уровень ${rl.level})</li>`;
+        html += `<li class="list-group-item">${rl.levelName} (уровень ${rl.level})</li>`;
       });
       html += '</ul>';
       alert(html);
     });
   }
 
+  function renderRoleLevelsList() {
+    const container = document.getElementById('roleLevelsList');
+    if (!container) return;
+    if (allRoleLevels.length === 0) {
+      container.innerHTML = '<p class="text-muted">Нет уровней</p>';
+      return;
+    }
+    let html = '';
+    allRoleLevels.forEach(rl => {
+      html += `<div class="border p-2 mb-2">${rl.levelName} (уровень ${rl.level})</div>`;
+    });
+    container.innerHTML = html;
+  }
+
   function openActivateUserModal() {
     alert('Активация пользователя (в разработке)');
+  }
+
+  function openListCustomPermissions() {
+    axios.get('/api/v1/custom-permission/all').then(response => {
+      let html = '<ul class="list-group">';
+      response.data.forEach(cp => {
+        html += `<li class="list-group-item">${cp.name} (${cp.code}) - ${cp.description || ''}</li>`;
+      });
+      html += '</ul>';
+      alert(html);
+    });
   }
 
   function openCalendar() {
@@ -1778,135 +2365,6 @@
 
   function openAuditLog() {
     alert('Логи аудита (в разработке)');
-  }
-
-  // --- ФУНКЦИИ ДЛЯ ЗАГРУЗКИ ДАННЫХ (ОБНОВЛЕННЫЕ) ---
-  function loadProjects() {
-    console.log('🔍 Загрузка проектов...');
-    axios.get('/project/getAll')
-            .then(response => {
-              const projects = Array.isArray(response.data) ? response.data : [];
-              console.log('✅ Проекты:', projects);
-              const select = document.getElementById('taskProject');
-              if (!select) return;
-              select.innerHTML = '<option value="">Выберите проект</option>';
-              projects.forEach(project => {
-                if (!project.id) return;
-                const option = document.createElement('option');
-                option.value = project.id;
-                option.textContent = `${project.name} (${project.projectKey})`;
-                select.appendChild(option);
-              });
-            })
-            .catch(error => {
-              console.error('❌ Ошибка загрузки проектов:', error);
-            });
-  }
-
-  function loadDepartments() {
-    axios.get('/api/v1/department/get')
-            .then(response => {
-              allDepartments = response.data;
-              updateDepartmentSelects();
-            })
-            .catch(error => {
-              console.error('Ошибка загрузки департаментов:', error);
-            });
-  }
-
-  function updateDepartmentSelects() {
-    const deptSelects = [
-      { id: 'ruleSourceDeptSelect', useName: true },
-      { id: 'ruleTargetDeptSelect', useName: true },
-      { id: 'assignDeptSelect', useName: true },
-      { id: 'departmentForUser', useName: false }
-    ];
-
-    deptSelects.forEach(config => {
-      const select = document.getElementById(config.id);
-      if (!select) return;
-
-      select.innerHTML = '<option value="">Выберите отдел</option>';
-      allDepartments.forEach(dept => {
-        const option = document.createElement('option');
-        if (config.useName) {
-          option.value = dept.name;
-          option.textContent = dept.name;
-        } else {
-          option.value = dept.id;
-          option.textContent = dept.name;
-        }
-        select.appendChild(option);
-      });
-    });
-  }
-
-  function loadTasks() {
-    axios.get('/api/v1/task/all')
-            .then(response => {
-              allTasks = response.data;
-              renderKanban();
-            })
-            .catch(error => {
-              alert('Ошибка загрузки задач: ' + (error.response?.data?.message || 'Неизвестная ошибка'));
-            });
-  }
-
-  function loadRoles() {
-    axios.get('/role/all')
-            .then(response => {
-              allRoles = response.data;
-              const roleSelects = ['ruleRoleSelect', 'assignRoleSelect', 'inviteRole', 'roleForLevel'];
-              roleSelects.forEach(selectId => {
-                const select = document.getElementById(selectId);
-                if (!select) return;
-                select.innerHTML = '<option value="">Выберите роль</option>';
-                allRoles.forEach(role => {
-                  const option = document.createElement('option');
-                  option.value = role.code;
-                  option.textContent = role.displayName;
-                  select.appendChild(option);
-                });
-              });
-            })
-            .catch(error => {
-              console.error('❌ Ошибка загрузки ролей:', error);
-            });
-  }
-
-  function loadAssignmentRules() {
-    axios.get('/assignmentRuleService/getAllRoleCompany')
-            .then(response => {
-              allAssignmentRules = response.data;
-              renderAssignmentRules();
-            })
-            .catch(error => {
-              console.error('❌ Ошибка загрузки правил:', error);
-            });
-  }
-
-  function renderAssignmentRules() {
-    const tbody = document.getElementById('rulesTableBody');
-    tbody.innerHTML = '';
-    if (allAssignmentRules.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" class="text-center">Нет правил</td></tr>';
-      return;
-    }
-    allAssignmentRules.forEach(rule => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${rule.roleName} (${rule.roleCode})</td>
-        <td>${rule.sourceDepartment}</td>
-        <td>${rule.targetDepartment}</td>
-        <td>${rule.allowed ? '✅ Да' : '❌ Нет'}</td>
-        <td>
-          <button class="btn btn-sm btn-danger" onclick="deleteAssignmentRule(${rule.id})">
-            Удалить
-          </button>
-        </td>
-      `;
-      tbody.appendChild(tr);
-    });
   }
 
   // --- ФУНКЦИИ ДЛЯ ОТКРЫТИЯ МОДАЛОК (существующие) ---
@@ -1996,9 +2454,21 @@
     new bootstrap.Modal(document.getElementById('assignmentRulesModal')).show();
   }
 
-  // --- ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ ---
+  // --- УПРАВЛЕНИЕ ПАНЕЛЬЮ ОТЛАДКИ ---
   document.addEventListener('DOMContentLoaded', () => {
-    console.log('✅ DOM загружен');
+    addDebugLog('✅ DOM загружен');
+
+    const debugToggle = document.getElementById('debugToggle');
+    const debugPanel = document.getElementById('debugPanel');
+    const debugClose = document.getElementById('debugClose');
+
+    debugToggle.addEventListener('click', () => {
+      debugPanel.classList.toggle('show');
+    });
+
+    debugClose.addEventListener('click', () => {
+      debugPanel.classList.remove('show');
+    });
 
     loadUserPermissions();
     loadUsers();
@@ -2007,12 +2477,9 @@
     loadTasks();
     loadRoles();
 
-    // Загружаем дополнительные данные если есть права
     setTimeout(() => {
       if (hasPermission('VIEW_CUSTOM_PERMISSIONS')) loadCustomPermissions();
       if (hasPermission('VIEW_SCHEME_PERMISSIONS')) loadSchemePermissions();
-      if (hasPermission('VIEW_PERMISSION_DEFINITIONS')) loadDefinitions();
-      if (hasPermission('VIEW_PERMISSION_SCHEMES')) loadPermissionSchemes();
       if (hasPermission('VIEW_ROLE_LEVELS')) loadRoleLevels();
     }, 500);
   });

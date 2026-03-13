@@ -54,6 +54,7 @@ public class SecurityConfig {
                         "/api/companies/register",
                         "/lander",
                         "/register",
+                        "/api/v1/schemes/**",
                         "/InvitationToken/completeRegistration"
                 ).permitAll()
 

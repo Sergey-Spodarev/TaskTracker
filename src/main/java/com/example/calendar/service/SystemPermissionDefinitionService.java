@@ -38,7 +38,7 @@ public class SystemPermissionDefinitionService {
             }
         }
 
-        if (!permissionDefinitionRepository.existsByCode(permissionDefinition.getCode())) {
+        if (permissionDefinitionRepository.existsByCode(permissionDefinition.getCode())) {
             throw new RuntimeException("Набор с кодом  " + permissionDefinition.getCode() + " уже существует");
         }
 
