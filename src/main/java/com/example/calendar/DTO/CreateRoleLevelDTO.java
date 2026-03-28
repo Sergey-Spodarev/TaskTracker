@@ -7,5 +7,5 @@ public class CreateRoleLevelDTO {
     private Long id;
     private Integer level;
     private String levelName;
-    private Long roleId;
+    private String roleCode;
 }

@@ -17,6 +17,7 @@ public class UserDTO {
     private Long departmentId;
     private Long roleLevelId;
     private Integer roleLevel;
+    private Long roleId;
 
     @Email(message = "Почта является обязательной")
     @NotBlank

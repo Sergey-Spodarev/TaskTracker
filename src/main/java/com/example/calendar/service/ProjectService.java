@@ -30,30 +30,25 @@ public class ProjectService {
     public ProjectDTO create(ProjectDTO projectDTO) {
         User user = getCurrentUser();
 
-        // Проверка прав
         if (!permissionCheckService.hasPermission(user, "CREATE_PROJECT")) {
             throw new SecurityException("Недостаточно прав для создания проекта");
         }
 
-        // Получаем department из DTO или используем дефолтный
         Department department = null;
         if (projectDTO.getDepartmentId() != null) {
             department = departmentRepository.findById(projectDTO.getDepartmentId())
                     .orElseThrow(() -> new IllegalArgumentException("Отдел не найден"));
 
-            // Проверяем, что отдел принадлежит компании пользователя
             if (!department.getCompany().getId().equals(user.getCompany().getId())) {
                 throw new SecurityException("Отдел не принадлежит вашей компании");
             }
         } else {
-            // Используем отдел пользователя как дефолтный
             department = user.getDepartment();
             if (department == null) {
                 throw new IllegalArgumentException("У пользователя не указан отдел");
             }
         }
 
-        // Проверяем уникальность ключа проекта в компании
         if (projectRepository.existsByProjectKeyAndDepartment_Company(
                 projectDTO.getProjectKey(), user.getCompany())) {
             throw new IllegalArgumentException("Проект с таким ключом уже существует в компании");
@@ -70,7 +65,6 @@ public class ProjectService {
     public ProjectDTO update(ProjectDTO projectDTO) {
         User user = getCurrentUser();
 
-        // Проверка прав
         if (!permissionCheckService.hasPermission(user, "EDIT_PROJECT")) {
             throw new SecurityException("Недостаточно прав для обновления проекта");
         }
@@ -79,21 +73,18 @@ public class ProjectService {
                         projectDTO.getId(), user.getCompany())
                 .orElseThrow(() -> new IllegalArgumentException("Проект не найден в данной компании"));
 
-        // Проверяем, может ли пользователь редактировать этот проект
         if (!canUserModifyProject(user, project)) {
             throw new SecurityException("Нет прав для редактирования этого проекта");
         }
 
         project.setName(projectDTO.getName());
 
-        // Если нужно изменить отдел
         if (projectDTO.getDepartmentId() != null &&
                 !projectDTO.getDepartmentId().equals(project.getDepartment().getId())) {
 
             Department newDepartment = departmentRepository.findById(projectDTO.getDepartmentId())
                     .orElseThrow(() -> new IllegalArgumentException("Отдел не найден"));
 
-            // Проверяем, что новый отдел в той же компании
             if (!newDepartment.getCompany().getId().equals(user.getCompany().getId())) {
                 throw new SecurityException("Новый отдел не принадлежит вашей компании");
             }
@@ -107,25 +98,20 @@ public class ProjectService {
     public List<ProjectDTO> findAll() {
         User user = getCurrentUser();
 
-        // Проверка прав
         if (!permissionCheckService.hasPermission(user, "VIEW_PROJECTS")) {
             throw new SecurityException("Недостаточно прав для просмотра проектов");
         }
 
         List<Project> projects;
 
-        // Разные уровни доступа
         if (user.getSystemRole() == SystemRole.COMPANY_OWNER) {
-            // Владелец видит все проекты компании
             projects = projectRepository.findByDepartment_Company(user.getCompany());
         } else if (user.getSystemRole() == SystemRole.DEPARTMENT_HEAD) {
-            // Руководитель отдела видит проекты своего отдела
             if (user.getDepartment() == null) {
                 throw new IllegalArgumentException("У руководителя отдела не указан отдел");
             }
             projects = projectRepository.findByDepartment(user.getDepartment());
         } else {
-            // Обычный пользователь видит проекты своего отдела
             if (user.getDepartment() == null) {
                 throw new IllegalArgumentException("У пользователя не указан отдел");
             }
@@ -140,7 +126,6 @@ public class ProjectService {
     public ProjectDTO findById(Long id) {
         User user = getCurrentUser();
 
-        // Проверка прав
         if (!permissionCheckService.hasPermission(user, "VIEW_PROJECT_DETAILS")) {
             throw new SecurityException("Недостаточно прав для просмотра деталей проекта");
         }
@@ -148,7 +133,6 @@ public class ProjectService {
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Проект не найден"));
 
-        // Проверяем доступ к проекту
         if (!hasAccessToProject(user, project)) {
             throw new SecurityException("Нет доступа к этому проекту");
         }
@@ -159,7 +143,6 @@ public class ProjectService {
     public void deleteById(Long id) {
         User user = getCurrentUser();
 
-        // Проверка прав
         if (!permissionCheckService.hasPermission(user, "DELETE_PROJECT")) {
             throw new SecurityException("Недостаточно прав для удаления проекта");
         }
@@ -167,7 +150,6 @@ public class ProjectService {
         Project project = projectRepository.findByIdAndDepartment_Company(id, user.getCompany())
                 .orElseThrow(() -> new IllegalArgumentException("Проект не найден или нет прав для удаления"));
 
-        // Дополнительная проверка для руководителей отделов
         if (user.getSystemRole() == SystemRole.DEPARTMENT_HEAD &&
                 !project.getDepartment().getId().equals(user.getDepartment().getId())) {
             throw new SecurityException("Можно удалять только проекты своего отдела");
@@ -176,14 +158,11 @@ public class ProjectService {
         projectRepository.delete(project);
     }
 
-    // Вспомогательные методы
     private boolean hasAccessToProject(User user, Project project) {
-        // 1. Проверяем компанию
         if (!project.getDepartment().getCompany().getId().equals(user.getCompany().getId())) {
             return false;
         }
 
-        // 2. Проверяем права доступа
         if (user.getSystemRole() == SystemRole.COMPANY_OWNER) {
             return true;
         }
@@ -192,7 +171,6 @@ public class ProjectService {
             return project.getDepartment().getId().equals(user.getDepartment().getId());
         }
 
-        // Обычные пользователи видят проекты своего отдела
         return project.getDepartment().getId().equals(user.getDepartment().getId());
     }
 
@@ -205,7 +183,6 @@ public class ProjectService {
             return project.getDepartment().getId().equals(user.getDepartment().getId());
         }
 
-        // Обычные пользователи не могут редактировать проекты
         return false;
     }
 
@@ -221,12 +198,10 @@ public class ProjectService {
         projectDTO.setName(project.getName());
         projectDTO.setProjectKey(project.getProjectKey());
 
-        // Добавляем информацию об отделе
         if (project.getDepartment() != null) {
             projectDTO.setDepartmentId(project.getDepartment().getId());
             projectDTO.setDepartmentName(project.getDepartment().getName());
 
-            // Добавляем информацию о компании (опционально)
             if (project.getDepartment().getCompany() != null) {
                 projectDTO.setCompanyId(project.getDepartment().getCompany().getId());
                 projectDTO.setCompanyName(project.getDepartment().getCompany().getName());

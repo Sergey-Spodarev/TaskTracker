@@ -21,4 +21,4 @@ public class SystemPermissionDefinition {
     private String code;
     private String name;
     private String description;
-}//это комбо значения
+}

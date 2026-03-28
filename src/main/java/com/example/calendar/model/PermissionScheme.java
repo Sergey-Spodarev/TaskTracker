@@ -22,7 +22,7 @@ public class PermissionScheme {
     private String description;
 
     @ManyToOne
-    @JoinColumn(name = "company_id")// добавил данную связь надо докрутить присваивание, ну и конечно и в dto
+    @JoinColumn(name = "company_id")
     private Company company;
 
     @ManyToOne

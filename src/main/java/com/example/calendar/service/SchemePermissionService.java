@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Transactional
@@ -41,6 +42,18 @@ public class SchemePermissionService {
         schemePermission.setMaxLevel(schemePermissionDTO.getMaxLevel());
         schemePermissionRepository.save(schemePermission);
         return schemePermissionDTO;
+    }
+
+    public Optional<SchemePermission> getByPermissionKey(String permissionKey) {
+        try {
+            return schemePermissionRepository.findByPermissionKey(permissionKey);
+        } catch (IllegalArgumentException e) {
+            return Optional.empty();
+        }
+    }
+
+    public SchemePermission save(SchemePermission schemePermission) {
+        return schemePermissionRepository.save(schemePermission);
     }
 
     public SchemePermissionDTO updateSchemePermission(SchemePermissionDTO schemePermissionDTO) {
@@ -97,10 +110,6 @@ public class SchemePermissionService {
                 .map(this::convertToDTO)
                 .toList();
     }
-
-    /** может потом сделать
-     * Получение уровней, подходящих под указанный уровень пользователя
-     */
 
     public void deleteSchemePermission(String permissionKey) {
         User user = getCurrentUser();

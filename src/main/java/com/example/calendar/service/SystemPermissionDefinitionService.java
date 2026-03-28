@@ -2,9 +2,7 @@ package com.example.calendar.service;
 
 import com.example.calendar.DTO.SystemPermissionDefinitionDTO;
 import com.example.calendar.DTO.SystemPermissionDefinitionUpdateDTO;
-import com.example.calendar.model.SystemPermissionCatalog;
-import com.example.calendar.model.SystemPermissionDefinition;
-import com.example.calendar.model.User;
+import com.example.calendar.model.*;
 import com.example.calendar.repository.SystemPermissionDefinitionRepository;
 import com.example.calendar.security.CustomUserDetails;
 import org.springframework.security.core.Authentication;
@@ -12,7 +10,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -20,10 +19,13 @@ public class SystemPermissionDefinitionService {
     private final SystemPermissionDefinitionRepository permissionDefinitionRepository;
     private final SystemPermissionCatalogService systemPermissionCatalogService;
     private final PermissionCheckService permissionCheckService;
-    public SystemPermissionDefinitionService(SystemPermissionDefinitionRepository permissionDefinitionRepository, SystemPermissionCatalogService systemPermissionCatalogService, PermissionCheckService permissionCheckService) {
+    private final SystemPermissionDefinitionRepository systemPermissionDefinitionRepository;
+
+    public SystemPermissionDefinitionService(SystemPermissionDefinitionRepository permissionDefinitionRepository, SystemPermissionCatalogService systemPermissionCatalogService, PermissionCheckService permissionCheckService, SystemPermissionDefinitionRepository systemPermissionDefinitionRepository) {
         this.permissionDefinitionRepository = permissionDefinitionRepository;
         this.systemPermissionCatalogService = systemPermissionCatalogService;
         this.permissionCheckService = permissionCheckService;
+        this.systemPermissionDefinitionRepository = systemPermissionDefinitionRepository;
     }
 
     public SystemPermissionDefinitionDTO createSystemPermissionDefinition(SystemPermissionDefinitionDTO permissionDefinition) {
@@ -49,6 +51,40 @@ public class SystemPermissionDefinitionService {
         systemPermissionDefinition.setSystemPermissionCatalog(permissionDefinition.getSystemPermissionCatalog());
         permissionDefinitionRepository.save(systemPermissionDefinition);
         return convertToDTO(systemPermissionDefinition);
+    }
+
+    public SystemPermissionDefinition createSystemPermissionDefinition(List<String> permissionCodes) {
+        SystemPermissionDefinition systemPermissionDefinition = new SystemPermissionDefinition();
+        Set<SystemPermissionCatalog> systemPermissionCatalogs = new HashSet<>();
+        String name = String.join("_", permissionCodes);
+        String code = String.join("_", permissionCodes);
+        String description = "Набор системных прав: " + name;
+        for (String permissionCode : permissionCodes) {
+            SystemPermissionCatalog catalog = systemPermissionCatalogService.getByKey(SystemPermissionKey.valueOf(permissionCode));
+            systemPermissionCatalogs.add(catalog);
+        }
+        systemPermissionDefinition.setSystemPermissionCatalog(systemPermissionCatalogs);
+        systemPermissionDefinition.setName(name);
+        systemPermissionDefinition.setDescription(description);
+        systemPermissionDefinition.setCode(code);
+        systemPermissionDefinitionRepository.save(systemPermissionDefinition);
+        return systemPermissionDefinition;
+    }
+
+    public void updateSystemPermissionDefinition(SystemPermissionDefinition systemPermissionDefinition, List<String> permissionCodes) {
+        Set<SystemPermissionCatalog> currentCatalogs = systemPermissionDefinition.getSystemPermissionCatalog();
+        Set<String> currentKeys = currentCatalogs.stream()
+                .map(c -> c.getKey().name())
+                .collect(Collectors.toSet());
+
+        for (String permissionCode : permissionCodes) {
+            if (!currentKeys.contains(permissionCode)) {
+                SystemPermissionCatalog catalog = systemPermissionCatalogService.getByKey(SystemPermissionKey.valueOf(permissionCode));
+                currentCatalogs.add(catalog);
+            }
+        }
+
+        systemPermissionDefinitionRepository.save(systemPermissionDefinition);
     }
 
     public SystemPermissionDefinitionDTO updateSystemPermissionDefinition(SystemPermissionDefinitionDTO permissionDefinition) {
@@ -83,20 +119,8 @@ public class SystemPermissionDefinitionService {
         return convertToDTO(systemPermissionDefinition);
     }
 
-    public SystemPermissionDefinitionDTO deleteSystemPermissionDefinition(SystemPermissionDefinitionUpdateDTO deleteData) {
-        User user = getCurrentUser();
-        if (!permissionCheckService.hasPermission(user, "EDIT_PERMISSION_DEFINITION")) {
-            throw new SecurityException("Нет права на редактирование набора прав");
-        }
-
-        SystemPermissionDefinition systemPermissionDefinition = permissionDefinitionRepository.findByCode(deleteData.getDefinitionCode())
-                .orElseThrow(() -> new RuntimeException("Набора задач " + deleteData.getDefinitionCode() + " на данный момент не существует"));
-
-        SystemPermissionCatalog systemPermissionCatalog = systemPermissionCatalogService.getByKey(deleteData.getPermissionKey());
-
-        systemPermissionDefinition.getSystemPermissionCatalog().remove(systemPermissionCatalog);
-        permissionDefinitionRepository.save(systemPermissionDefinition);
-        return convertToDTO(systemPermissionDefinition);
+    public boolean existsSystemPermissionDefinitionByCode(String code) {
+        return permissionDefinitionRepository.existsByCode(code);
     }
 
     public SystemPermissionDefinitionDTO getByCode(String code) {
@@ -121,6 +145,15 @@ public class SystemPermissionDefinitionService {
                 .toList();
     }
 
+    public List<String> getSystemPermissionCurrentUser(SystemPermissionDefinition systemPermissionDefinition) {
+        List<String> permission = new ArrayList<>();
+        if (systemPermissionDefinition != null) {
+            systemPermissionDefinition.getSystemPermissionCatalog()
+                    .forEach(catalog -> permission.add(catalog.getKey().name()));
+        }
+        return permission;
+    }
+
     public void deleteByCode(String code) {
         User user = getCurrentUser();
         if (!permissionCheckService.hasPermission(user, "DELETE_PERMISSION_DEFINITION")) {
@@ -130,6 +163,22 @@ public class SystemPermissionDefinitionService {
         SystemPermissionDefinition systemPermissionDefinition = permissionDefinitionRepository.findByCode(code)
                 .orElseThrow(() -> new RuntimeException("Данной задачи " + code + " не существует"));
         permissionDefinitionRepository.delete(systemPermissionDefinition);
+    }
+
+    public SystemPermissionDefinitionDTO deleteSystemPermissionDefinition(SystemPermissionDefinitionUpdateDTO deleteData) {
+        User user = getCurrentUser();
+        if (!permissionCheckService.hasPermission(user, "EDIT_PERMISSION_DEFINITION")) {
+            throw new SecurityException("Нет права на редактирование набора прав");
+        }
+
+        SystemPermissionDefinition systemPermissionDefinition = permissionDefinitionRepository.findByCode(deleteData.getDefinitionCode())
+                .orElseThrow(() -> new RuntimeException("Набора задач " + deleteData.getDefinitionCode() + " на данный момент не существует"));
+
+        SystemPermissionCatalog systemPermissionCatalog = systemPermissionCatalogService.getByKey(deleteData.getPermissionKey());
+
+        systemPermissionDefinition.getSystemPermissionCatalog().remove(systemPermissionCatalog);
+        permissionDefinitionRepository.save(systemPermissionDefinition);
+        return convertToDTO(systemPermissionDefinition);
     }
 
     private User getCurrentUser() {

@@ -15,7 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Comparator;
 import java.util.List;
 
-//Бизнес-логика (например, UserService для регистрации).
 @Service
 @Transactional
 public class UserService {
@@ -181,18 +180,47 @@ public class UserService {
         User user = userRepository.findById(userDTO.getId())
                 .orElseThrow(() -> new UsernameNotFoundException("Пользователь не найден"));
 
-        if (!user.getCompany().equals(currentUser.getCompany())) {
+        if (!user.getCompany().getId().equals(currentUser.getCompany().getId())) {
+            System.out.println("❌❌❌ ID КОМПАНИЙ НЕ СОВПАДАЮТ! БЛОКИРУЮ");
             throw new SecurityException("Нельзя обновлять данные пользователя из другой компании");
         }
 
+        Department department = departmentRepository.findById(userDTO.getDepartmentId())
+                .orElseThrow(() -> new UsernameNotFoundException("Данного департамента с таким " + userDTO.getDepartmentId() + " не был найден"));
+
+        Role role = roleRepository.findById(userDTO.getRoleId())
+                .orElseThrow(() -> new UsernameNotFoundException("Такой роли " + userDTO.getRoleId() + " нет"));
+
         user.setUserName(userDTO.getUserName());
         user.setEmail(userDTO.getEmail());
+        user.setDepartment(department);
+        user.setRole(role);
+
 
         if (userDTO.getPassword() != null && !userDTO.getPassword().isEmpty()) {
             user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
         }
 
         return convertUserToDTO(userRepository.save(user));
+    }
+
+    public UserDTO updateUserDepartment(Long userId, Long departmentId) {
+        User currentUser = getCurrentUser();
+
+        if (!currentUser.getId().equals(userId)) {
+            if (!permissionCheckService.hasPermission(currentUser, "UPDATE_OTHER_USER")) {
+                throw new SecurityException("Недостаточно прав для обновления данных другого пользователя");
+            }
+        }
+
+        User updateUser = userRepository.findById(userId)
+                .orElseThrow(() -> new UsernameNotFoundException("<UNK> <UNK> <UNK> " + userId + " <UNK> <UNK> <UNK>"));
+
+        Department newDepartment = departmentRepository.findById(departmentId)
+                .orElseThrow(() -> new RuntimeException(""));
+
+        updateUser.setDepartment(newDepartment);
+        return convertUserToDTO(userRepository.save(updateUser));
     }
 
     public List<UserWithRoleDTO> getAwaitingRole(Long companyId) {
@@ -208,7 +236,6 @@ public class UserService {
 
         Company company = admin.getCompany();
 
-        // ИСПРАВЛЕНО: используем правильный метод
         Role awaitingRole = roleRepository.findByCodeAndDepartment_Company("AWAITING", company)
                 .orElseThrow(() -> new RuntimeException("В вашей компании нет людей с ролью Awaiting"));
 

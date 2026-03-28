@@ -13,7 +13,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -46,6 +47,50 @@ public class CustomPermissionService {
 
         customPermissionRepository.save(customPermission);
         return convertToDTO(customPermission);
+    }
+
+    public CustomPermission createCustomPermission(List<String> permissionCodes) {
+        User user = getCurrentUser();
+        CustomPermission customPermission = new CustomPermission();
+        Set<SchemePermission> schemePermissions = new HashSet<>();
+
+        String code = String.join("_", permissionCodes);
+        String name = "Набор кастомных прав: " + code;
+        String description = "Автоматически созданный набор кастомных прав";
+        for (String permissionCode : permissionCodes) {
+            Optional<SchemePermission> existing = schemePermissionService.getByPermissionKey(permissionCode);
+            existing.ifPresent(schemePermissions::add);
+        }
+        customPermission.setCreatePermission(user);
+        customPermission.setCreateTime(LocalDateTime.now());
+        customPermission.setSchemePermission(schemePermissions);
+        customPermission.setDescription(description);
+        customPermission.setName(name);
+        customPermission.setCode(code);
+        customPermissionRepository.save(customPermission);
+        return customPermission;
+    }
+
+    public void updateCustomPermission(CustomPermission customPermission, List<String> permissionCodes) {
+        Set<SchemePermission> currentPermissions = customPermission.getSchemePermission();
+        Set<String> currentKeys = currentPermissions.stream()
+                .map(SchemePermission::getPermissionKey)
+                .collect(Collectors.toSet());
+
+        for (String permissionCode : permissionCodes) {
+            if (!currentKeys.contains(permissionCode)) {
+                SchemePermission schemePermission = schemePermissionService.getByPermissionKey(permissionCode)
+                        .orElseGet(() -> {
+                            SchemePermission newPermission = new SchemePermission();
+                            newPermission.setPermissionKey(permissionCode);
+                            newPermission.setDescription("Автоматически созданное право: " + permissionCode);
+                            return schemePermissionService.save(newPermission);
+                        });
+                currentPermissions.add(schemePermission);
+            }
+        }
+
+        customPermissionRepository.save(customPermission);
     }
 
     public CustomPermissionDTO updatePermission(CustomPermissionDTO customPermissionDTO) {
@@ -121,6 +166,15 @@ public class CustomPermissionService {
         return customPermissionRepository.findAll().stream()
                 .map(this::convertToDTO)
                 .toList();
+    }
+
+    public List<String> getCustomPermissionCurrentUser(CustomPermission customPermission) {
+        List<String> customPermissionCurrentUser = new ArrayList<>();
+        if (customPermission != null) {
+            customPermission.getSchemePermission()
+                    .forEach(permission -> customPermissionCurrentUser.add(permission.getPermissionKey()));
+        }
+        return customPermissionCurrentUser;
     }
 
     public void deletePermission(String code) {

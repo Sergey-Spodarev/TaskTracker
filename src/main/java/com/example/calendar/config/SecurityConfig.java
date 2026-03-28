@@ -28,7 +28,6 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        // Отключаем CSRF (временно, для разработки)
         http.csrf(csrf -> csrf.disable());
 
         // Управление сессиями
@@ -58,11 +57,11 @@ public class SecurityConfig {
                         "/InvitationToken/completeRegistration"
                 ).permitAll()
 
-                // === АДМИН-ПАНЕЛИ (HTML-страницы и API) ===
-                .requestMatchers("/admin/**").hasRole("ADMIN")  // ← Все пути, начинающиеся с /admin — только для ADMIN
+                // === АДМИН-ПАНЕЛИ (теперь доступно всем аутентифицированным) ===
+                .requestMatchers("/admin/**").authenticated()  // ← ИЗМЕНЕНО!
 
                 // === ПРОСТОЙ ДОСТУП К ЗАДАЧАМ (HTML-страница) ===
-                .requestMatchers("/task").authenticated()  // ← Любой залогиненный пользователь может зайти на /task
+                .requestMatchers("/task").authenticated()
 
                 // === API ЗАДАЧ ===
                 .requestMatchers(
@@ -97,11 +96,11 @@ public class SecurityConfig {
                 .requestMatchers(
                         "/project/create",
                         "/project/update",
-                        "/project/delete/**"  // используем ** вместо {id}
+                        "/project/delete/**"
                 ).hasRole("ADMIN")
 
-                .requestMatchers("/project/getAll").authenticated()  // явно разрешаем
-                .requestMatchers("/project/{id}").authenticated()    // для просмотра конкретного проекта
+                .requestMatchers("/project/getAll").authenticated()
+                .requestMatchers("/project/{id}").authenticated()
 
                 // === ОТДЕЛЫ ===
                 .requestMatchers(
@@ -113,13 +112,8 @@ public class SecurityConfig {
 
                 // === ПРИГЛАШЕНИЯ ===
                 .requestMatchers("/InvitationToken/addInvitationToken").hasRole("ADMIN")
-
-                //  доступ к ожидающим пользователям
                 .requestMatchers("/api/users/{companyId}/awaiting").hasRole("ADMIN")
-
-                // назначение пользователя в департамент
                 .requestMatchers("/api/v1/department/{userId}/assign-role-and-department").hasRole("ADMIN")
-
                 .requestMatchers("/api/v1/department/{userId}/assign-department").hasRole("ADMIN")
 
                 // === КОМПАНИЯ ===
@@ -141,15 +135,8 @@ public class SecurityConfig {
                     public void onAuthenticationSuccess(HttpServletRequest request,
                                                         HttpServletResponse response,
                                                         Authentication authentication) throws IOException {
-                        // Проверяем, есть ли у пользователя роль ADMIN
-                        boolean isAdmin = authentication.getAuthorities().stream()
-                                .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("ROLE_ADMIN"));
-
-                        if (isAdmin) {
-                            response.sendRedirect("/admin/tasks");
-                        } else {
-                            response.sendRedirect("/task");
-                        }
+                        // Всех пользователей отправляем на /admin/tasks
+                        response.sendRedirect("/admin/tasks");
                     }
                 })
                 .failureUrl("/?error=true")

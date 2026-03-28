@@ -21,7 +21,7 @@ public class PermissionSchemeController {
     public ResponseEntity<PermissionSchemeDTO> addPermissionScheme(@RequestBody PermissionSchemeDTO permissionSchemeDTO) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(permissionSchemeService.addPermissionScheme(permissionSchemeDTO));
+                .body(permissionSchemeService.createPermissionScheme(permissionSchemeDTO));
     }
 
     @GetMapping("/user")

@@ -24,6 +24,26 @@ public class RoleLevelController {
                 .body(roleLevelService.create(roleLevelDTO));
     }
 
+    @PatchMapping("/update")
+    public ResponseEntity<RoleLevelDTO> update(@RequestBody RoleLevelDTO roleLevelDTO) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(roleLevelService.update(roleLevelDTO));
+    }
+
+    @PatchMapping("/{roleLevelId}/permissions")
+    public ResponseEntity<Void> updateRoleLevelPermissions(@PathVariable Long roleLevelId, @RequestBody List<String> permissions) {
+        roleLevelService.updateRoleLevelPermissions(roleLevelId, permissions);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{levelId}/update")
+    public ResponseEntity<RoleLevelDTO> updateRoleLevel(@PathVariable Long levelId, @RequestBody RoleLevelDTO request) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(roleLevelService.updateRoleLevel(levelId, request));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<RoleLevelDTO> getById(@PathVariable Long id) {
         return ResponseEntity
@@ -31,18 +51,25 @@ public class RoleLevelController {
                 .body(roleLevelService.getById(id));
     }
 
+    @GetMapping("/role/{roleCode}/levels")
+    public ResponseEntity<List<RoleLevelDTO>> getRoleLevelsByRole(@PathVariable String roleCode) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(roleLevelService.getRoleLevelsByRole(roleCode));
+    }
+
+    @GetMapping("/{roleLevelId}/permissions")
+    public ResponseEntity<List<String>> getRoleLevelPermissions(@PathVariable Long roleLevelId) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(roleLevelService.getRoleLevelPermissions(roleLevelId));
+    }
+
     @GetMapping("/all")
     public ResponseEntity<List<RoleLevelDTO>> getAll() {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(roleLevelService.getAll());
-    }
-
-    @PatchMapping("/update")
-    public ResponseEntity<RoleLevelDTO> update(@RequestBody RoleLevelDTO roleLevelDTO) {
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(roleLevelService.update(roleLevelDTO));
     }
 
     @DeleteMapping("/{id}/delete")

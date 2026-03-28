@@ -27,11 +27,18 @@ public class UserController {
                 .body(userService.assignUser(userAssignmentDTO));
     }
 
-    @PostMapping("/update/dataUser")
+    @PatchMapping("/update/dataUser")
     public ResponseEntity<?> updateUser(@RequestBody UserDTO userDTO) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(userService.updateUser(userDTO));
+    }
+
+    @PatchMapping("/{userId}/update/{departmentID}")
+    public ResponseEntity<UserDTO> updateUser(@PathVariable Long userId, @PathVariable Long departmentID) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(userService.updateUserDepartment(userId, departmentID));
     }
 
     @GetMapping("/me")

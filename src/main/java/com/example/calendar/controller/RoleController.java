@@ -17,21 +17,21 @@ public class RoleController {
         this.roleService = roleService;
     }
 
-    @GetMapping("/all")//это у админа только
+    @GetMapping("/all")
     public ResponseEntity<List<RoleDTO>> getAll() {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(roleService.findAllRoles());
     }
 
-    @PostMapping("/add")//это тоже для админа
+    @PostMapping("/add")
     public ResponseEntity<RoleDTO> add(@RequestBody RoleDTO roleDTO) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(roleService.addRole(roleDTO));
     }
 
-    @PostMapping("/updateRole")//это у админа только
+    @PostMapping("/updateRole")
     public ResponseEntity<RoleDTO> update(@RequestBody RoleDTO roleDTO, @RequestParam String userName) {
         return ResponseEntity
                 .status(HttpStatus.OK)

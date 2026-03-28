@@ -23,4 +23,11 @@ public interface RoleLevelRepository extends JpaRepository<RoleLevel, Long> {
             "JOIN r.department d " +
             "WHERE d.company = :company")
     List<RoleLevel> findAllByCompany(@Param("company") Company company);
+
+    Optional<RoleLevel> findByRole(Role role);
+
+    List<RoleLevel> findAllByRole(Role role);
+
+    @Query("SELECT rl FROM RoleLevel rl WHERE rl.role.code = :roleCode")
+    Optional<RoleLevel> findByRoleCode(@Param("roleCode") String roleCode);
 }

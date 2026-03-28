@@ -68,7 +68,6 @@ public class RoleService {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         User admin = userDetails.getUser();
 
-        // TODO: Проверить права админа
         if(!"ADMIN".equals(admin.getRole().getCode())){
             throw new AccessDeniedException("The user is not admin");
         }
@@ -94,12 +93,10 @@ public class RoleService {
         Role role = roleRepository.findById(roleId)
                 .orElseThrow(() -> new UsernameNotFoundException("Role not found"));
 
-        // TODO: Проверить права админа
         if(!"ADMIN".equals(admin.getRole().getCode())){
             throw new AccessDeniedException("The user is not admin");
         }
 
-        // TODO: Проверить, что роль из той же компании
         if (!role.getDepartment().getCompany().equals(admin.getCompany())) {
             throw new AccessDeniedException("You can't change a role from another company.");
         }
