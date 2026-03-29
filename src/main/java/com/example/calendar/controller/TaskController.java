@@ -100,8 +100,7 @@ public class TaskController {
                 .body(taskService.getTasksByReporter());
     }
 
-    @GetMapping("/task-my-department")
-    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/department")
     public ResponseEntity<List<TaskDTO>> getTasksByDepartment() {
         return ResponseEntity
                 .status(HttpStatus.OK)

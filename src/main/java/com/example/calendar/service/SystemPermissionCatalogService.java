@@ -13,14 +13,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @Transactional
 public class SystemPermissionCatalogService {
     private final SystemPermissionCatalogRepository catalogRepository;
     private final PermissionCheckService permissionCheckService;
-    public SystemPermissionCatalogService(SystemPermissionCatalogRepository catalogRepository, PermissionCheckService permissionCheckService) {
+
+    public SystemPermissionCatalogService(SystemPermissionCatalogRepository catalogRepository,
+                                          PermissionCheckService permissionCheckService) {
         this.catalogRepository = catalogRepository;
         this.permissionCheckService = permissionCheckService;
     }
@@ -60,7 +61,7 @@ public class SystemPermissionCatalogService {
 
     public SystemPermissionCatalog getByKey(SystemPermissionKey key) {
         return catalogRepository.findByKey(key)
-                .orElseThrow(() -> new RuntimeException("Задачи с ключом " + key + " не был найден" ));
+                .orElseThrow(() -> new RuntimeException("Задачи с ключом " + key + " не был найден"));
     }
 
     public List<SystemPermissionCatalogDTO> getAllSystemPermissionCatalog() {
@@ -126,6 +127,7 @@ public class SystemPermissionCatalogService {
             case ADD_COMMENT: return "Добавление комментария";
             case DELETE_COMMENT: return "Удаление комментария";
             case EDIT_COMMENT: return "Редактирование комментария";
+            case VIEW_CALENDAR: return "Просмотр календаря";
 
             // ==================== УПРАВЛЕНИЕ ПРОЕКТАМИ ====================
             case CREATE_PROJECT: return "Создание проекта";
@@ -133,6 +135,7 @@ public class SystemPermissionCatalogService {
             case DELETE_PROJECT: return "Удаление проекта";
             case VIEW_ALL_PROJECTS: return "Просмотр всех проектов";
             case VIEW_PROJECT: return "Просмотр проекта";
+            case VIEW_PROJECTS: return "Просмотр проектов";
 
             // ==================== УПРАВЛЕНИЕ РОЛЯМИ ====================
             case CREATE_ROLE: return "Создание роли";
@@ -142,6 +145,16 @@ public class SystemPermissionCatalogService {
             case VIEW_ALL_ROLES: return "Просмотр всех ролей";
             case MANAGE_ROLES: return "Управление ролями";
 
+            // ==================== УПРАВЛЕНИЕ УРОВНЯМИ РОЛЕЙ ====================
+            case CREATE_ROLE_LEVEL: return "Создание уровня роли";
+            case EDIT_ROLE_LEVEL: return "Редактирование уровня роли";
+            case DELETE_ROLE_LEVEL: return "Удаление уровня роли";
+            case VIEW_ALL_ROLE_LEVELS: return "Просмотр всех уровней ролей";
+            case VIEW_ROLE_LEVEL: return "Просмотр уровня роли";
+            case ASSIGN_ROLE_PERMISSIONS: return "Назначение прав роли";
+            case VIEW_ROLE_PERMISSIONS: return "Просмотр прав роли";
+            case VIEW_ROLE_LEVELS: return "Просмотр уровней ролей";
+
             // ==================== УПРАВЛЕНИЕ РАЗРЕШЕНИЯМИ ====================
             case CREATE_PERMISSION_SCHEME: return "Создание схемы разрешений";
             case EDIT_PERMISSION_SCHEME: return "Редактирование схемы разрешений";
@@ -150,6 +163,7 @@ public class SystemPermissionCatalogService {
             case REMOVE_PERMISSION_FROM_SCHEME: return "Удаление права из схемы";
             case VIEW_ALL_PERMISSION_SCHEMES: return "Просмотр всех схем";
             case VIEW_PERMISSION_SCHEME: return "Просмотр схемы";
+            case VIEW_PERMISSION_SCHEMES: return "Просмотр схем разрешений";
 
             // ==================== КАСТОМНЫЕ ПРАВА ====================
             case CREATE_CUSTOM_PERMISSION: return "Создание кастомного права";
@@ -159,6 +173,7 @@ public class SystemPermissionCatalogService {
             case VIEW_CUSTOM_PERMISSION: return "Просмотр кастомного права";
             case ADD_SCHEME_LEVEL_TO_CUSTOM: return "Добавление уровня к праву";
             case REMOVE_SCHEME_LEVEL_FROM_CUSTOM: return "Удаление уровня из права";
+            case VIEW_CUSTOM_PERMISSIONS: return "Просмотр кастомных прав";
 
             // ==================== УРОВНИ ДОСТУПА ====================
             case CREATE_SCHEME_PERMISSION: return "Создание уровня доступа";
@@ -166,6 +181,7 @@ public class SystemPermissionCatalogService {
             case DELETE_SCHEME_PERMISSION: return "Удаление уровня доступа";
             case VIEW_ALL_SCHEME_PERMISSIONS: return "Просмотр всех уровней доступа";
             case VIEW_SCHEME_PERMISSION: return "Просмотр уровня доступа";
+            case VIEW_SCHEME_PERMISSIONS: return "Просмотр уровней доступа";
 
             // ==================== НАБОРЫ ПРАВ ====================
             case CREATE_PERMISSION_DEFINITION: return "Создание набора прав";
@@ -173,6 +189,7 @@ public class SystemPermissionCatalogService {
             case DELETE_PERMISSION_DEFINITION: return "Удаление набора прав";
             case VIEW_ALL_PERMISSION_DEFINITIONS: return "Просмотр всех наборов прав";
             case VIEW_PERMISSION_DEFINITION: return "Просмотр набора прав";
+            case VIEW_PERMISSION_DEFINITIONS: return "Просмотр наборов прав";
 
             // ==================== УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ ====================
             case INVITE_USER: return "Приглашение пользователя";
@@ -182,6 +199,7 @@ public class SystemPermissionCatalogService {
             case VIEW_ALL_USERS: return "Просмотр всех пользователей";
             case VIEW_USER: return "Просмотр пользователя";
             case MANAGE_USERS: return "Управление пользователями";
+            case VIEW_USERS: return "Просмотр пользователей";
 
             // ==================== УПРАВЛЕНИЕ ДЕПАРТАМЕНТАМИ ====================
             case CREATE_DEPARTMENT: return "Создание отдела";
@@ -191,6 +209,7 @@ public class SystemPermissionCatalogService {
             case VIEW_DEPARTMENT: return "Просмотр отдела";
             case ASSIGN_USER_DEPARTMENT: return "Назначение пользователя в отдел";
             case REMOVE_USER_FROM_DEPARTMENT: return "Удаление пользователя из отдела";
+            case VIEW_DEPARTMENTS: return "Просмотр отделов";
 
             // ==================== УПРАВЛЕНИЕ КОМПАНИЕЙ ====================
             case EDIT_COMPANY: return "Редактирование компании";
@@ -203,11 +222,18 @@ public class SystemPermissionCatalogService {
             case IMPORT_DATA: return "Импорт данных";
 
             // ==================== АДМИНИСТРИРОВАНИЕ ====================
-            case MANAGE_PERMISSION_CATALOG: return "Управление каталогом прав";
-            case VIEW_PERMISSION_CATALOG: return "Просмотр каталога прав";
             case VIEW_AUDIT_LOG: return "Просмотр логов аудита";
             case MANAGE_SYSTEM: return "Управление системой";
             case MANAGE_INTEGRATIONS: return "Управление интеграциями";
+            case MANAGE_ASSIGNMENT_RULES: return "Управление правилами назначения";
+
+            // ==================== УПРАВЛЕНИЕ КАТАЛОГОМ ====================
+            case MANAGE_PERMISSION_CATALOG: return "Управление каталогом прав";
+            case VIEW_PERMISSION_CATALOG: return "Просмотр каталога прав";
+
+            case VIEW_TASKS: return "Просмотр задач";
+            case ASSIGN_ROLE_DEPARTMENT: return "Назначение роли и отдела";
+            case ACTIVATE_USER: return "Активация пользователя";
 
             default: return key.name();
         }
@@ -227,6 +253,7 @@ public class SystemPermissionCatalogService {
             case ADD_COMMENT: return "Добавление комментариев к задачам";
             case DELETE_COMMENT: return "Удаление комментариев";
             case EDIT_COMMENT: return "Редактирование своих комментариев";
+            case VIEW_CALENDAR: return "Просмотр календаря с задачами";
 
             // ==================== УПРАВЛЕНИЕ ПРОЕКТАМИ ====================
             case CREATE_PROJECT: return "Создание новых проектов";
@@ -234,6 +261,7 @@ public class SystemPermissionCatalogService {
             case DELETE_PROJECT: return "Удаление проекта";
             case VIEW_ALL_PROJECTS: return "Просмотр всех проектов компании";
             case VIEW_PROJECT: return "Просмотр деталей конкретного проекта";
+            case VIEW_PROJECTS: return "Просмотр списка проектов компании";
 
             // ==================== УПРАВЛЕНИЕ РОЛЯМИ ====================
             case CREATE_ROLE: return "Создание новых ролей (например, Разработчик, Тестировщик)";
@@ -243,6 +271,16 @@ public class SystemPermissionCatalogService {
             case VIEW_ALL_ROLES: return "Просмотр всех ролей в системе";
             case MANAGE_ROLES: return "Полное управление ролями (создание, редактирование, удаление, назначение прав)";
 
+            // ==================== УПРАВЛЕНИЕ УРОВНЯМИ РОЛЕЙ ====================
+            case CREATE_ROLE_LEVEL: return "Создание нового уровня для роли";
+            case EDIT_ROLE_LEVEL: return "Изменение параметров уровня роли";
+            case DELETE_ROLE_LEVEL: return "Удаление уровня роли";
+            case VIEW_ALL_ROLE_LEVELS: return "Просмотр всех уровней ролей";
+            case VIEW_ROLE_LEVEL: return "Просмотр деталей уровня роли";
+            case ASSIGN_ROLE_PERMISSIONS: return "Назначение прав конкретному уровню роли";
+            case VIEW_ROLE_PERMISSIONS: return "Просмотр прав, назначенных уровню роли";
+            case VIEW_ROLE_LEVELS: return "Просмотр уровней ролей";
+
             // ==================== УПРАВЛЕНИЕ РАЗРЕШЕНИЯМИ ====================
             case CREATE_PERMISSION_SCHEME: return "Создание новой схемы разрешений";
             case EDIT_PERMISSION_SCHEME: return "Изменение параметров схемы";
@@ -251,6 +289,7 @@ public class SystemPermissionCatalogService {
             case REMOVE_PERMISSION_FROM_SCHEME: return "Удаление разрешения из схемы";
             case VIEW_ALL_PERMISSION_SCHEMES: return "Просмотр всех схем разрешений";
             case VIEW_PERMISSION_SCHEME: return "Просмотр деталей схемы разрешений";
+            case VIEW_PERMISSION_SCHEMES: return "Просмотр списка схем разрешений";
 
             // ==================== КАСТОМНЫЕ ПРАВА ====================
             case CREATE_CUSTOM_PERMISSION: return "Создание кастомного права";
@@ -260,6 +299,7 @@ public class SystemPermissionCatalogService {
             case VIEW_CUSTOM_PERMISSION: return "Просмотр деталей кастомного права";
             case ADD_SCHEME_LEVEL_TO_CUSTOM: return "Добавление уровня доступа к кастомному праву";
             case REMOVE_SCHEME_LEVEL_FROM_CUSTOM: return "Удаление уровня доступа из кастомного права";
+            case VIEW_CUSTOM_PERMISSIONS: return "Просмотр списка кастомных прав";
 
             // ==================== УРОВНИ ДОСТУПА ====================
             case CREATE_SCHEME_PERMISSION: return "Создание уровня доступа";
@@ -267,6 +307,7 @@ public class SystemPermissionCatalogService {
             case DELETE_SCHEME_PERMISSION: return "Удаление уровня доступа";
             case VIEW_ALL_SCHEME_PERMISSIONS: return "Просмотр всех уровней доступа";
             case VIEW_SCHEME_PERMISSION: return "Просмотр деталей уровня доступа";
+            case VIEW_SCHEME_PERMISSIONS: return "Просмотр списка уровней доступа";
 
             // ==================== НАБОРЫ ПРАВ ====================
             case CREATE_PERMISSION_DEFINITION: return "Создание набора прав";
@@ -274,6 +315,7 @@ public class SystemPermissionCatalogService {
             case DELETE_PERMISSION_DEFINITION: return "Удаление набора прав";
             case VIEW_ALL_PERMISSION_DEFINITIONS: return "Просмотр всех наборов прав";
             case VIEW_PERMISSION_DEFINITION: return "Просмотр деталей набора прав";
+            case VIEW_PERMISSION_DEFINITIONS: return "Просмотр списка наборов прав";
 
             // ==================== УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ ====================
             case INVITE_USER: return "Отправка приглашения новому пользователю по email";
@@ -283,6 +325,7 @@ public class SystemPermissionCatalogService {
             case VIEW_ALL_USERS: return "Просмотр всех пользователей компании";
             case VIEW_USER: return "Просмотр деталей пользователя";
             case MANAGE_USERS: return "Полное управление пользователями (все операции)";
+            case VIEW_USERS: return "Просмотр списка пользователей компании";
 
             // ==================== УПРАВЛЕНИЕ ДЕПАРТАМЕНТАМИ ====================
             case CREATE_DEPARTMENT: return "Создание нового отдела";
@@ -292,6 +335,7 @@ public class SystemPermissionCatalogService {
             case VIEW_DEPARTMENT: return "Просмотр деталей отдела";
             case ASSIGN_USER_DEPARTMENT: return "Назначение пользователя в отдел";
             case REMOVE_USER_FROM_DEPARTMENT: return "Удаление пользователя из отдела";
+            case VIEW_DEPARTMENTS: return "Просмотр списка отделов компании";
 
             // ==================== УПРАВЛЕНИЕ КОМПАНИЕЙ ====================
             case EDIT_COMPANY: return "Редактирование информации о компании";
@@ -304,11 +348,18 @@ public class SystemPermissionCatalogService {
             case IMPORT_DATA: return "Импорт данных в систему";
 
             // ==================== АДМИНИСТРИРОВАНИЕ ====================
-            case MANAGE_PERMISSION_CATALOG: return "Редактирование названий, описаний, иконок и групп системных прав";
-            case VIEW_PERMISSION_CATALOG: return "Просмотр всех доступных системных прав в каталоге";
             case VIEW_AUDIT_LOG: return "Просмотр логов аудита системы";
             case MANAGE_SYSTEM: return "Управление системными настройками";
             case MANAGE_INTEGRATIONS: return "Управление интеграциями с внешними сервисами";
+            case MANAGE_ASSIGNMENT_RULES: return "Управление правилами назначения задач между отделами";
+
+            // ==================== УПРАВЛЕНИЕ КАТАЛОГОМ ====================
+            case MANAGE_PERMISSION_CATALOG: return "Редактирование названий, описаний, иконок и групп системных прав";
+            case VIEW_PERMISSION_CATALOG: return "Просмотр всех доступных системных прав в каталоге";
+
+            case VIEW_TASKS: return "Просмотр списка задач";
+            case ASSIGN_ROLE_DEPARTMENT: return "Назначение пользователю роли и отдела одновременно";
+            case ACTIVATE_USER: return "Активация приглашенного пользователя в системе";
 
             default: return "";
         }
@@ -318,18 +369,26 @@ public class SystemPermissionCatalogService {
         // Автоматическое определение группы по ключу
         if (key.name().startsWith("CREATE_") || key.name().startsWith("EDIT_") ||
                 key.name().startsWith("DELETE_") || key.name().startsWith("VIEW_") ||
-                key.name().startsWith("ADD_") || key.name().startsWith("REMOVE_")) {
+                key.name().startsWith("ADD_") || key.name().startsWith("REMOVE_") ||
+                key.name().startsWith("ASSIGN_") || key.name().startsWith("MANAGE_")) {
 
             if (key.name().contains("TASK")) return "Задачи";
             if (key.name().contains("PROJECT")) return "Проекты";
             if (key.name().contains("ROLE")) return "Роли";
             if (key.name().contains("USER")) return "Пользователи";
             if (key.name().contains("DEPARTMENT")) return "Отделы";
+            if (key.name().contains("PERMISSION") && key.name().contains("SCHEME")) return "Схемы разрешений";
             if (key.name().contains("PERMISSION")) return "Разрешения";
-            if (key.name().contains("SCHEME")) return "Схемы";
+            if (key.name().contains("SCHEME") && key.name().contains("PERMISSION")) return "Уровни доступа";
             if (key.name().contains("CUSTOM")) return "Кастомные права";
             if (key.name().contains("COMPANY")) return "Компания";
             if (key.name().contains("REPORT")) return "Отчеты";
+            if (key.name().contains("EXPORT")) return "Отчеты";
+            if (key.name().contains("IMPORT")) return "Отчеты";
+            if (key.name().contains("AUDIT")) return "Администрирование";
+            if (key.name().contains("SYSTEM")) return "Администрирование";
+            if (key.name().contains("INTEGRATION")) return "Администрирование";
+            if (key.name().contains("ASSIGNMENT")) return "Администрирование";
         }
 
         // Ручное распределение по группам
@@ -341,41 +400,46 @@ public class SystemPermissionCatalogService {
                 return "Задачи";
 
             case CREATE_PROJECT: case EDIT_PROJECT: case DELETE_PROJECT:
-            case VIEW_ALL_PROJECTS: case VIEW_PROJECT:
+            case VIEW_ALL_PROJECTS: case VIEW_PROJECT: case VIEW_PROJECTS:
                 return "Проекты";
 
             case CREATE_ROLE: case EDIT_ROLE: case DELETE_ROLE: case ASSIGN_ROLE:
             case VIEW_ALL_ROLES: case MANAGE_ROLES:
                 return "Роли";
 
+            case CREATE_ROLE_LEVEL: case EDIT_ROLE_LEVEL: case DELETE_ROLE_LEVEL:
+            case VIEW_ALL_ROLE_LEVELS: case VIEW_ROLE_LEVEL: case VIEW_ROLE_LEVELS:
+            case ASSIGN_ROLE_PERMISSIONS: case VIEW_ROLE_PERMISSIONS:
+                return "Уровни ролей";
+
             case CREATE_PERMISSION_SCHEME: case EDIT_PERMISSION_SCHEME:
             case DELETE_PERMISSION_SCHEME: case ADD_PERMISSION_TO_SCHEME:
             case REMOVE_PERMISSION_FROM_SCHEME: case VIEW_ALL_PERMISSION_SCHEMES:
-            case VIEW_PERMISSION_SCHEME:
+            case VIEW_PERMISSION_SCHEME: case VIEW_PERMISSION_SCHEMES:
                 return "Схемы разрешений";
 
             case CREATE_CUSTOM_PERMISSION: case EDIT_CUSTOM_PERMISSION:
             case DELETE_CUSTOM_PERMISSION: case VIEW_ALL_CUSTOM_PERMISSIONS:
-            case VIEW_CUSTOM_PERMISSION: case ADD_SCHEME_LEVEL_TO_CUSTOM:
-            case REMOVE_SCHEME_LEVEL_FROM_CUSTOM:
+            case VIEW_CUSTOM_PERMISSION: case VIEW_CUSTOM_PERMISSIONS:
+            case ADD_SCHEME_LEVEL_TO_CUSTOM: case REMOVE_SCHEME_LEVEL_FROM_CUSTOM:
                 return "Кастомные права";
 
             case CREATE_SCHEME_PERMISSION: case EDIT_SCHEME_PERMISSION:
             case DELETE_SCHEME_PERMISSION: case VIEW_ALL_SCHEME_PERMISSIONS:
-            case VIEW_SCHEME_PERMISSION:
+            case VIEW_SCHEME_PERMISSION: case VIEW_SCHEME_PERMISSIONS:
                 return "Уровни доступа";
 
             case CREATE_PERMISSION_DEFINITION: case EDIT_PERMISSION_DEFINITION:
             case DELETE_PERMISSION_DEFINITION: case VIEW_ALL_PERMISSION_DEFINITIONS:
-            case VIEW_PERMISSION_DEFINITION:
+            case VIEW_PERMISSION_DEFINITION: case VIEW_PERMISSION_DEFINITIONS:
                 return "Наборы прав";
 
             case INVITE_USER: case BLOCK_USER: case DELETE_USER: case EDIT_USER:
-            case VIEW_ALL_USERS: case VIEW_USER: case MANAGE_USERS:
+            case VIEW_ALL_USERS: case VIEW_USER: case MANAGE_USERS: case VIEW_USERS:
                 return "Пользователи";
 
             case CREATE_DEPARTMENT: case EDIT_DEPARTMENT: case DELETE_DEPARTMENT:
-            case VIEW_ALL_DEPARTMENTS: case VIEW_DEPARTMENT:
+            case VIEW_ALL_DEPARTMENTS: case VIEW_DEPARTMENT: case VIEW_DEPARTMENTS:
             case ASSIGN_USER_DEPARTMENT: case REMOVE_USER_FROM_DEPARTMENT:
                 return "Отделы";
 
@@ -385,9 +449,17 @@ public class SystemPermissionCatalogService {
             case VIEW_REPORTS: case EXPORT_DATA: case IMPORT_DATA:
                 return "Отчеты";
 
-            case MANAGE_PERMISSION_CATALOG: case VIEW_PERMISSION_CATALOG:
             case VIEW_AUDIT_LOG: case MANAGE_SYSTEM: case MANAGE_INTEGRATIONS:
+            case MANAGE_ASSIGNMENT_RULES:
                 return "Администрирование";
+
+            case MANAGE_PERMISSION_CATALOG: case VIEW_PERMISSION_CATALOG:
+                return "Каталог прав";
+
+            // Убедись, что эти case есть
+            case VIEW_TASKS: return "Задачи";
+            case ASSIGN_ROLE_DEPARTMENT: return "Пользователи";
+            case ACTIVATE_USER: return "Пользователи";
 
             default:
                 return "Другое";
@@ -429,9 +501,32 @@ public class SystemPermissionCatalogService {
             case VIEW_AUDIT_LOG: return "fa-history";
             case MANAGE_SYSTEM: return "fa-server";
             case MANAGE_INTEGRATIONS: return "fa-plug";
+            case MANAGE_ASSIGNMENT_RULES: return "fa-rule";
 
             case MANAGE_PERMISSION_CATALOG: return "fa-database";
             case VIEW_PERMISSION_CATALOG: return "fa-list";
+
+            case CREATE_ROLE_LEVEL: return "fa-layer-group";
+            case EDIT_ROLE_LEVEL: return "fa-layer-group";
+            case DELETE_ROLE_LEVEL: return "fa-layer-group";
+            case VIEW_ALL_ROLE_LEVELS: return "fa-layer-group";
+            case VIEW_ROLE_LEVEL: return "fa-layer-group";
+            case ASSIGN_ROLE_PERMISSIONS: return "fa-key";
+            case VIEW_ROLE_PERMISSIONS: return "fa-key";
+
+            case VIEW_TASKS: return "fa-tasks";
+            case ASSIGN_USER_DEPARTMENT: return "fa-user-plus";
+            case ASSIGN_ROLE_DEPARTMENT: return "fa-user-tag";
+            case ACTIVATE_USER: return "fa-user-check";
+            case REMOVE_USER_FROM_DEPARTMENT: return "fa-user-minus";
+            case VIEW_DEPARTMENTS: return "fa-building";
+            case VIEW_USERS: return "fa-users";
+            case VIEW_PROJECTS: return "fa-folder-open";
+            case VIEW_PERMISSION_SCHEMES: return "fa-shield-alt";
+            case VIEW_CUSTOM_PERMISSIONS: return "fa-star";
+            case VIEW_SCHEME_PERMISSIONS: return "fa-layer-group";
+            case VIEW_PERMISSION_DEFINITIONS: return "fa-cubes";
+            case VIEW_ROLE_LEVELS: return "fa-layer-group";
 
             default: return "fa-circle";
         }

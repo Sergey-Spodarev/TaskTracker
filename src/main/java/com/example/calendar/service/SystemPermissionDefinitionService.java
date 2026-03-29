@@ -120,7 +120,8 @@ public class SystemPermissionDefinitionService {
     }
 
     public boolean existsSystemPermissionDefinitionByCode(String code) {
-        return permissionDefinitionRepository.existsByCode(code);
+        SystemPermissionKey key = SystemPermissionKey.valueOf(code);
+        return systemPermissionCatalogService.existsSystemPermissionCatalogByKey(key);
     }
 
     public SystemPermissionDefinitionDTO getByCode(String code) {

@@ -67,6 +67,15 @@ public class PermissionSchemeService {
             }
         }
 
+        System.out.println("Сиситемные права = ");
+        for (String systemPermission : systemPermissions) {
+            System.out.println(" " + systemPermission);
+        }
+        System.out.println("Кастомные права = ");
+        for (String customPermission : customPermissions) {
+            System.out.println(" " + customPermission);
+        }
+
         SystemPermissionDefinition systemPermissionDefinition = systemPermissionDefinitionService.createSystemPermissionDefinition(systemPermissions);
         permissionScheme.setSystemPermissionDefinition(systemPermissionDefinition);
         CustomPermission customPermission = customPermissionService.createCustomPermission(customPermissions);
@@ -92,6 +101,15 @@ public class PermissionSchemeService {
             } else {
                 customPermissions.add(permission);
             }
+        }
+
+        System.out.println("Сиситемные права = ");
+        for (String systemPermission : systemPermissions) {
+            System.out.println(" " + systemPermission);
+        }
+        System.out.println("Кастомные права = ");
+        for (String customPermission : customPermissions) {
+            System.out.println(" " + customPermission);
         }
 
         systemPermissionDefinitionService.updateSystemPermissionDefinition(permissionScheme.getSystemPermissionDefinition(), systemPermissions);
