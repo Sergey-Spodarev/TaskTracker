@@ -4,6 +4,7 @@ import com.example.calendar.DTO.*;
 import com.example.calendar.model.*;
 import com.example.calendar.repository.*;
 import com.example.calendar.security.CustomUserDetails;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -11,6 +12,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.Comparator;
 import java.util.List;
