@@ -33,11 +33,17 @@ public class ProjectController {
     }
 
     @GetMapping("/getAll")
-    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<ProjectDTO>> getAllProjects() {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(projectService.findAll());
+    }
+
+    @GetMapping("/getByDepartment")
+    public ResponseEntity<List<ProjectDTO>> getProjectsByDepartment() {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(projectService.getProjectsByDepartment());
     }
 
     @GetMapping("/{id}")

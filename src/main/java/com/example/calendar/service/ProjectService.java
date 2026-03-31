@@ -140,6 +140,19 @@ public class ProjectService {
         return convertToDTO(project);
     }
 
+    public List<ProjectDTO> getProjectsByDepartment() {
+        User user = getCurrentUser();
+        if (!permissionCheckService.hasPermission(user, "VIEW_PROJECTS")) {
+            throw new SecurityException("Нет прав просмотра ролей в вашем департаменте");
+        }
+
+        Department department = user.getDepartment();
+
+        return projectRepository.findByDepartment(department).stream()
+                .map(this::convertToDTO)
+                .toList();
+    }
+
     public void deleteById(Long id) {
         User user = getCurrentUser();
 
