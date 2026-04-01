@@ -53,6 +53,12 @@ public enum SystemPermissionKey {
     VIEW_PERMISSION_SCHEME,
     VIEW_PERMISSION_SCHEMES,
 
+    // ==================== ПРАВИЛА НАЗНАЧЕНИЯ ЗАДАЧ ====================
+    VIEW_ASSIGNMENT_RULES,
+    CREATE_ASSIGNMENT_RULE,
+    EDIT_ASSIGNMENT_RULE,
+    DELETE_ASSIGNMENT_RULE,
+
     // ==================== КАСТОМНЫЕ ПРАВА ====================
     CREATE_CUSTOM_PERMISSION,
     EDIT_CUSTOM_PERMISSION,
@@ -116,6 +122,10 @@ public enum SystemPermissionKey {
     MANAGE_SYSTEM,
     MANAGE_INTEGRATIONS,
     MANAGE_ASSIGNMENT_RULES,
+
+    // ==================== ПРАВА НА ПЕРЕДАЧУ ЗАДАЧ ====================
+    /** Управление правами на передачу задач между отделами */
+    MANAGE_TASK_ASSIGNMENT_PERMISSIONS,
 
     // ==================== УПРАВЛЕНИЕ КАТАЛОГОМ ====================
     MANAGE_PERMISSION_CATALOG,

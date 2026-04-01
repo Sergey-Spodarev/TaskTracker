@@ -191,6 +191,15 @@ public class SystemPermissionCatalogService {
             case VIEW_PERMISSION_DEFINITION: return "Просмотр набора прав";
             case VIEW_PERMISSION_DEFINITIONS: return "Просмотр наборов прав";
 
+            // ==================== ПРАВИЛА НАЗНАЧЕНИЯ ЗАДАЧ ====================
+            case VIEW_ASSIGNMENT_RULES: return "Просмотр правил назначения";
+            case CREATE_ASSIGNMENT_RULE: return "Создание правила назначения";
+            case EDIT_ASSIGNMENT_RULE: return "Редактирование правила назначения";
+            case DELETE_ASSIGNMENT_RULE: return "Удаление правила назначения";
+
+            // ==================== ПРАВА НА ПЕРЕДАЧУ ЗАДАЧ ====================
+            case MANAGE_TASK_ASSIGNMENT_PERMISSIONS: return "Управление правами на передачу задач";
+
             // ==================== УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ ====================
             case INVITE_USER: return "Приглашение пользователя";
             case BLOCK_USER: return "Блокировка пользователя";
@@ -290,6 +299,15 @@ public class SystemPermissionCatalogService {
             case VIEW_ALL_PERMISSION_SCHEMES: return "Просмотр всех схем разрешений";
             case VIEW_PERMISSION_SCHEME: return "Просмотр деталей схемы разрешений";
             case VIEW_PERMISSION_SCHEMES: return "Просмотр списка схем разрешений";
+
+            // ==================== ПРАВИЛА НАЗНАЧЕНИЯ ЗАДАЧ ====================
+            case VIEW_ASSIGNMENT_RULES: return "Просмотр списка правил: какие грейды в какие департаменты могут назначать задачи";
+            case CREATE_ASSIGNMENT_RULE: return "Создание нового правила, разрешающего грейду доступ к департаменту";
+            case EDIT_ASSIGNMENT_RULE: return "Изменение параметров существующего правила назначения";
+            case DELETE_ASSIGNMENT_RULE: return "Удаление правила назначения задач";
+
+            // ==================== ПРАВА НА ПЕРЕДАЧУ ЗАДАЧ ====================
+            case MANAGE_TASK_ASSIGNMENT_PERMISSIONS: return "Создание и удаление правил передачи задач между отделами";
 
             // ==================== КАСТОМНЫЕ ПРАВА ====================
             case CREATE_CUSTOM_PERMISSION: return "Создание кастомного права";
@@ -418,6 +436,15 @@ public class SystemPermissionCatalogService {
             case VIEW_PERMISSION_SCHEME: case VIEW_PERMISSION_SCHEMES:
                 return "Схемы разрешений";
 
+            case VIEW_ASSIGNMENT_RULES:
+            case CREATE_ASSIGNMENT_RULE:
+            case EDIT_ASSIGNMENT_RULE:
+            case DELETE_ASSIGNMENT_RULE:
+                return "Правила назначения";
+
+            case MANAGE_TASK_ASSIGNMENT_PERMISSIONS:
+                return "Передача задач";
+
             case CREATE_CUSTOM_PERMISSION: case EDIT_CUSTOM_PERMISSION:
             case DELETE_CUSTOM_PERMISSION: case VIEW_ALL_CUSTOM_PERMISSIONS:
             case VIEW_CUSTOM_PERMISSION: case VIEW_CUSTOM_PERMISSIONS:
@@ -456,7 +483,6 @@ public class SystemPermissionCatalogService {
             case MANAGE_PERMISSION_CATALOG: case VIEW_PERMISSION_CATALOG:
                 return "Каталог прав";
 
-            // Убедись, что эти case есть
             case VIEW_TASKS: return "Задачи";
             case ASSIGN_ROLE_DEPARTMENT: return "Пользователи";
             case ACTIVATE_USER: return "Пользователи";
@@ -502,6 +528,13 @@ public class SystemPermissionCatalogService {
             case MANAGE_SYSTEM: return "fa-server";
             case MANAGE_INTEGRATIONS: return "fa-plug";
             case MANAGE_ASSIGNMENT_RULES: return "fa-rule";
+
+            case VIEW_ASSIGNMENT_RULES: return "fa-list-alt";
+            case CREATE_ASSIGNMENT_RULE: return "fa-plus-square";
+            case EDIT_ASSIGNMENT_RULE: return "fa-edit";
+            case DELETE_ASSIGNMENT_RULE: return "fa-trash-alt";
+
+            case MANAGE_TASK_ASSIGNMENT_PERMISSIONS: return "fa-exchange-alt";
 
             case MANAGE_PERMISSION_CATALOG: return "fa-database";
             case VIEW_PERMISSION_CATALOG: return "fa-list";
