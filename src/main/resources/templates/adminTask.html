@@ -246,6 +246,13 @@
         <button type="button" class="btn btn-primary" onclick="createTask()">Создать</button>
       </div>
     </div>
+    <div class="mb-3" id="departmentSelectorBlock" style="display: none;">
+      <label class="form-label">Назначить в отдел (опционально)</label>
+      <select id="taskDepartment" class="form-control">
+        <option value="">Выберите отдел</option>
+      </select>
+      <small class="text-muted">Если выберите отдел, задача будет доступна всем сотрудникам этого отдела</small>
+    </div>
   </div>
 </div>
 
@@ -541,6 +548,52 @@
           </thead>
           <tbody id="rulesTableBody"></tbody>
         </table>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="taskAssignmentPermissionModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">📤 Права на передачу задач между отделами</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Форма создания нового права -->
+        <div class="mb-4 p-3 border rounded bg-light">
+          <h6>➕ Добавить новое право</h6>
+          <div class="row g-2">
+            <div class="col-md-4">
+              <label class="form-label">Уровень роли</label>
+              <select id="permRoleLevelId" class="form-control">
+                <option value="">Выберите уровень роли</option>
+              </select>
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label">В отдел</label>
+              <select id="permTargetDeptId" class="form-control">
+                <option value="">Выберите отдел</option>
+              </select>
+            </div>
+          </div>
+          <div class="mt-2">
+            <button class="btn btn-primary btn-sm" onclick="createTaskAssignmentPermission()">
+              ➕ Добавить право
+            </button>
+          </div>
+        </div>
+
+        <!-- Список существующих прав -->
+        <h6>📋 Существующие права</h6>
+        <div id="taskAssignmentPermissionsList" class="mt-2" style="max-height: 400px; overflow-y: auto;">
+          <div class="text-center p-3 text-muted">Загрузка...</div>
+        </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
@@ -1265,6 +1318,7 @@
   let currentEditSchemeId = null;
 
   // ==================== ОБНОВЛЕННЫЙ MENU_ITEMS ====================
+  // ==================== MENU_ITEMS ====================
   const MENU_ITEMS = [
     // Основное
     { permission: 'CREATE_TASK', name: '➕ Создать задачу', handler: 'openCreateTaskModal', section: 'Основное' },
@@ -1305,7 +1359,8 @@
     // Администрирование
     { permission: 'MANAGE_PERMISSION_CATALOG', name: '⚙️ Управление каталогом прав', handler: 'openPermissionCatalogModal', section: 'Администрирование' },
     { permission: 'MANAGE_ASSIGNMENT_RULES', name: '🔧 Правила назначения', handler: 'openAssignmentRulesModal', section: 'Администрирование' },
-    { permission: 'MANAGE_ROLES', name: '👥 Управление ролями', handler: 'openRoleManagementModal', section: 'Администрирование' }
+    { permission: 'MANAGE_ROLES', name: '👥 Управление ролями', handler: 'openRoleManagementModal', section: 'Администрирование' },
+    { permission: 'MANAGE_TASK_ASSIGNMENT_PERMISSIONS', name: '📤 Права на передачу задач', handler: 'openTaskAssignmentPermissionModal', section: 'Администрирование' }
   ];
 
   // --- ЗАГРУЗКА ПРАВ ПОЛЬЗОВАТЕЛЯ ---
@@ -1360,6 +1415,74 @@
   // --- ПРОВЕРКА НАЛИЧИЯ ПРАВА ---
   function hasPermission(permissionKey) {
     return userPermissions.includes(permissionKey);
+  }
+
+  // ==================== ОБНОВЛЕННЫЙ MENU_ITEMS ====================
+  // Добавь этот пункт в MENU_ITEMS
+  const TASK_ASSIGNMENT_MENU_ITEM = {
+    permission: 'MANAGE_TASK_ASSIGNMENT_PERMISSIONS',
+    name: '📤 Права на передачу задач',
+    handler: 'openTaskAssignmentPermissionModal',
+    section: 'Администрирование'
+  };
+
+  // Функция открытия модалки управления правами
+  function openTaskAssignmentPermissionModal() {
+    if (!hasPermission('MANAGE_TASK_ASSIGNMENT_PERMISSIONS')) {
+      alert('У вас нет прав для управления правами на передачу задач');
+      return;
+    }
+
+    // Загружаем уровни ролей и департаменты для селекторов
+    loadRoleLevelsForPermissionSelect();
+    loadDepartmentsForPermissionSelect();
+
+    // Загружаем существующие права
+    loadTaskAssignmentPermissions();
+
+    new bootstrap.Modal(document.getElementById('taskAssignmentPermissionModal')).show();
+  }
+
+  // Загрузка уровней ролей для селектора
+  function loadRoleLevelsForPermissionSelect() {
+    axios.get('/api/v1/role-levels/all') // предполагаемый эндпоинт
+            .then(response => {
+              const select = document.getElementById('permRoleLevelId');
+              if (!select) return;
+
+              select.innerHTML = '<option value="">Выберите уровень роли</option>';
+              response.data.forEach(rl => {
+                const option = document.createElement('option');
+                option.value = rl.id;
+                option.textContent = `${rl.roleCode} - ${rl.levelName} (уровень ${rl.level})`;
+                select.appendChild(option);
+              });
+            })
+            .catch(error => {
+              console.error('Ошибка загрузки уровней ролей:', error);
+            });
+  }
+
+  // Загрузка департаментов для селекторов
+  function loadDepartmentsForPermissionSelect() {
+    axios.get('/api/v1/department/get')
+            .then(response => {
+              const departments = response.data;
+              const targetSelect = document.getElementById('permTargetDeptId');  // Только один селект!
+
+              if (targetSelect) {
+                targetSelect.innerHTML = '<option value="">Выберите отдел</option>';
+                departments.forEach(dept => {
+                  const option = document.createElement('option');
+                  option.value = dept.id;
+                  option.textContent = dept.name;
+                  targetSelect.appendChild(option);
+                });
+              }
+            })
+            .catch(error => {
+              console.error('Ошибка загрузки департаментов:', error);
+            });
   }
 
   // --- ОТРИСОВКА БОКОВОГО МЕНЮ ---
@@ -1938,7 +2061,7 @@
   }
 
   function loadAssignmentRules() {
-    axios.get('/assignmentRuleService/getAllRoleCompany')
+    axios.get('/api/v1/task_assignment_permission/all')
             .then(response => {
               allAssignmentRules = response.data;
               renderAssignmentRules();
@@ -3712,6 +3835,217 @@
       }
     });
   });
+
+  // ==================== ПРАВА НА ПЕРЕДАЧУ ЗАДАЧ ====================
+
+  // Глобальные переменные
+  let allTaskAssignmentPermissions = [];
+  let availableTargetDepartments = [];
+
+  // Загрузка всех прав на передачу задач
+  function loadTaskAssignmentPermissions() {
+    axios.get('/api/v1/task_assignment_permission/all')
+            .then(response => {
+              allTaskAssignmentPermissions = response.data;
+              renderTaskAssignmentPermissionsList();
+            })
+            .catch(error => {
+              console.error('Ошибка загрузки прав:', error);
+            });
+  }
+
+  // Отрисовка списка прав
+  function renderTaskAssignmentPermissionsList() {
+    const container = document.getElementById('taskAssignmentPermissionsList');
+    if (!container) return;
+
+    if (!allTaskAssignmentPermissions || allTaskAssignmentPermissions.length === 0) {
+      container.innerHTML = '<div class="text-center p-3 text-muted">Нет добавленных прав</div>';
+      return;
+    }
+
+    let html = '<table class="table table-sm table-striped">';
+    html += '<thead><tr><th>Уровень роли</th><th>Из отдела</th><th>В отдел</th><th>Действия</th></tr></thead><tbody>';
+
+    allTaskAssignmentPermissions.forEach(perm => {
+      html += `
+        <tr>
+          <td>${perm.roleLevelName || `ID: ${perm.roleLevelId}`}</td>
+          <td>${perm.sourceDepartmentName || `ID: ${perm.sourceDepartmentId}`}</td>
+          <td>${perm.targetDepartmentName || `ID: ${perm.targetDepartmentId}`}</td>
+          <td>
+            <button class="btn btn-sm btn-danger" onclick="deleteTaskAssignmentPermission(${perm.id})">
+              <i class="fas fa-trash"></i> Удалить
+            </button>
+          </td>
+        </tr>
+      `;
+    });
+
+    html += '</tbody></table>';
+    container.innerHTML = html;
+  }
+
+  // Создание нового права
+  async function createTaskAssignmentPermission() {
+    const roleLevelId = document.getElementById('permRoleLevelId')?.value;
+    const targetDeptId = document.getElementById('permTargetDeptId')?.value;  // Только целевой отдел!
+
+    if (!roleLevelId || !targetDeptId) {
+      alert('Заполните все поля');
+      return;
+    }
+
+    try {
+      await axios.post('/api/v1/task_assignment_permission/create', {
+        roleLevelId: parseInt(roleLevelId),
+        departmentId: parseInt(targetDeptId)  // ✅ Правильное имя поля!
+      });
+
+      alert('✅ Право успешно добавлено!');
+
+      document.getElementById('permRoleLevelId').value = '';
+      document.getElementById('permTargetDeptId').value = '';
+
+      loadTaskAssignmentPermissions();
+
+    } catch (error) {
+      let errorMsg = 'Ошибка при добавлении права';
+      if (error.response?.data?.message) {
+        errorMsg = error.response.data.message;
+      }
+      alert('❌ ' + errorMsg);
+    }
+  }
+
+  // Удаление права
+  async function deleteTaskAssignmentPermission(id) {
+    if (!confirm('Удалить это право?')) return;
+
+    try {
+      await axios.delete(`/api/v1/task_assignment_permission/delete/${id}`);
+      alert('✅ Право удалено');
+      loadTaskAssignmentPermissions();
+    } catch (error) {
+      alert('❌ Ошибка при удалении');
+    }
+  }
+
+  // Загрузка доступных департаментов для текущего пользователя
+  async function loadAvailableTargetDepartments() {
+    try {
+      const response = await axios.get('/api/v1/task_assignment_permission/my-available-departments');
+      availableTargetDepartments = response.data;
+      updateTaskDepartmentSelect();
+      toggleDepartmentSelector();
+      return availableTargetDepartments;
+    } catch (error) {
+      console.error('Ошибка загрузки доступных департаментов:', error);
+      availableTargetDepartments = [];
+      return [];
+    }
+  }
+
+  // Обновление селектора департаментов в задаче
+  function updateTaskDepartmentSelect() {
+    const deptSelect = document.getElementById('taskDepartment');
+    if (!deptSelect) return;
+
+    deptSelect.innerHTML = '<option value="">Выберите отдел (опционально)</option>';
+
+    if (availableTargetDepartments && availableTargetDepartments.length > 0) {
+      availableTargetDepartments.forEach(dept => {
+        const option = document.createElement('option');
+        option.value = dept.id;
+        option.textContent = dept.name;
+        deptSelect.appendChild(option);
+      });
+    }
+  }
+
+  // Показать/скрыть выбор департамента
+  function toggleDepartmentSelector() {
+    const deptBlock = document.getElementById('departmentSelectorBlock');
+    if (!deptBlock) return;
+
+    if (availableTargetDepartments && availableTargetDepartments.length > 0) {
+      deptBlock.style.display = 'block';
+    } else {
+      deptBlock.style.display = 'none';
+    }
+  }
+
+  // Назначение задачи в отдел
+  async function assignTaskToDepartment(taskId, departmentId) {
+    try {
+      await axios.patch(`/api/v1/task/${taskId}/assign-department`, null, {
+        params: { departmentId: departmentId }
+      });
+      return true;
+    } catch (error) {
+      console.error('Ошибка назначения в отдел:', error);
+      return false;
+    }
+  }
+
+  // Обновленная функция создания задачи
+  async function createTaskWithDepartment() {
+    const title = document.getElementById('taskTitle').value.trim();
+    const start = document.getElementById('taskStart').value;
+    const end = document.getElementById('taskEnd').value;
+    const assigneeIdStr = document.getElementById('taskAssignee').value;
+    const projectIdStr = document.getElementById('taskProject').value;
+    const departmentId = document.getElementById('taskDepartment')?.value;
+
+    if (!title || !start || !end || !assigneeIdStr || !projectIdStr) {
+      alert('Заполните все обязательные поля');
+      return;
+    }
+
+    const assigneeId = parseInt(assigneeIdStr);
+    const projectId = parseInt(projectIdStr);
+
+    if (isNaN(assigneeId) || isNaN(projectId)) {
+      alert('Некорректные данные');
+      return;
+    }
+
+    if (new Date(end) <= new Date(start)) {
+      alert('Время окончания должно быть позже начала');
+      return;
+    }
+
+    const dto = {
+      title,
+      description: document.getElementById('taskDescription').value,
+      priority: document.getElementById('taskPriority').value,
+      start,
+      end,
+      assigneeId,
+      projectId
+    };
+
+    try {
+      const response = await axios.post('/api/v1/task/create', dto);
+
+      if (departmentId && response.data?.id) {
+        await assignTaskToDepartment(response.data.id, departmentId);
+      }
+
+      alert('✅ Задача успешно создана!');
+      const modal = bootstrap.Modal.getInstance(document.getElementById('createTaskModal'));
+      modal.hide();
+      loadTasks();
+
+    } catch (error) {
+      const msg = error.response?.data?.message || 'Не удалось создать задачу';
+      alert('❌ Ошибка: ' + msg);
+    }
+  }
+
+  // Переопределяем createTask на новую версию
+  window.createTask = createTaskWithDepartment;
+
 </script>
 </body>
 </html>
