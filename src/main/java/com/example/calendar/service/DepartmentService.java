@@ -136,6 +136,10 @@ public class DepartmentService {
         return user.getUserName() + "назначен в департамент";
     }
 
+    public Department getDepartmentById(Long id) {
+        return departmentRepository.findById(id).orElse(null);
+    }
+
     public DepartmentDTO convertToDTO(Department department) {
         DepartmentDTO departmentDTO = new DepartmentDTO();
         departmentDTO.setId(department.getId());
