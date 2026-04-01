@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/role_level")
+@RequestMapping("/api/v1/role-levels")
 public class RoleLevelController {
     private final RoleLevelService roleLevelService;
     public RoleLevelController(RoleLevelService roleLevelService) {

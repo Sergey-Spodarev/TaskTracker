@@ -237,6 +237,11 @@ public class RoleLevelService {
         roleLevelRepository.deleteById(id);
     }
 
+    public RoleLevel getRoleById(Long id) {
+        return roleLevelRepository.getById(id);
+    }
+
+
     private User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();

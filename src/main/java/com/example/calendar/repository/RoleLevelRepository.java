@@ -12,6 +12,8 @@ import java.util.Optional;
 
 public interface RoleLevelRepository extends JpaRepository<RoleLevel, Long> {
 
+    RoleLevel getById(Long id);
+
     @Query("SELECT rl FROM RoleLevel rl " +
             "JOIN rl.role r " +
             "JOIN r.department d " +
